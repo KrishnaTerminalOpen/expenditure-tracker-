@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Expenses - SpendWise{% endblock %}
+
+{% block content %}
+<!-- Module 3: Expense Management Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 800;">Expenses</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+            Manage and track all your expenses
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <button class="btn-primary" onclick="openModal('addExpenseMainModal')">
+            <i class="fa-solid fa-plus"></i> Add Expense
+        </button>
+    </div>
+</div>
+
+<!-- Search & Filter Bar matching Module 3 screenshot -->
+<div class="card" style="padding: 14px 18px; margin-bottom: 20px;">
+    <form action="{{ url_for('expenses') }}" method="GET" style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+        <div style="position: relative; flex: 1; min-width: 260px;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.85rem;"></i>
+            <input type="text" name="search" placeholder="Search expenses..." value="{{ search_query }}" class="form-input" style="padding-left: 38px;">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-filter" style="font-size: 0.8rem; color: var(--text-dim);"></i>
+                <select name="category" class="form-select" onchange="this.form.submit()" style="width: auto; padding: 8px 12px;">
+                    <option value="All" {{ 'selected' if not category_filter or category_filter == 'All' else '' }}>All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.name }}" {{ 'selected' if category_filter == cat.name else '' }}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <select name="period" class="form-select" onchange="this.form.submit()" style="width: auto; padding: 8px 12px;">
+                <option value="This Month" {{ 'selected' if period_filter == 'This Month' else '' }}>This Month</option>
+                <option value="Last Month" {{ 'selected' if period_filter == 'Last Month' else '' }}>Last Month</option>
+                <option value="All Time" {{ 'selected' if period_filter == 'All Time' else '' }}>All Time</option>
+            </select>
+            
+            {% if search_query or (category_filter and category_filter != 'All') %}
+            <a href="{{ url_for('expenses') }}" class="btn-outline" style="padding: 8px 12px; font-size: 0.8rem;" title="Clear Filters">
+                <i class="fa-solid fa-rotate-left"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Expenses Table matching Module 3 screenshot -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Payment</th>
+                    <th style="text-align: right;">Amount</th>
+                    <th style="text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in expenses %}
+                <tr>
+                    <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
+                        {{ exp.expense_date[:10] }}
+                    </td>
+                    <td>
+                        <strong style="font-weight: 600;">{{ exp.title }}</strong>
+                        {% if exp.notes %}
+                        <div style="font-size: 0.72rem; color: var(--text-dim);">{{ exp.notes }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="badge-cat">
+                            <span class="badge-dot-cat" style="background: 
+                                {% if exp.category == 'Food & Dining' %}#f97316
+                                {% elif exp.category == 'Shopping' %}#ec4899
+                                {% elif exp.category == 'Transport' %}#3b82f6
+                                {% elif exp.category == 'Bills & Utilities' %}#10b981
+                                {% elif exp.category == 'Entertainment' %}#8b5cf6
+                                {% elif exp.category == 'Education' %}#6366f1
+                                {% elif exp.category == 'Health' %}#ef4444
+                                {% else %}#64748b{% endif %};"></span>
+                            <span>{{ exp.category }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="background: rgba(255,255,255,0.04); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; color: var(--text-muted);">
+                            {{ exp.payment_method }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <span class="amount-text">₹ {{ "{:,.0f}".format(exp.amount) }}</span>
+                    </td>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button onclick="openEditModal('{{ exp.id }}', '{{ exp.title|escape }}', '{{ exp.amount }}', '{{ exp.category|escape }}', '{{ exp.payment_method|escape }}', '{{ (exp.notes or '')|escape }}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; font-size: 0.85rem;" title="Edit">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <form action="{{ url_for('delete_expense', exp_id=exp.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this expense?');">
+                            <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 6px; font-size: 0.85rem;" title="Delete">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                        <i class="fa-solid fa-receipt" style="font-size: 2rem; margin-bottom: 8px; display: block;"></i>
+                        No expenses found matching your query.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Table Footer with Pagination matching Screenshot -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-dim);">
+        <div>
+            Showing 1 to {{ expenses|length }} of {{ total_count }} entries
+        </div>
+        <div class="pagination-pages">
+            <span class="page-num"><i class="fa-solid fa-chevron-left" style="font-size: 0.7rem;"></i></span>
+            <span class="page-num active">1</span>
+            <span class="page-num">2</span>
+            <span class="page-num">3</span>
+            <span class="page-num">4</span>
+            <span class="page-num">5</span>
+            <span class="page-num"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem;"></i></span>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Expense Main -->
+<div class="modal-overlay" id="addExpenseMainModal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-plus-circle" style="color: var(--accent-orange);"></i> Add New Expense
+            </h3>
+            <button onclick="closeModal('addExpenseMainModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.1rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form action="{{ url_for('add_expense') }}" method="POST">
+            <div class="form-group">
+                <label>Description / Merchant</label>
+                <input type="text" name="title" required class="form-input" placeholder="e.g. Lunch at Cafe, Mobile Recharge">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" step="0.01" name="amount" required class="form-input" placeholder="450.00">
+                </div>
+                <div class="form-group">
+                    <label>Date & Time</label>
+                    <input type="datetime-local" name="expense_date" class="form-input" id="exp-add-date">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select name="category" class="form-select">
+                        {% for cat in categories %}
+                        <option value="{{ cat.name }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select name="payment_method" class="form-select">
+                        {% for pm in payment_methods %}
+                        <option value="{{ pm.name }}">{{ pm.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Notes (Optional)</label>
+                <input type="text" name="notes" class="form-input" placeholder="e.g. Monthly groceries, Team dinner">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn-outline" onclick="closeModal('addExpenseMainModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Save Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edit Expense -->
+<div class="modal-overlay" id="editExpenseModal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.1rem; font-weight: 700;">Edit Expense</h3>
+            <button onclick="closeModal('editExpenseModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.1rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form id="editExpenseForm" method="POST">
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" name="title" id="edit_title" required class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Amount (₹)</label>
+                <input type="number" step="0.01" name="amount" id="edit_amount" required class="form-input">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select name="category" id="edit_category" class="form-select">
+                        {% for cat in categories %}
+                        <option value="{{ cat.name }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select name="payment_method" id="edit_payment" class="form-select">
+                        {% for pm in payment_methods %}
+                        <option value="{{ pm.name }}">{{ pm.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <input type="text" name="notes" id="edit_notes" class="form-input">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn-outline" onclick="closeModal('editExpenseModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Update Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openEditModal(id, title, amount, category, payment, notes) {
+        document.getElementById('editExpenseForm').action = '/expenses/edit/' + id;
+        document.getElementById('edit_title').value = title;
+        document.getElementById('edit_amount').value = amount;
+        document.getElementById('edit_category').value = category;
+        document.getElementById('edit_payment').value = payment;
+        document.getElementById('edit_notes').value = notes;
+        openModal('editExpenseModal');
+    }
+</script>
+{% endblock %}

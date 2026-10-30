@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile & Settings - SpendWise{% endblock %}
+
+{% block content %}
+<!-- Profile & Settings View -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 800;">User Profile & Preferences</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+            Configure your personal account, currency, monthly threshold, and visual theme
+        </p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; max-width: 1000px;">
+    <!-- Profile Card (Left) -->
+    <div class="card" style="text-align: center; padding: 30px 20px;">
+        <div style="position: relative; width: 90px; height: 90px; margin: 0 auto 16px auto;">
+            <img src="{{ user.avatar }}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-orange);">
+            <div style="position: absolute; bottom: 0; right: 0; width: 26px; height: 26px; background: var(--accent-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem;">
+                <i class="fa-solid fa-camera"></i>
+            </div>
+        </div>
+
+        <h3 style="font-size: 1.15rem; font-weight: 700;">{{ user.name }}</h3>
+        <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">{{ user.email }}</p>
+
+        <div style="display: flex; justify-content: space-around; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">Total Spent</span>
+                <strong style="font-size: 1rem; color: var(--accent-orange);">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
+            </div>
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">Total Entries</span>
+                <strong style="font-size: 1rem; color: var(--text-main);">{{ total_txns }}</strong>
+            </div>
+        </div>
+
+        <div style="margin-top: 24px;">
+            <a href="{{ url_for('logout') }}" class="btn-outline" style="width: 100%; justify-content: center; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+            </a>
+        </div>
+    </div>
+
+    <!-- Preferences Form (Right) -->
+    <div class="card" style="padding: 28px;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px;">Account Settings</h3>
+        <form action="{{ url_for('profile') }}" method="POST">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" value="{{ user.name }}" required class="form-input">
+            </div>
+
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" value="{{ user.email }}" disabled class="form-input" style="opacity: 0.6; cursor: not-allowed;">
+                <span style="font-size: 0.7rem; color: var(--text-dim);">Email address is associated with your unique database record.</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="form-group">
+                    <label>Monthly Budget Limit (₹)</label>
+                    <input type="number" step="500" name="monthly_budget" value="{{ user.monthly_budget }}" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Currency Symbol</label>
+                    <select name="currency" class="form-select">
+                        <option value="₹" {{ 'selected' if user.currency == '₹' else '' }}>₹ (INR)</option>
+                        <option value="$" {{ 'selected' if user.currency == '$' else '' }}>$ (USD)</option>
+                        <option value="€" {{ 'selected' if user.currency == '€' else '' }}>€ (EUR)</option>
+                        <option value="£" {{ 'selected' if user.currency == '£' else '' }}>£ (GBP)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Theme Preference</label>
+                <select name="theme" class="form-select">
+                    <option value="dark" {{ 'selected' if user.theme == 'dark' else '' }}>Dark (Default FinTech Dark)</option>
+                    <option value="light" {{ 'selected' if user.theme == 'light' else '' }}>Light (Clean Crisp)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Preferences
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

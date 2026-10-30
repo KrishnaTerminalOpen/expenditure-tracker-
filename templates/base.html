@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ user.theme if user and user.theme else 'dark' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SpendWise - Intelligent Financial Tracking{% endblock %}</title>
+    <meta name="description" content="SpendWise is a modern personal finance and expense management dashboard built entirely in Python.">
+    <!-- FontAwesome 6 CDN for modern crisp icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js CDN for interactive fin-tech visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div>
+                <!-- Brand Identity -->
+                <div class="brand">
+                    <div class="brand-icon">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </div>
+                    <div>
+                        <div class="brand-name">SpendWise</div>
+                        <span class="brand-tag">Track. Manage. Save.</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Menu (Modules 1-8) -->
+                <nav class="nav-menu">
+                    <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if current_page == 'dashboard' else '' }}" id="nav-dashboard">
+                        <i class="fa-solid fa-table-columns"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ url_for('expenses') }}" class="nav-item {{ 'active' if current_page == 'expenses' else '' }}" id="nav-expenses">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>Expenses</span>
+                    </a>
+                    <a href="{{ url_for('budget') }}" class="nav-item {{ 'active' if current_page == 'budget' else '' }}" id="nav-budget">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>Budget</span>
+                    </a>
+                    <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if current_page == 'analytics' else '' }}" id="nav-analytics">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                    <a href="{{ url_for('insights') }}" class="nav-item {{ 'active' if current_page == 'insights' else '' }}" id="nav-insights">
+                        <i class="fa-solid fa-lightbulb"></i>
+                        <span>Insights</span>
+                    </a>
+                    <a href="{{ url_for('history') }}" class="nav-item {{ 'active' if current_page == 'history' else '' }}" id="nav-history">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>History</span>
+                    </a>
+                    <a href="{{ url_for('categories_payments') }}" class="nav-item {{ 'active' if current_page == 'categories' else '' }}" id="nav-categories">
+                        <i class="fa-solid fa-shapes"></i>
+                        <span>Categories</span>
+                    </a>
+                    <a href="{{ url_for('profile') }}" class="nav-item {{ 'active' if current_page == 'profile' else '' }}" id="nav-profile">
+                        <i class="fa-regular fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                    <a href="{{ url_for('profile') }}" class="nav-item" id="nav-settings">
+                        <i class="fa-solid fa-gear"></i>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div>
+                <!-- Upgrade to Premium Promo Card -->
+                <div class="sidebar-upgrade">
+                    <div style="color: var(--accent-orange); font-size: 1.2rem; margin-bottom: 6px;">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <h4>Upgrade to Premium</h4>
+                    <p>Unlock advanced reports, exports & bank sync.</p>
+                    <button class="btn-upgrade" onclick="alert('SpendWise Pro: Full cloud sync & AI budget auditor available in production!')">Upgrade Now ⚡</button>
+                </div>
+
+                <!-- Dark Mode Toggle Switch -->
+                <div class="theme-switch-container">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-half-stroke"></i> Dark Mode
+                    </span>
+                    <label class="switch">
+                        <input type="checkbox" id="theme-toggle-chk" {{ 'checked' if not user or user.theme == 'dark' else '' }} onchange="toggleAppTheme()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <main class="main-wrapper">
+            <!-- Top App Bar -->
+            <header class="top-navbar">
+                <div class="search-bar-global">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <form action="{{ url_for('expenses') }}" method="GET" style="display: flex; width: 100%;">
+                        <input type="text" name="search" placeholder="Search expenses, tags, bills..." value="{{ request.args.get('search', '') }}">
+                    </form>
+                </div>
+
+                <div class="top-nav-right">
+                    <a href="{{ url_for('insights') }}" class="icon-btn-badge" title="Notifications & Insights" id="btn-top-notifs">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="badge-dot"></span>
+                    </a>
+                    <div class="user-profile-menu" onclick="window.location.href='{{ url_for('profile') }}'">
+                        <img src="{{ user.avatar if user and user.avatar else 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' }}" alt="Avatar" class="user-avatar">
+                        <div style="line-height: 1.2; display: flex; flex-direction: column;">
+                            <span style="font-size: 0.85rem; font-weight: 600;">{{ user.name if user else 'Krishna Sahu' }}</span>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">Personal Account</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: var(--text-dim); margin-left: 4px;"></i>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" title="Sign out">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Page Dynamic Body -->
+            <div class="page-container">
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-container">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>{{ message }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Quick Add Expense Modal Available from anywhere -->
+    <div class="modal-overlay" id="quickAddExpenseModal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-plus" style="color: var(--accent-orange);"></i> Add Expense
+                </h3>
+                <button onclick="closeModal('quickAddExpenseModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.1rem;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form action="{{ url_for('add_expense') }}" method="POST">
+                <div class="form-group">
+                    <label>Title / Description</label>
+                    <input type="text" name="title" required class="form-input" placeholder="e.g. Lunch at Cafe, Grocery Shopping">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>Amount (₹)</label>
+                        <input type="number" step="0.01" name="amount" required class="form-input" placeholder="250.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="datetime-local" name="expense_date" class="form-input" id="quick-exp-date">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" class="form-select">
+                            <option value="Food & Dining">Food & Dining</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Bills & Utilities">Bills & Utilities</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Education">Education</option>
+                            <option value="Health">Health</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="UPI">UPI</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Debit Card">Debit Card</option>
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes (Optional)</label>
+                    <input type="text" name="notes" class="form-input" placeholder="e.g. Team lunch, May month bill">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+                    <button type="button" class="btn-outline" onclick="closeModal('quickAddExpenseModal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.style.display = 'flex';
+                const dateInp = el.querySelector('#quick-exp-date');
+                if (dateInp && !dateInp.value) {
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                    dateInp.value = now.toISOString().slice(0, 16);
+                }
+            }
+        }
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if(el) el.style.display = 'none';
+        }
+        function toggleAppTheme() {
+            fetch('{{ url_for("toggle_theme") }}', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                document.documentElement.setAttribute('data-theme', data.theme);
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

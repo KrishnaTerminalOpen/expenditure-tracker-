@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpendWise - Sign In & Registration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <style>
+        body {
+            background-color: #0d1117;
+            background-image: radial-gradient(circle at 10% 20%, rgba(249, 115, 22, 0.08) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.06) 0%, transparent 40%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .auth-container {
+            display: flex;
+            width: 100%;
+            max-width: 950px;
+            background: #131822;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+        }
+        .auth-left-preview {
+            flex: 1.1;
+            background: linear-gradient(135deg, #161d2b 0%, #0d121c 100%);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid var(--border-color);
+            position: relative;
+        }
+        .auth-right-form {
+            flex: 1.2;
+            padding: 40px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .auth-tabs {
+            display: flex;
+            gap: 12px;
+            background: #1a2232;
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 28px;
+        }
+        .auth-tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .auth-tab-btn.active {
+            background: var(--bg-card);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .auth-card-feature {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            margin-top: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Visual & Feature Showcase matching Module 1 screenshot -->
+        <div class="auth-left-preview">
+            <div>
+                <div class="brand" style="border: none; padding: 0 0 20px 0;">
+                    <div class="brand-icon">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </div>
+                    <div>
+                        <div class="brand-name">SpendWise</div>
+                        <span class="brand-tag">Track. Manage. Save.</span>
+                    </div>
+                </div>
+                <h2 style="font-size: 1.6rem; font-weight: 700; line-height: 1.25; margin-bottom: 12px;">
+                    Smart Personal Expense & Financial Planning.
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5;">
+                    Gain 100% control over your daily spending, track budgets by categories, analyze trends, and export instant PDF audit summaries.
+                </p>
+
+                <div class="auth-card-feature">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                        <span style="color: #f97316; font-size: 1.1rem;"><i class="fa-solid fa-shield-halved"></i></span>
+                        <strong style="font-size: 0.9rem;">100% Python Native Stack</strong>
+                    </div>
+                    <p style="font-size: 0.78rem; color: var(--text-dim);">
+                        Built with Python Flask, SQLite, bcrypt password encryption, and ReportLab PDF reporting engine.
+                    </p>
+                </div>
+
+                <div class="auth-card-feature">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Demo Credentials</span>
+                        <span style="font-size: 0.7rem; background: var(--accent-orange); color:#fff; padding:2px 8px; border-radius:10px;">Instant Login</span>
+                    </div>
+                    <div style="margin-top: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: #38bdf8;">
+                        email: krishna@example.com<br>password: password123
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-lock"></i> End-to-end encrypted session storage
+            </div>
+        </div>
+
+        <!-- Form Panels -->
+        <div class="auth-right-form">
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab-btn {{ 'active' if active_tab != 'register' else '' }}" onclick="switchTab('login')">
+                    Welcome Back!
+                </button>
+                <button type="button" class="auth-tab-btn {{ 'active' if active_tab == 'register' else '' }}" onclick="switchTab('register')">
+                    Create Account
+                </button>
+            </div>
+
+            <!-- Flash alerts -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div style="margin-bottom: 16px;">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- LOGIN FORM -->
+            <div id="login-panel" style="display: {{ 'block' if active_tab != 'register' else 'none' }};">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 4px;">Welcome Back!</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Login to your SpendWise account</p>
+                </div>
+                <form action="{{ url_for('login') }}" method="POST">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" class="form-input" placeholder="krishna@example.com" value="{{ email or 'krishna@example.com' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="margin: 0;">Password</label>
+                            <a href="javascript:void(0)" onclick="alert('Demo password is password123')" style="font-size: 0.75rem; color: var(--accent-orange);">Forgot Password?</a>
+                        </div>
+                        <input type="password" name="password" class="form-input" placeholder="••••••••" value="password123" required>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                        <input type="checkbox" id="remember-me" checked>
+                        <label for="remember-me" style="font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">Remember me</label>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.95rem;">
+                        Login <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+                <div style="text-align: center; margin-top: 20px; font-size: 0.8rem; color: var(--text-dim);">
+                    Don't have an account? <a href="javascript:void(0)" onclick="switchTab('register')" style="color: var(--accent-orange); font-weight: 600;">Register here</a>
+                </div>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div id="register-panel" style="display: {{ 'block' if active_tab == 'register' else 'none' }};">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 4px;">Create Account</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Join SpendWise today and take control</p>
+                </div>
+                <form action="{{ url_for('register') }}" method="POST">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="name" class="form-input" placeholder="Krishna Sahu" value="{{ name or '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" class="form-input" placeholder="krishna@example.com" value="{{ email or '' }}" required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password</label>
+                            <input type="password" name="confirm_password" class="form-input" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                        <input type="checkbox" id="terms-agree" required checked>
+                        <label for="terms-agree" style="font-size: 0.78rem; color: var(--text-muted); cursor: pointer;">
+                            I agree to the <a href="javascript:void(0)" style="color: var(--accent-orange);">Terms & Conditions</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.95rem;">
+                        Register <i class="fa-solid fa-user-plus"></i>
+                    </button>
+                </form>
+                <div style="text-align: center; margin-top: 20px; font-size: 0.8rem; color: var(--text-dim);">
+                    Already have an account? <a href="javascript:void(0)" onclick="switchTab('login')" style="color: var(--accent-orange); font-weight: 600;">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            const loginPanel = document.getElementById('login-panel');
+            const regPanel = document.getElementById('register-panel');
+            const btns = document.querySelectorAll('.auth-tab-btn');
+
+            if (tab === 'login') {
+                loginPanel.style.display = 'block';
+                regPanel.style.display = 'none';
+                btns[0].classList.add('active');
+                btns[1].classList.remove('active');
+            } else {
+                loginPanel.style.display = 'none';
+                regPanel.style.display = 'block';
+                btns[0].classList.remove('active');
+                btns[1].classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
