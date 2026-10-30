@@ -93,15 +93,23 @@
             </div>
         </aside>
 
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
         <!-- Main Wrapper -->
         <main class="main-wrapper">
             <!-- Top App Bar -->
             <header class="top-navbar">
-                <div class="search-bar-global">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <form action="{{ url_for('expenses') }}" method="GET" style="display: flex; width: 100%;">
-                        <input type="text" name="search" placeholder="Search expenses, tags, bills..." value="{{ request.args.get('search', '') }}">
-                    </form>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="search-bar-global">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <form action="{{ url_for('expenses') }}" method="GET" style="display: flex; width: 100%;">
+                            <input type="text" name="search" placeholder="Search expenses, tags..." value="{{ request.args.get('search', '') }}">
+                        </form>
+                    </div>
                 </div>
 
                 <div class="top-nav-right">
@@ -111,11 +119,11 @@
                     </a>
                     <div class="user-profile-menu" onclick="window.location.href='{{ url_for('profile') }}'">
                         <img src="{{ user.avatar if user and user.avatar else 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' }}" alt="Avatar" class="user-avatar">
-                        <div style="line-height: 1.2; display: flex; flex-direction: column;">
+                        <div class="user-profile-info" style="line-height: 1.2; display: flex; flex-direction: column;">
                             <span style="font-size: 0.85rem; font-weight: 600;">{{ user.name if user else 'Krishna Sahu' }}</span>
                             <span style="font-size: 0.7rem; color: var(--text-dim);">Personal Account</span>
                         </div>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: var(--text-dim); margin-left: 4px;"></i>
+                        <i class="fa-solid fa-chevron-down user-profile-chevron" style="font-size: 0.7rem; color: var(--text-dim); margin-left: 4px;"></i>
                     </div>
                     <a href="{{ url_for('logout') }}" class="btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" title="Sign out">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -141,6 +149,29 @@
 
                 {% block content %}{% endblock %}
             </div>
+
+            <!-- Mobile Bottom Quick Navigation Bar -->
+            <nav class="mobile-bottom-nav">
+                <a href="{{ url_for('dashboard') }}" class="mobile-nav-link {{ 'active' if current_page == 'dashboard' else '' }}">
+                    <i class="fa-solid fa-table-columns"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('expenses') }}" class="mobile-nav-link {{ 'active' if current_page == 'expenses' else '' }}">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Expenses</span>
+                </a>
+                <button class="mobile-fab-btn" onclick="openModal('quickAddExpenseModal')" title="Add Expense">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+                <a href="{{ url_for('budget') }}" class="mobile-nav-link {{ 'active' if current_page == 'budget' else '' }}">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span>Budget</span>
+                </a>
+                <a href="{{ url_for('analytics') }}" class="mobile-nav-link {{ 'active' if current_page == 'analytics' else '' }}">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+            </nav>
         </main>
     </div>
 
@@ -209,6 +240,14 @@
     </div>
 
     <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            }
+        }
         function openModal(id) {
             const el = document.getElementById(id);
             if(el) {
