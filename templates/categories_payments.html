@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Category & Payment Management - SpendWise{% endblock %}
+
+{% block content %}
+<!-- Module 4 Header -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 800;">Category & Payment Management</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+            Manage and customize your expense categories and payment gateways
+        </p>
+    </div>
+</div>
+
+<!-- SECTION 1: CATEGORIES -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div>
+        <h2 style="font-size: 1.15rem; font-weight: 700;">Categories</h2>
+        <span style="font-size: 0.75rem; color: var(--text-dim);">Manage your expense categories</span>
+    </div>
+    <button class="btn-primary" onclick="openModal('addCategoryModal')">
+        <i class="fa-solid fa-plus"></i> Add Category
+    </button>
+</div>
+
+<!-- Categories Grid (Module 4 screenshot top section) -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 36px;">
+    {% for cat in categories %}
+    <div class="card" style="position: relative; display: flex; flex-direction: column; justify-content: space-between; border-left: 4px solid {{ cat.color }};">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; color: {{ cat.color }}; font-size: 1.1rem;">
+                <i class="fa-solid fa-{{ cat.icon }}"></i>
+            </div>
+            <form action="{{ url_for('delete_category', cat_id=cat.id) }}" method="POST" onsubmit="return confirm('Delete this category?');">
+                <button type="submit" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.8rem;" title="Delete Category">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </form>
+        </div>
+        <div>
+            <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 4px;">{{ cat.name }}</h3>
+            <span style="font-size: 0.75rem; color: var(--text-dim);">{{ cat.expense_count }} Expenses</span>
+        </div>
+        <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted);">
+            <span>Spent: ₹{{ "{:,.0f}".format(cat.total_spent) }}</span>
+            <span>Limit: ₹{{ "{:,.0f}".format(cat.budget_limit) }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- SECTION 2: PAYMENT METHODS -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div>
+        <h2 style="font-size: 1.15rem; font-weight: 700;">Payment Methods</h2>
+        <span style="font-size: 0.75rem; color: var(--text-dim);">Manage your payment methods</span>
+    </div>
+    <button class="btn-primary" onclick="openModal('addPaymentModal')">
+        <i class="fa-solid fa-plus"></i> Add Method
+    </button>
+</div>
+
+<!-- Payment Methods Grid (Module 4 screenshot bottom section) -->
+<div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px;">
+    {% for pm in payment_methods %}
+    <div class="card" style="text-align: center; padding: 20px 14px; position: relative;">
+        {% if pm.is_default %}
+        <span style="position: absolute; top: 8px; right: 8px; font-size: 0.65rem; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 1px 6px; border-radius: 10px;">
+            Default
+        </span>
+        {% endif %}
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 255, 255, 0.04); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: var(--accent-orange); font-size: 1.2rem;">
+            <i class="fa-solid fa-{{ pm.icon }}"></i>
+        </div>
+        <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 2px;">{{ pm.name }}</div>
+        <span style="font-size: 0.7rem; color: var(--text-dim);">{{ pm.usage_count }} transactions</span>
+        {% if not pm.is_default %}
+        <div style="margin-top: 10px;">
+            <form action="{{ url_for('delete_payment_method', pm_id=pm.id) }}" method="POST" onsubmit="return confirm('Remove this method?');">
+                <button type="submit" style="background: none; border: none; color: #ef4444; font-size: 0.7rem; cursor: pointer;">Remove</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal: Add Category -->
+<div class="modal-overlay" id="addCategoryModal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.1rem; font-weight: 700;">Add Category</h3>
+            <button onclick="closeModal('addCategoryModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form action="{{ url_for('add_category') }}" method="POST">
+            <div class="form-group">
+                <label>Category Name</label>
+                <input type="text" name="name" required class="form-input" placeholder="e.g. Travel, Fitness, Subscriptions">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Icon (FontAwesome Name)</label>
+                    <select name="icon" class="form-select">
+                        <option value="utensils">utensils (Food)</option>
+                        <option value="shopping-bag">shopping-bag</option>
+                        <option value="car">car (Transport)</option>
+                        <option value="receipt">receipt (Bills)</option>
+                        <option value="film">film (Entertainment)</option>
+                        <option value="heart-pulse">heart-pulse (Health)</option>
+                        <option value="graduation-cap">graduation-cap (Education)</option>
+                        <option value="plane">plane (Travel)</option>
+                        <option value="dumbbell">dumbbell (Fitness)</option>
+                        <option value="tag">tag (Other)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Badge Color</label>
+                    <input type="color" name="color" value="#f97316" class="form-input" style="height: 42px; padding: 2px;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Monthly Budget Limit (₹)</label>
+                <input type="number" step="100" name="budget_limit" value="3000" class="form-input">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-outline" onclick="closeModal('addCategoryModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Create Category</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Add Payment Method -->
+<div class="modal-overlay" id="addPaymentModal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.1rem; font-weight: 700;">Add Payment Method</h3>
+            <button onclick="closeModal('addPaymentModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form action="{{ url_for('add_payment_method') }}" method="POST">
+            <div class="form-group">
+                <label>Payment Method Name</label>
+                <input type="text" name="name" required class="form-input" placeholder="e.g. Amazon Pay, PayPal, Apple Pay">
+            </div>
+            <div class="form-group">
+                <label>Icon Style</label>
+                <select name="icon" class="form-select">
+                    <option value="smartphone">smartphone (UPI / Mobile App)</option>
+                    <option value="credit-card">credit-card</option>
+                    <option value="banknote">banknote (Cash)</option>
+                    <option value="landmark">landmark (Bank Transfer)</option>
+                    <option value="wallet">wallet (Digital Wallet)</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-outline" onclick="closeModal('addPaymentModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Add Method</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

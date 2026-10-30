@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications & Spending Insights - SpendWise{% endblock %}
+
+{% block content %}
+<!-- Module 7 Header -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 800;">Notifications & Insights</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+            Smart insights about your spending behavior and automated budget guards
+        </p>
+    </div>
+    <form action="{{ url_for('mark_all_notifications_read') }}" method="POST">
+        <button type="submit" class="btn-outline" style="font-size: 0.8rem; color: var(--accent-orange); border-color: rgba(249,115,22,0.3);">
+            <i class="fa-solid fa-check-double"></i> Mark all as read
+        </button>
+    </form>
+</div>
+
+<!-- List of Smart Insights matching Module 7 Screenshot Card Style -->
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 900px;">
+    {% for n in notifications %}
+    <div class="card" style="padding: 18px 20px; display: flex; align-items: flex-start; gap: 16px; border-left: 4px solid 
+        {% if n.type == 'alert' %}#ef4444
+        {% elif n.type == 'success' %}#10b981
+        {% elif n.type == 'stat' %}#3b82f6
+        {% elif n.type == 'warning' %}#f59e0b
+        {% else %}#8b5cf6{% endif %}; background: 
+        {% if n.type == 'alert' %}rgba(239, 68, 68, 0.05)
+        {% elif n.type == 'success' %}rgba(16, 185, 129, 0.05)
+        {% elif n.type == 'stat' %}rgba(59, 130, 246, 0.05)
+        {% elif n.type == 'warning' %}rgba(245, 158, 11, 0.05)
+        {% else %}rgba(139, 92, 246, 0.05)
+        {% endif %};">
+        
+        <!-- Icon badge -->
+        <div style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; background: 
+            {% if n.type == 'alert' %}rgba(239, 68, 68, 0.2); color: #ef4444
+            {% elif n.type == 'success' %}rgba(16, 185, 129, 0.2); color: #10b981
+            {% elif n.type == 'stat' %}rgba(59, 130, 246, 0.2); color: #3b82f6
+            {% elif n.type == 'warning' %}rgba(245, 158, 11, 0.2); color: #f59e0b
+            {% else %}rgba(139, 92, 246, 0.2); color: #8b5cf6{% endif %};">
+            {% if n.type == 'alert' %}<i class="fa-solid fa-arrow-trend-up"></i>
+            {% elif n.type == 'success' %}<i class="fa-solid fa-thumbs-up"></i>
+            {% elif n.type == 'stat' %}<i class="fa-solid fa-chart-pie"></i>
+            {% elif n.type == 'warning' %}<i class="fa-solid fa-triangle-exclamation"></i>
+            {% else %}<i class="fa-solid fa-lightbulb"></i>{% endif %}
+        </div>
+
+        <!-- Content -->
+        <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
+                    {{ n.title }}
+                </h3>
+                <span style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; margin-left: 12px;">
+                    {{ n.created_at }}
+                </span>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+                {{ n.message }}
+            </p>
+        </div>
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 40px; color: var(--text-dim);">
+        <i class="fa-regular fa-bell-slash" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+        All caught up! No active notifications or budget alerts.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

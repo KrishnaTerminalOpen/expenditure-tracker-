@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Expense History, Search & Export - SpendWise{% endblock %}
+
+{% block content %}
+<!-- Module 8 Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 800;">Expense History, Search & Export</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+            Full audit log of all financial transactions with instant CSV & PDF export
+        </p>
+    </div>
+    <!-- Export Buttons matching Screenshot Module 8 top right -->
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('export_csv') }}" class="btn-primary" style="background: linear-gradient(90deg, #10b981 0%, #059669 100%);">
+            <i class="fa-solid fa-file-csv"></i> Export CSV
+        </a>
+        <a href="{{ url_for('export_pdf') }}" class="btn-primary" style="background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);">
+            <i class="fa-solid fa-file-pdf"></i> Export PDF
+        </a>
+    </div>
+</div>
+
+<!-- Search & Multi-Filters Toolbar -->
+<div class="card" style="padding: 14px 18px; margin-bottom: 20px;">
+    <form action="{{ url_for('history') }}" method="GET" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <!-- Search input -->
+        <div style="position: relative; flex: 1; min-width: 240px;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.85rem;"></i>
+            <input type="text" name="search" placeholder="Search expenses..." value="{{ search_query }}" class="form-input" style="padding-left: 38px;">
+        </div>
+
+        <!-- Category Dropdown -->
+        <select name="category" class="form-select" onchange="this.form.submit()" style="width: auto; padding: 8px 12px;">
+            <option value="All Categories" {{ 'selected' if not category_filter or category_filter == 'All Categories' else '' }}>All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat.name }}" {{ 'selected' if category_filter == cat.name else '' }}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Payment Method Dropdown -->
+        <select name="payment" class="form-select" onchange="this.form.submit()" style="width: auto; padding: 8px 12px;">
+            <option value="All Methods" {{ 'selected' if not payment_filter or payment_filter == 'All Methods' else '' }}>All Payment Methods</option>
+            {% for pm in payment_methods %}
+            <option value="{{ pm.name }}" {{ 'selected' if payment_filter == pm.name else '' }}>{{ pm.name }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Date Range indicator -->
+        <div style="font-size: 0.8rem; background: var(--bg-input); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-sm); color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-regular fa-calendar" style="color: var(--accent-orange);"></i>
+            <span>01 May 2024 - 31 May 2024</span>
+        </div>
+    </form>
+</div>
+
+<!-- Main History Layout: Table (Left) + Summary Widget (Right) matching Screenshot Module 8 -->
+<div style="display: grid; grid-template-columns: 2.7fr 1fr; gap: 20px;">
+    <!-- History Table -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Payment</th>
+                        <th style="text-align: right;">Amount</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in expenses %}
+                    <tr>
+                        <td style="color: var(--text-muted); font-size: 0.78rem; white-space: nowrap;">
+                            {{ exp.expense_date }}
+                        </td>
+                        <td>
+                            <strong style="font-weight: 600;">{{ exp.title }}</strong>
+                        </td>
+                        <td>
+                            <div class="badge-cat">
+                                <span class="badge-dot-cat" style="background: 
+                                    {% if exp.category == 'Food & Dining' %}#f97316
+                                    {% elif exp.category == 'Shopping' %}#ec4899
+                                    {% elif exp.category == 'Transport' %}#3b82f6
+                                    {% elif exp.category == 'Bills & Utilities' %}#10b981
+                                    {% elif exp.category == 'Entertainment' %}#8b5cf6
+                                    {% elif exp.category == 'Education' %}#6366f1
+                                    {% elif exp.category == 'Health' %}#ef4444
+                                    {% else %}#64748b{% endif %};"></span>
+                                <span>{{ exp.category }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ exp.payment_method }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <span class="amount-text">₹ {{ "{:,.0f}".format(exp.amount) }}</span>
+                        </td>
+                        <td style="font-size: 0.75rem; color: var(--text-dim);">
+                            {{ exp.notes or '-' }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-dim);">
+                            No transactions matched the criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-dim);">
+            <div>
+                Showing 1 to {{ expenses|length }} of {{ total_count }} transactions
+            </div>
+            <div class="pagination-pages">
+                <span class="page-num"><i class="fa-solid fa-chevron-left" style="font-size: 0.7rem;"></i></span>
+                <span class="page-num active">1</span>
+                <span class="page-num">2</span>
+                <span class="page-num">3</span>
+                <span class="page-num">4</span>
+                <span class="page-num">5</span>
+                <span class="page-num"><i class="fa-solid fa-chevron-right" style="font-size: 0.7rem;"></i></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Side Summary Card matching Module 8 screenshot -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card" style="padding: 22px;">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 4px;">Summary</h3>
+            <span style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 20px;">This Month</span>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Total Expenses</span>
+                    <strong style="font-size: 0.95rem; color: var(--text-main);">₹ {{ "{:,.0f}".format(total_expenses) }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Total Transactions</span>
+                    <strong style="font-size: 0.95rem; color: var(--text-main);">{{ total_count }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Average Daily</span>
+                    <strong style="font-size: 0.95rem; color: var(--text-main);">₹ {{ "{:,.0f}".format(avg_daily) }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Highest Expense</span>
+                    <strong style="font-size: 0.95rem; color: #ef4444;">₹ {{ "{:,.0f}".format(highest_expense) }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Lowest Expense</span>
+                    <strong style="font-size: 0.95rem; color: #10b981;">₹ {{ "{:,.0f}".format(lowest_expense) }}</strong>
+                </div>
+            </div>
+
+            <!-- Mini visual graphic -->
+            <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color); text-align: center;">
+                <div style="display: inline-block; padding: 10px 18px; background: rgba(249, 115, 22, 0.1); border-radius: var(--radius-sm); color: var(--accent-orange); font-size: 0.8rem; font-weight: 600;">
+                    <i class="fa-solid fa-file-shield"></i> Verified Ledger Integrity
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
