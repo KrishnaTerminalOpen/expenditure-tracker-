@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ user.theme if user and user.theme else 'dark' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to SpendWise • Record Your First Transaction</title>
+    <meta name="description" content="Set up your first expense and activate your intelligent financial tracking dashboard.">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body class="onboarding-screen">
+    <!-- Canvas for celebratory confetti -->
+    <canvas id="confettiCanvas" style="position: fixed; inset: 0; pointer-events: none; z-index: 999999;"></canvas>
+
+    <!-- Top Navigation Header -->
+    <header class="onboarding-nav">
+        <div class="brand">
+            <div class="brand-icon">
+                <i class="fa-solid fa-chart-simple"></i>
+            </div>
+            <div>
+                <div class="brand-name">SpendWise</div>
+                <span class="brand-tag">Intelligent FinTech Engine</span>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <button type="button" class="sound-toggle-btn sound-on" id="soundToggleBtn" onclick="toggleAudio()" title="Sound Effects">
+                <i class="fa-solid fa-volume-high"></i>
+                <span id="soundLabel">Sound: ON</span>
+            </button>
+            <a href="{{ url_for('dashboard', skip_onboarding=1) }}" class="btn-outline" style="font-size: 0.8rem; padding: 6px 14px;" onclick="playClickSound()">
+                Skip for now <i class="fa-solid fa-arrow-right" style="margin-left: 6px;"></i>
+            </a>
+        </div>
+    </header>
+
+    <div class="onboarding-container">
+        <!-- Interactive Step Progress -->
+        <div class="onboarding-steps">
+            <div class="step-pill done">
+                <div class="step-number"><i class="fa-solid fa-check"></i></div>
+                <span>1. Account Created</span>
+            </div>
+            <div class="step-divider"></div>
+            <div class="step-pill active">
+                <div class="step-number"><i class="fa-solid fa-bolt"></i></div>
+                <span>2. Log First Expense</span>
+            </div>
+            <div class="step-divider"></div>
+            <div class="step-pill">
+                <div class="step-number">3</div>
+                <span>3. Financial Dashboard</span>
+            </div>
+        </div>
+
+        <!-- Hero Header -->
+        <div style="text-align: center; margin-bottom: 28px;">
+            <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px;">
+                Welcome aboard, {{ user.name.split(' ')[0] if user else 'Krishna' }}! 🎉
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; max-width: 600px; margin: 0 auto;">
+                Your account is ready. Let's record your very first expense to jumpstart your real-time budget analytics and smart spending insights.
+            </p>
+        </div>
+
+        <!-- Main Form + Live Preview Grid -->
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; align-items: start;">
+            <!-- Left Card: Form -->
+            <div class="card" style="padding: 28px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-orange);">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Quick Presets (1-Click Fill)
+                    </span>
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">Pick one or type below</span>
+                </div>
+
+                <!-- 1-Click Quick Preset Chips -->
+                <div class="preset-chip-list">
+                    <button type="button" class="preset-chip" onclick="applyPreset('Coffee & Snack', 150, 'Food & Dining', 'UPI', 'Cafe break')">
+                        ☕ Coffee ₹150
+                    </button>
+                    <button type="button" class="preset-chip" onclick="applyPreset('Supermarket Groceries', 1250, 'Shopping', 'UPI', 'Weekly essentials')">
+                        🛒 Groceries ₹1,250
+                    </button>
+                    <button type="button" class="preset-chip" onclick="applyPreset('Fuel Refill', 1000, 'Transport', 'Credit Card', 'Petrol station')">
+                        ⛽ Fuel ₹1,000
+                    </button>
+                    <button type="button" class="preset-chip" onclick="applyPreset('Dinner with Friends', 650, 'Food & Dining', 'UPI', 'Weekend dining')">
+                        🍕 Dinner ₹650
+                    </button>
+                    <button type="button" class="preset-chip" onclick="applyPreset('Mobile Recharge', 299, 'Bills & Utilities', 'UPI', 'Monthly plan')">
+                        📱 Recharge ₹299
+                    </button>
+                    <button type="button" class="preset-chip" onclick="applyPreset('Movie Tickets', 350, 'Entertainment', 'Debit Card', 'Cinema weekend')">
+                        🎬 Movie ₹350
+                    </button>
+                </div>
+
+                <form action="{{ url_for('first_transaction') }}" method="POST" id="firstTxnForm" onsubmit="return handleFormSubmit(event)">
+                    <div class="form-group">
+                        <label>Expense Title / Description <span style="color: var(--accent-orange);">*</span></label>
+                        <input type="text" name="title" id="inpTitle" required class="form-input" placeholder="e.g. Lunch at Cafe, Supermarket, Metro Pass" value="Coffee & Snack" oninput="updateLivePreview()">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px;">
+                        <div class="form-group">
+                            <label>Amount ({{ user.currency if user and user.currency else '₹' }}) <span style="color: var(--accent-orange);">*</span></label>
+                            <input type="number" step="0.01" name="amount" id="inpAmount" required class="form-input" placeholder="150.00" value="150" oninput="updateLivePreview()" style="font-weight: 700; font-size: 1.1rem; color: var(--accent-orange);">
+                        </div>
+                        <div class="form-group">
+                            <label>Date & Time</label>
+                            <input type="datetime-local" name="expense_date" id="inpDate" class="form-input" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select name="category" id="inpCategory" class="form-select" onchange="updateLivePreview()">
+                                {% for cat in categories %}
+                                <option value="{{ cat.name }}" data-color="{{ cat.color }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <select name="payment_method" id="inpPayment" class="form-select" onchange="updateLivePreview()">
+                                {% for pm in payment_methods %}
+                                <option value="{{ pm.name }}">{{ pm.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                        <div class="form-group">
+                            <label>Monthly Budget Target ({{ user.currency if user and user.currency else '₹' }})</label>
+                            <input type="number" step="500" name="monthly_budget" id="inpBudget" class="form-input" value="{{ user.monthly_budget if user and user.monthly_budget else 20000 }}" oninput="updateLivePreview()" title="Set your target monthly budget cap">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes (Optional)</label>
+                            <input type="text" name="notes" id="inpNotes" class="form-input" placeholder="e.g. Paid via GooglePay" value="Morning cafe run" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 26px; display: flex; align-items: center; justify-content: space-between;">
+                        <a href="{{ url_for('dashboard', skip_onboarding=1) }}" style="font-size: 0.8rem; color: var(--text-dim);" onclick="playClickSound()">
+                            Skip & setup later
+                        </a>
+                        <button type="submit" class="btn-primary" id="btnSubmitTxn" style="padding: 12px 28px; font-size: 0.95rem; box-shadow: 0 4px 20px var(--accent-orange-glow);">
+                            <i class="fa-solid fa-rocket" style="margin-right: 6px;"></i> Launch Dashboard
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Card: Live Receipt & Dashboard Preview -->
+            <div>
+                <div class="live-preview-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                        <div>
+                            <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-orange); font-weight: 700; display: block;">
+                                Real-Time Preview
+                            </span>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">
+                                Live Transaction Card
+                            </h3>
+                        </div>
+                        <span class="badge-dot" style="background: var(--accent-emerald); box-shadow: 0 0 10px rgba(16,185,129,0.5);"></span>
+                    </div>
+
+                    <!-- Receipt Preview Box -->
+                    <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); display: flex; align-items: center; justify-content: center; font-size: 1rem;" id="prevIcon">
+                                    <i class="fa-solid fa-receipt"></i>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 0.92rem; font-weight: 700; margin-bottom: 2px;" id="prevTitle">Coffee & Snack</h4>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="badge-cat" style="font-size: 0.7rem; padding: 2px 8px;">
+                                            <span class="badge-dot-cat" id="prevDot" style="background: #f97316;"></span>
+                                            <span id="prevCategory">Food & Dining</span>
+                                        </span>
+                                        <span style="font-size: 0.7rem; color: var(--text-dim);" id="prevPayment">UPI</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.15rem; font-weight: 800; color: #ef4444;" id="prevAmount">-₹150</div>
+                                <div style="font-size: 0.68rem; color: var(--text-dim);" id="prevTime">Just now</div>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 0.72rem; color: var(--text-dim); border-top: 1px dashed rgba(255, 255, 255, 0.08); padding-top: 8px; display: flex; justify-content: space-between;">
+                            <span>Notes: <span id="prevNotes" style="color: var(--text-muted);">Morning cafe run</span></span>
+                            <span style="color: var(--accent-emerald);">Verified Record</span>
+                        </div>
+                    </div>
+
+                    <!-- Mini Budget Impact Gauge -->
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
+                            <span style="color: var(--text-muted); font-weight: 600;">Monthly Budget Impact</span>
+                            <span style="color: var(--text-main); font-weight: 700;" id="prevBudgetImpact">₹150 / ₹20,000 (1%)</span>
+                        </div>
+                        <div style="height: 8px; width: 100%; background: rgba(255, 255, 255, 0.06); border-radius: 10px; overflow: hidden;">
+                            <div id="prevProgressBar" style="height: 100%; width: 1%; background: linear-gradient(90deg, #f97316, #ea580c); border-radius: 10px; transition: width 0.3s ease;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); margin-top: 6px;">
+                            <span id="prevRemaining">₹19,850 remaining</span>
+                            <span style="color: var(--accent-emerald);">Within Safe Zone 🟢</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Assistant Tip Card -->
+                    <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.06) 100%); border: 1px solid rgba(59, 130, 246, 0.18); border-radius: var(--radius-md); padding: 14px;">
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <div style="color: #60a5fa; font-size: 1rem; margin-top: 2px;">
+                                <i class="fa-solid fa-lightbulb"></i>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #93c5fd; display: block; margin-bottom: 2px;">
+                                    SpendWise Financial Intelligence
+                                </span>
+                                <p style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.4;">
+                                    Recording expenses immediately helps build spending awareness. Your dashboard will auto-generate category breakdowns and monthly run-rates from this entry!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web Audio Synthesizer & Dynamic Live Preview Script -->
+    <script>
+        // Web Audio Synthesizer Engine
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playClickSound() {
+            if (!soundEnabled) return;
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.04);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.04);
+        }
+
+        function playSuccessSound() {
+            if (!soundEnabled) return;
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.07);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.07);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.07 + 0.25);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + i * 0.07);
+                osc.stop(ctx.currentTime + i * 0.07 + 0.25);
+            });
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggleBtn');
+            const lbl = document.getElementById('soundLabel');
+            if (soundEnabled) {
+                btn.className = 'sound-toggle-btn sound-on';
+                btn.querySelector('i').className = 'fa-solid fa-volume-high';
+                lbl.innerText = 'Sound: ON';
+                playClickSound();
+            } else {
+                btn.className = 'sound-toggle-btn';
+                btn.querySelector('i').className = 'fa-solid fa-volume-xmark';
+                lbl.innerText = 'Sound: OFF';
+            }
+        }
+
+        // Apply 1-Click Preset
+        function applyPreset(title, amount, category, payment, notes) {
+            playClickSound();
+            document.getElementById('inpTitle').value = title;
+            document.getElementById('inpAmount').value = amount;
+            document.getElementById('inpCategory').value = category;
+            document.getElementById('inpPayment').value = payment;
+            document.getElementById('inpNotes').value = notes;
+            updateLivePreview();
+        }
+
+        // Live Dynamic Preview Synchronizer
+        function updateLivePreview() {
+            const title = document.getElementById('inpTitle').value || 'Expense Title';
+            const amount = parseFloat(document.getElementById('inpAmount').value) || 0;
+            const categorySelect = document.getElementById('inpCategory');
+            const category = categorySelect.value || 'Food & Dining';
+            const selectedOpt = categorySelect.options[categorySelect.selectedIndex];
+            const catColor = selectedOpt ? selectedOpt.getAttribute('data-color') || '#f97316' : '#f97316';
+            const payment = document.getElementById('inpPayment').value || 'UPI';
+            const notes = document.getElementById('inpNotes').value || 'No notes provided';
+            const monthlyBudget = parseFloat(document.getElementById('inpBudget').value) || 20000;
+
+            document.getElementById('prevTitle').innerText = title;
+            document.getElementById('prevAmount').innerText = '-₹' + amount.toLocaleString('en-IN');
+            document.getElementById('prevCategory').innerText = category;
+            document.getElementById('prevDot').style.background = catColor;
+            document.getElementById('prevPayment').innerText = payment;
+            document.getElementById('prevNotes').innerText = notes;
+
+            // Budget calculations
+            const pct = Math.min(100, Math.round((amount / monthlyBudget) * 100));
+            const remaining = Math.max(0, monthlyBudget - amount);
+            document.getElementById('prevBudgetImpact').innerText = '₹' + amount.toLocaleString('en-IN') + ' / ₹' + monthlyBudget.toLocaleString('en-IN') + ' (' + pct + '%)';
+            document.getElementById('prevProgressBar').style.width = pct + '%';
+            document.getElementById('prevRemaining').innerText = '₹' + remaining.toLocaleString('en-IN') + ' remaining';
+        }
+
+        // Set default datetime to right now
+        window.addEventListener('DOMContentLoaded', () => {
+            const dateInp = document.getElementById('inpDate');
+            if (dateInp && !dateInp.value) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                dateInp.value = now.toISOString().slice(0, 16);
+            }
+            updateLivePreview();
+        });
+
+        // Confetti Particle Burst Engine
+        function fireConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f97316', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#f59e0b', '#ffffff'];
+
+            for (let i = 0; i < 90; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height * 0.45,
+                    vx: (Math.random() - 0.5) * 18,
+                    vy: (Math.random() - 0.9) * 16,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * 360,
+                    vrot: (Math.random() - 0.5) * 12,
+                    life: 1.0
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.45; // gravity
+                    p.rot += p.vrot;
+                    p.life -= 0.015;
+
+                    if (p.life > 0) {
+                        alive = true;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rot * Math.PI) / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = Math.max(0, p.life);
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                        ctx.restore();
+                    }
+                });
+                if (alive) requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // Form submission with celebratory sound and confetti
+        function handleFormSubmit(e) {
+            playSuccessSound();
+            fireConfetti();
+            const btn = document.getElementById('btnSubmitTxn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Activating Dashboard...';
+            btn.style.opacity = '0.8';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                document.getElementById('firstTxnForm').submit();
+            }, 600);
+            return false;
+        }
+    </script>
+</body>
+</html>

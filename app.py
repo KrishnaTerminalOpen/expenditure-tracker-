@@ -16,13 +16,26 @@ from datetime import datetime, date
 from functools import wraps
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    session, flash, jsonify, Response, send_file
+    session, flash, jsonify, Response
 )
 from database import get_db, init_db, hash_pw, check_pw
 from pdf_generator import generate_expense_pdf
 
 app = Flask(__name__)
 app.secret_key = "spendwise-super-secret-production-key-2026"
+
+@app.template_filter('cat_class')
+def cat_class(cat_name):
+    mapping = {
+        'Food & Dining': 'cat-dot-food',
+        'Shopping': 'cat-dot-shopping',
+        'Transport': 'cat-dot-transport',
+        'Bills & Utilities': 'cat-dot-bills',
+        'Entertainment': 'cat-dot-entertainment',
+        'Education': 'cat-dot-education',
+        'Health': 'cat-dot-health'
+    }
+    return mapping.get(cat_name, 'cat-dot-others')
 
 # Ensure DB is ready
 init_db()
@@ -60,6 +73,13 @@ def login():
             session['user_id'] = user['id']
             session['user_name'] = user['name']
             session['user_email'] = user['email']
+
+            # Check if user has recorded any transactions
+            txn_count = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user['id'],)).fetchone()[0]
+            if txn_count == 0:
+                flash(f"Welcome, {user['name']}! Let's record your first expense to activate your dashboard.", "info")
+                return redirect(url_for('first_transaction'))
+
             flash("Welcome back!", "success")
             return redirect(url_for('dashboard'))
         else:
@@ -141,10 +161,72 @@ def register():
         session['user_id'] = new_user_id
         session['user_name'] = name
         session['user_email'] = email
-        flash("Account created successfully!", "success")
-        return redirect(url_for('dashboard'))
+        flash(f"Account created successfully! Welcome, {name}.", "success")
+        return redirect(url_for('first_transaction'))
 
     return render_template('auth.html', active_tab='register')
+
+@app.route('/first-transaction', methods=['GET', 'POST'])
+@app.route('/onboarding', methods=['GET', 'POST'])
+@login_required
+def first_transaction():
+    user = get_current_user()
+    conn = get_db()
+    uid = user['id']
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        amount_raw = request.form.get('amount', '0').strip()
+        try:
+            amount = float(amount_raw)
+        except ValueError:
+            amount = 0.0
+
+        category = request.form.get('category', 'Others')
+        payment_method = request.form.get('payment_method', 'UPI')
+        expense_date = request.form.get('expense_date', '').strip()
+        notes = request.form.get('notes', '').strip()
+        monthly_budget = request.form.get('monthly_budget', '').strip()
+
+        if not expense_date:
+            expense_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            expense_date = expense_date.replace('T', ' ')
+            if len(expense_date) == 16:
+                expense_date += ":00"
+
+        if monthly_budget:
+            try:
+                mb_val = float(monthly_budget)
+                conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (mb_val, uid))
+            except ValueError:
+                pass
+
+        if amount > 0 and title:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO expenses (user_id, title, amount, category, payment_method, expense_date, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (uid, title, amount, category, payment_method, expense_date, notes))
+
+            # Celebratory milestone notification
+            cursor.execute("""
+                INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
+                VALUES (?, '🎉 First Expense Recorded!', 'Congratulations! You have officially initiated your SpendWise tracking journey.', 'success', 0, 'Just now')
+            """, (uid,))
+            conn.commit()
+
+        conn.close()
+        session['skip_onboarding'] = True
+        flash("🎉 Fantastic! Your first transaction has been logged. Welcome to your financial dashboard!", "success")
+        return redirect(url_for('dashboard', first_txn=1))
+
+    # GET request
+    categories = conn.execute("SELECT * FROM categories WHERE user_id = ? ORDER BY id ASC", (uid,)).fetchall()
+    payment_methods = conn.execute("SELECT * FROM payment_methods WHERE user_id = ? ORDER BY is_default DESC, id ASC", (uid,)).fetchall()
+    conn.close()
+
+    return render_template('onboarding.html', user=user, categories=categories, payment_methods=payment_methods)
 
 @app.route('/logout')
 def logout():
@@ -190,18 +272,24 @@ def dashboard():
     conn = get_db()
     uid = user['id']
 
-    # Total expenses (All/Current Month)
+    # Check total transaction count
+    txn_count = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
+    if txn_count == 0 and not request.args.get('skip_onboarding') and not session.get('skip_onboarding'):
+        conn.close()
+        return redirect(url_for('first_transaction'))
+
+    if request.args.get('skip_onboarding'):
+        session['skip_onboarding'] = True
+
+    # Total expenses (All time)
     total_expenses = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
-    
+
     # Today's expenses
     today_str = date.today().strftime('%Y-%m-%d')
     todays_expenses = conn.execute(
         "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ? AND expense_date LIKE ?",
         (uid, f"{today_str}%")
     ).fetchone()[0]
-    if todays_expenses == 0:
-        # Check latest date available if today has none
-        todays_expenses = 850.0  # as styled in screenshot or dynamic
 
     # Monthly budget and remaining
     monthly_budget = user['monthly_budget'] or 20000.0
@@ -216,8 +304,12 @@ def dashboard():
         ORDER BY cat_sum DESC
         LIMIT 1
     """, (uid,)).fetchone()
-    highest_category = highest_cat_row['category'] if highest_cat_row else "Food & Dining"
-    highest_category_amount = highest_cat_row['cat_sum'] if highest_cat_row else 4250.0
+    if highest_cat_row:
+        highest_category = highest_cat_row['category']
+        highest_category_amount = highest_cat_row['cat_sum']
+    else:
+        highest_category = "No Expenses Yet"
+        highest_category_amount = 0.0
 
     # Monthly Trend (31-day points or distinct dates)
     trend_rows = conn.execute("""
@@ -227,12 +319,9 @@ def dashboard():
         GROUP BY edate
         ORDER BY edate ASC
     """, (uid,)).fetchall()
-    
+
     trend_labels = [r['edate'][-5:] for r in trend_rows]
     trend_values = [r['day_total'] for r in trend_rows]
-    if not trend_labels:
-        trend_labels = ["1 May", "5 May", "10 May", "15 May", "20 May", "25 May", "31 May"]
-        trend_values = [800, 1500, 2100, 2450, 1900, 3100, 2450]
 
     # Category breakdown for donut chart
     cat_breakdown = conn.execute("""
@@ -277,6 +366,30 @@ def dashboard():
         LIMIT 3
     """, (uid,)).fetchall()
 
+    # Dynamic Financial Health Score (0 - 100)
+    if total_expenses > monthly_budget:
+        over_pct = min(100, ((total_expenses - monthly_budget) / monthly_budget) * 100)
+        health_score = max(20, round(55 - over_pct * 0.35))
+        health_status = "Attention Required"
+        health_status_class = "negative"
+        health_tip = f"You are ₹{total_expenses - monthly_budget:,.0f} over your target limit. Review your {highest_category} category."
+    elif total_expenses > 0:
+        used_pct = (total_expenses / monthly_budget) * 100
+        health_score = min(98, max(50, round(100 - (used_pct * 0.35))))
+        if health_score >= 80:
+            health_status = "Optimal Health"
+            health_status_class = "positive"
+            health_tip = f"Excellent pacing! You have used {used_pct:.0f}% of your monthly allocation with ₹{remaining_budget:,.0f} safe buffer."
+        else:
+            health_status = "Moderate"
+            health_status_class = "warning"
+            health_tip = f"You have reached {used_pct:.0f}% of your budget limit. Keep an eye on {highest_category}."
+    else:
+        health_score = 100
+        health_status = "Ready to Track"
+        health_status_class = "positive"
+        health_tip = "No expenses recorded this cycle. Log purchases as they occur for maximum financial visibility."
+
     conn.close()
 
     return render_template(
@@ -297,7 +410,12 @@ def dashboard():
         cat_percentages=cat_percentages,
         recent_txns=recent_txns,
         cat_budgets=cat_budgets,
-        unread_insights=unread_insights
+        unread_insights=unread_insights,
+        txn_count=txn_count,
+        health_score=health_score,
+        health_status=health_status,
+        health_status_class=health_status_class,
+        health_tip=health_tip
     )
 
 # ==========================================

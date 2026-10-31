@@ -82,15 +82,7 @@
                         </td>
                         <td>
                             <div class="badge-cat">
-                                <span class="badge-dot-cat" style="background: 
-                                    {% if exp.category == 'Food & Dining' %}#f97316
-                                    {% elif exp.category == 'Shopping' %}#ec4899
-                                    {% elif exp.category == 'Transport' %}#3b82f6
-                                    {% elif exp.category == 'Bills & Utilities' %}#10b981
-                                    {% elif exp.category == 'Entertainment' %}#8b5cf6
-                                    {% elif exp.category == 'Education' %}#6366f1
-                                    {% elif exp.category == 'Health' %}#ef4444
-                                    {% else %}#64748b{% endif %};"></span>
+                                <span class="badge-dot-cat {{ exp.category|cat_class }}"></span>
                                 <span>{{ exp.category }}</span>
                             </div>
                         </td>
