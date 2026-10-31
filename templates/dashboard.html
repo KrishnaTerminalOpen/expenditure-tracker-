@@ -7,7 +7,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
         <h1 style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em;">
-            Good Morning, {{ user.name.split(' ')[0] if user else 'Krishna' }}! 👋
+            Good Morning, {{ (user.name.split(' ')[0] if (user and user.name) else 'Krishna') }}! 👋
         </h1>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
             Here's what's happening with your money today.
