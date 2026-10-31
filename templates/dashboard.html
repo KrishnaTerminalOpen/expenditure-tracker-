@@ -193,14 +193,15 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 14px;">
             {% for b in cat_budgets %}
-            {% set pct = [100, ((b.spent / b.budget_limit) * 100)|round|int]|min %}
+            {% set limit_val = b.budget_limit if b.budget_limit and b.budget_limit > 0 else 1 %}
+            {% set pct = [100, (((b.spent or 0) / limit_val) * 100)|round|int]|min %}
             <div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
                     <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                         <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ b.color }};"></span>
                         {{ b.name }}
                     </span>
-                    <span style="color: var(--text-dim);">₹{{ "{:,.0f}".format(b.spent) }} / ₹{{ "{:,.0f}".format(b.budget_limit) }}</span>
+                    <span style="color: var(--text-dim);">₹{{ "{:,.0f}".format(b.spent or 0) }} / ₹{{ "{:,.0f}".format(b.budget_limit or 0) }}</span>
                 </div>
                 <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
                     <div style="height: 100%; width: {{ pct }}%; background: {{ b.color }}; border-radius: 10px;"></div>
