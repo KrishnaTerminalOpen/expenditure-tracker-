@@ -117,20 +117,20 @@ def register():
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO users (name, email, password_hash, monthly_budget)
-            VALUES (?, ?, ?, 20000.0)
+            VALUES (?, ?, ?, 0.0)
         """, (name, email, hashed))
         new_user_id = cursor.lastrowid
 
-        # Seed initial categories for new user
+        # Seed initial categories for new user (0.0 limit until user configures it)
         cats = [
-            ("Food & Dining", "utensils", "#f97316", 5000.0),
-            ("Shopping", "shopping-bag", "#ec4899", 4000.0),
-            ("Transport", "car", "#3b82f6", 2500.0),
-            ("Bills & Utilities", "receipt", "#10b981", 2000.0),
-            ("Entertainment", "film", "#8b5cf6", 2000.0),
-            ("Education", "graduation-cap", "#6366f1", 1500.0),
-            ("Health", "heart-pulse", "#ef4444", 2000.0),
-            ("Others", "grid", "#64748b", 3000.0)
+            ("Food & Dining", "utensils", "#f97316", 0.0),
+            ("Shopping", "shopping-bag", "#ec4899", 0.0),
+            ("Transport", "car", "#3b82f6", 0.0),
+            ("Bills & Utilities", "receipt", "#10b981", 0.0),
+            ("Entertainment", "film", "#8b5cf6", 0.0),
+            ("Education", "graduation-cap", "#6366f1", 0.0),
+            ("Health", "heart-pulse", "#ef4444", 0.0),
+            ("Others", "grid", "#64748b", 0.0)
         ]
         for cname, icon, color, limit in cats:
             cursor.execute("INSERT INTO categories (user_id, name, icon, color, budget_limit) VALUES (?, ?, ?, ?, ?)",
@@ -241,7 +241,7 @@ def profile():
     conn = get_db()
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        monthly_budget = float(request.form.get('monthly_budget', 20000.0))
+        monthly_budget = float(request.form.get('monthly_budget', 0.0) or 0.0)
         currency = request.form.get('currency', '₹')
         theme = request.form.get('theme', 'dark')
 
@@ -292,8 +292,8 @@ def dashboard():
     ).fetchone()[0]
 
     # Monthly budget and remaining
-    monthly_budget = user['monthly_budget'] or 20000.0
-    remaining_budget = max(0.0, monthly_budget - total_expenses)
+    monthly_budget = float(user['monthly_budget'] or 0.0)
+    remaining_budget = max(0.0, monthly_budget - total_expenses) if monthly_budget > 0 else 0.0
 
     # Highest Category
     highest_cat_row = conn.execute("""
@@ -347,12 +347,12 @@ def dashboard():
         LIMIT 5
     """, (uid,)).fetchall()
 
-    # Budget Progress items (categories with limit and spent)
+    # Budget Progress items (categories with explicit user limits and spent)
     cat_budgets = conn.execute("""
         SELECT c.name, c.budget_limit, COALESCE(SUM(e.amount), 0) as spent, c.color
         FROM categories c
         LEFT JOIN expenses e ON e.category = c.name AND e.user_id = c.user_id
-        WHERE c.user_id = ?
+        WHERE c.user_id = ? AND c.budget_limit > 0
         GROUP BY c.id
         ORDER BY c.budget_limit DESC
         LIMIT 4
@@ -367,28 +367,34 @@ def dashboard():
     """, (uid,)).fetchall()
 
     # Dynamic Financial Health Score (0 - 100)
-    if total_expenses > monthly_budget:
-        over_pct = min(100, ((total_expenses - monthly_budget) / monthly_budget) * 100)
-        health_score = max(20, round(55 - over_pct * 0.35))
-        health_status = "Attention Required"
-        health_status_class = "negative"
-        health_tip = f"You are ₹{total_expenses - monthly_budget:,.0f} over your target limit. Review your {highest_category} category."
-    elif total_expenses > 0:
-        used_pct = (total_expenses / monthly_budget) * 100
-        health_score = min(98, max(50, round(100 - (used_pct * 0.35))))
-        if health_score >= 80:
-            health_status = "Optimal Health"
-            health_status_class = "positive"
-            health_tip = f"Excellent pacing! You have used {used_pct:.0f}% of your monthly allocation with ₹{remaining_budget:,.0f} safe buffer."
+    if monthly_budget > 0:
+        if total_expenses > monthly_budget:
+            over_pct = min(100, ((total_expenses - monthly_budget) / monthly_budget) * 100)
+            health_score = max(20, round(55 - over_pct * 0.35))
+            health_status = "Attention Required"
+            health_status_class = "negative"
+            health_tip = f"You are ₹{total_expenses - monthly_budget:,.0f} over your target limit. Review your {highest_category} category."
+        elif total_expenses > 0:
+            used_pct = (total_expenses / monthly_budget) * 100
+            health_score = min(98, max(50, round(100 - (used_pct * 0.35))))
+            if health_score >= 80:
+                health_status = "Optimal Health"
+                health_status_class = "positive"
+                health_tip = f"Excellent pacing! You have used {used_pct:.0f}% of your monthly allocation with ₹{remaining_budget:,.0f} safe buffer."
+            else:
+                health_status = "Moderate"
+                health_status_class = "warning"
+                health_tip = f"You have reached {used_pct:.0f}% of your budget limit. Keep an eye on {highest_category}."
         else:
-            health_status = "Moderate"
-            health_status_class = "warning"
-            health_tip = f"You have reached {used_pct:.0f}% of your budget limit. Keep an eye on {highest_category}."
+            health_score = 100
+            health_status = "Ready to Track"
+            health_status_class = "positive"
+            health_tip = "No expenses recorded this cycle. Log purchases as they occur for maximum financial visibility."
     else:
-        health_score = 100
-        health_status = "Ready to Track"
+        health_score = 95 if total_expenses > 0 else 100
+        health_status = "Budget Unset"
         health_status_class = "positive"
-        health_tip = "No expenses recorded this cycle. Log purchases as they occur for maximum financial visibility."
+        health_tip = "Define your custom monthly budget in Budget Management to enable real-time tracking & threshold alerts."
 
     conn.close()
 
@@ -594,7 +600,7 @@ def add_category():
     name = request.form.get('name', '').strip()
     icon = request.form.get('icon', 'tag').strip()
     color = request.form.get('color', '#3b82f6').strip()
-    budget_limit = float(request.form.get('budget_limit', 3000.0))
+    budget_limit = float(request.form.get('budget_limit', 0.0) or 0.0)
 
     if name:
         conn = get_db()
@@ -661,22 +667,45 @@ def budget():
     uid = user['id']
 
     if request.method == 'POST':
-        overall_budget = float(request.form.get('overall_budget', 20000.0))
+        action = request.form.get('action', '')
+        if action == 'single_category':
+            cat_id = request.form.get('category_id')
+            limit_raw = request.form.get('budget_limit', '0').strip()
+            try:
+                limit_val = max(0.0, float(limit_raw))
+            except ValueError:
+                limit_val = 0.0
+            conn.execute("UPDATE categories SET budget_limit = ? WHERE id = ? AND user_id = ?", (limit_val, cat_id, uid))
+            conn.commit()
+            conn.close()
+            flash("Category budget limit updated successfully!", "success")
+            return redirect(url_for('budget'))
+
+        # Standard form update (overall budget and category limits)
+        overall_val = request.form.get('overall_budget', '0').strip()
+        try:
+            overall_budget = max(0.0, float(overall_val))
+        except ValueError:
+            overall_budget = 0.0
         conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (overall_budget, uid))
 
         # Check for category limits updates
         for key, val in request.form.items():
             if key.startswith('cat_limit_'):
                 cat_id = key.replace('cat_limit_', '')
-                conn.execute("UPDATE categories SET budget_limit = ? WHERE id = ? AND user_id = ?", (float(val), cat_id, uid))
+                try:
+                    c_val = max(0.0, float(val.strip() or 0))
+                except ValueError:
+                    c_val = 0.0
+                conn.execute("UPDATE categories SET budget_limit = ? WHERE id = ? AND user_id = ?", (c_val, cat_id, uid))
 
         conn.commit()
         flash("Budget goals updated successfully!", "success")
         return redirect(url_for('budget'))
 
-    overall_budget = user['monthly_budget'] or 20000.0
+    overall_budget = float(user['monthly_budget'] or 0.0)
     total_spent = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
-    remaining = max(0.0, overall_budget - total_spent)
+    remaining = max(0.0, overall_budget - total_spent) if overall_budget > 0 else 0.0
     overall_percent = min(100, round((total_spent / overall_budget) * 100)) if overall_budget > 0 else 0
 
     # Category budgets list
@@ -686,23 +715,31 @@ def budget():
         LEFT JOIN expenses e ON e.category = c.name AND e.user_id = c.user_id
         WHERE c.user_id = ?
         GROUP BY c.id
-        ORDER BY c.budget_limit DESC
+        ORDER BY c.budget_limit DESC, c.name ASC
     """, (uid,)).fetchall()
 
     budget_items = []
     for cb in cat_budgets:
-        limit = cb['budget_limit'] or 1.0
-        spent = cb['spent']
-        pct = min(100, round((spent / limit) * 100))
-        if pct >= 80:
-            status = "High"
-            status_color = "#ef4444"
-        elif pct >= 50:
-            status = "Medium"
-            status_color = "#f59e0b"
+        limit = float(cb['budget_limit'] or 0.0)
+        spent = float(cb['spent'] or 0.0)
+        if limit > 0:
+            pct = min(100, round((spent / limit) * 100))
+            if spent > limit:
+                status = "Exceeded"
+                status_color = "#ef4444"
+            elif pct >= 80:
+                status = "High"
+                status_color = "#ef4444"
+            elif pct >= 50:
+                status = "Medium"
+                status_color = "#f59e0b"
+            else:
+                status = "Good"
+                status_color = "#10b981"
         else:
-            status = "Good"
-            status_color = "#10b981"
+            pct = 0
+            status = "Not Set"
+            status_color = "#64748b"
 
         budget_items.append({
             'id': cb['id'],

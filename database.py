@@ -24,7 +24,7 @@ def init_db():
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        monthly_budget REAL DEFAULT 20000.0,
+        monthly_budget REAL DEFAULT 0.0,
         currency TEXT DEFAULT '₹',
         theme TEXT DEFAULT 'dark',
         avatar TEXT DEFAULT 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
@@ -40,7 +40,7 @@ def init_db():
         name TEXT NOT NULL,
         icon TEXT NOT NULL,
         color TEXT NOT NULL,
-        budget_limit REAL DEFAULT 5000.0,
+        budget_limit REAL DEFAULT 0.0,
         FOREIGN KEY (user_id) REFERENCES users (id)
     )
     """)

@@ -136,8 +136,8 @@
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                         <div class="form-group">
-                            <label>Monthly Budget Target ({{ user.currency if user and user.currency else '₹' }})</label>
-                            <input type="number" step="500" name="monthly_budget" id="inpBudget" class="form-input" value="{{ user.monthly_budget if user and user.monthly_budget else 20000 }}" oninput="updateLivePreview()" title="Set your target monthly budget cap">
+                            <label>Monthly Budget Target ({{ user.currency if user and user.currency else '₹' }}) <span style="font-size: 0.72rem; color: var(--text-dim);">(Optional)</span></label>
+                            <input type="number" step="500" name="monthly_budget" id="inpBudget" class="form-input" placeholder="e.g. 25000 (Leave blank for no limit)" value="{{ user.monthly_budget if user and user.monthly_budget > 0 else '' }}" oninput="updateLivePreview()" title="Set your target monthly budget cap">
                         </div>
                         <div class="form-group">
                             <label>Notes (Optional)</label>
@@ -327,7 +327,7 @@
             const catColor = selectedOpt ? selectedOpt.getAttribute('data-color') || '#f97316' : '#f97316';
             const payment = document.getElementById('inpPayment').value || 'UPI';
             const notes = document.getElementById('inpNotes').value || 'No notes provided';
-            const monthlyBudget = parseFloat(document.getElementById('inpBudget').value) || 20000;
+            const monthlyBudget = parseFloat(document.getElementById('inpBudget').value) || 0;
 
             document.getElementById('prevTitle').innerText = title;
             document.getElementById('prevAmount').innerText = '-₹' + amount.toLocaleString('en-IN');
@@ -337,11 +337,17 @@
             document.getElementById('prevNotes').innerText = notes;
 
             // Budget calculations
-            const pct = Math.min(100, Math.round((amount / monthlyBudget) * 100));
-            const remaining = Math.max(0, monthlyBudget - amount);
-            document.getElementById('prevBudgetImpact').innerText = '₹' + amount.toLocaleString('en-IN') + ' / ₹' + monthlyBudget.toLocaleString('en-IN') + ' (' + pct + '%)';
-            document.getElementById('prevProgressBar').style.width = pct + '%';
-            document.getElementById('prevRemaining').innerText = '₹' + remaining.toLocaleString('en-IN') + ' remaining';
+            if (monthlyBudget > 0) {
+                const pct = Math.min(100, Math.round((amount / monthlyBudget) * 100));
+                const remaining = Math.max(0, monthlyBudget - amount);
+                document.getElementById('prevBudgetImpact').innerText = '₹' + amount.toLocaleString('en-IN') + ' / ₹' + monthlyBudget.toLocaleString('en-IN') + ' (' + pct + '%)';
+                document.getElementById('prevProgressBar').style.width = pct + '%';
+                document.getElementById('prevRemaining').innerText = '₹' + remaining.toLocaleString('en-IN') + ' remaining';
+            } else {
+                document.getElementById('prevBudgetImpact').innerText = '₹' + amount.toLocaleString('en-IN') + ' (No monthly limit set)';
+                document.getElementById('prevProgressBar').style.width = '0%';
+                document.getElementById('prevRemaining').innerText = 'Flexible / No Cap';
+            }
         }
 
         // Set default datetime to right now
