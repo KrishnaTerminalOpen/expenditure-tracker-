@@ -69,6 +69,12 @@
             color: var(--text-main);
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
+        .panel-hidden {
+            display: none;
+        }
+        .panel-active {
+            display: block;
+        }
         .auth-card-feature {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -151,7 +157,7 @@
             {% endwith %}
 
             <!-- LOGIN FORM -->
-            <div id="login-panel" style="display: {{ 'block' if active_tab != 'register' else 'none' }};">
+            <div id="login-panel" class="{{ 'panel-active' if active_tab != 'register' else 'panel-hidden' }}">
                 <div style="margin-bottom: 20px;">
                     <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 4px;">Welcome Back!</h3>
                     <p style="font-size: 0.8rem; color: var(--text-dim);">Login to your SpendWise account</p>
@@ -184,7 +190,7 @@
             </div>
 
             <!-- REGISTER FORM -->
-            <div id="register-panel" style="display: {{ 'block' if active_tab == 'register' else 'none' }};">
+            <div id="register-panel" class="{{ 'panel-active' if active_tab == 'register' else 'panel-hidden' }}">
                 <div style="margin-bottom: 20px;">
                     <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 4px;">Create Account</h3>
                     <p style="font-size: 0.8rem; color: var(--text-dim);">Join SpendWise today and take control</p>
@@ -234,13 +240,17 @@
             const btns = document.querySelectorAll('.auth-tab-btn');
 
             if (tab === 'login') {
-                loginPanel.style.display = 'block';
-                regPanel.style.display = 'none';
+                loginPanel.classList.remove('panel-hidden');
+                loginPanel.classList.add('panel-active');
+                regPanel.classList.remove('panel-active');
+                regPanel.classList.add('panel-hidden');
                 btns[0].classList.add('active');
                 btns[1].classList.remove('active');
             } else {
-                loginPanel.style.display = 'none';
-                regPanel.style.display = 'block';
+                loginPanel.classList.remove('panel-active');
+                loginPanel.classList.add('panel-hidden');
+                regPanel.classList.remove('panel-hidden');
+                regPanel.classList.add('panel-active');
                 btns[0].classList.remove('active');
                 btns[1].classList.add('active');
             }
