@@ -20,13 +20,13 @@
     </div>
 </div>
 
-<!-- 4 Key Metric Cards (Matching Screenshot Card 2 exactly) -->
+<!-- 4 Key Metric Cards (Matching Screenshot Card 2 exactly with vibrant glow and gradients) -->
 <div class="kpi-grid">
-    <!-- Card 1: Total Expenses -->
-    <div class="kpi-card">
+    <!-- Card 1: Total Expenses (Warm Amber/Bronze Gradient) -->
+    <div class="kpi-card kpi-orange">
         <div class="kpi-header">
             <span class="kpi-title">Total Expenses (This Month)</span>
-            <div class="kpi-icon" style="background: rgba(249, 115, 22, 0.15); color: #f97316;">
+            <div class="kpi-icon icon-orange">
                 <i class="fa-solid fa-wallet"></i>
             </div>
         </div>
@@ -37,11 +37,11 @@
         </div>
     </div>
 
-    <!-- Card 2: Today's Expenses -->
-    <div class="kpi-card">
+    <!-- Card 2: Today's Expenses (Deep Blue Gradient) -->
+    <div class="kpi-card kpi-blue">
         <div class="kpi-header">
             <span class="kpi-title">Today's Expenses</span>
-            <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+            <div class="kpi-icon icon-blue">
                 <i class="fa-regular fa-calendar-check"></i>
             </div>
         </div>
@@ -52,30 +52,30 @@
         </div>
     </div>
 
-    <!-- Card 3: Remaining Budget -->
-    <div class="kpi-card">
+    <!-- Card 3: Remaining Budget (Emerald Green Gradient) -->
+    <div class="kpi-card kpi-emerald">
         <div class="kpi-header">
             <span class="kpi-title">Remaining Budget</span>
-            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+            <div class="kpi-icon icon-emerald">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
         </div>
         <div class="kpi-value">₹ {{ "{:,.0f}".format(remaining_budget) }}</div>
-        <div class="kpi-sub">
+        <div class="kpi-sub" style="color: #6ee7b7;">
             <span>38% of ₹{{ "{:,.0f}".format(monthly_budget) }} used</span>
         </div>
     </div>
 
-    <!-- Card 4: Highest Category -->
-    <div class="kpi-card">
+    <!-- Card 4: Highest Category (Copper Bronze Gradient) -->
+    <div class="kpi-card kpi-copper">
         <div class="kpi-header">
             <span class="kpi-title">Highest Category</span>
-            <div class="kpi-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
+            <div class="kpi-icon icon-copper">
                 <i class="fa-solid fa-utensils"></i>
             </div>
         </div>
-        <div class="kpi-value" style="font-size: 1.3rem;">{{ highest_category }}</div>
-        <div class="kpi-sub" style="color: #f97316;">
+        <div class="kpi-value" style="font-size: 1.35rem;">{{ highest_category }}</div>
+        <div class="kpi-sub" style="color: #fdba74;">
             <span>₹ {{ "{:,.0f}".format(highest_category_amount) }} (34%)</span>
         </div>
     </div>
