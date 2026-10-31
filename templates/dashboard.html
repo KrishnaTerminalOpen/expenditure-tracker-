@@ -112,12 +112,23 @@
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
         </div>
+        {% if monthly_budget > 0 %}
         <div class="kpi-value">
             ₹ <span class="count-up" data-target="{{ remaining_budget }}">0</span>
         </div>
         <div class="kpi-sub" style="color: #6ee7b7;">
-            <span>{{ ((total_expenses / (monthly_budget if monthly_budget > 0 else 1)) * 100)|round|int }}% of ₹{{ "{:,.0f}".format(monthly_budget) }} used</span>
+            <span>{{ ((total_expenses / monthly_budget) * 100)|round|int }}% of ₹{{ "{:,.0f}".format(monthly_budget) }} used</span>
         </div>
+        {% else %}
+        <div class="kpi-value" style="font-size: 1.35rem; color: var(--text-dim); font-weight: 700;">
+            Not Set
+        </div>
+        <div class="kpi-sub" style="color: var(--accent-orange);">
+            <a href="{{ url_for('budget') }}" style="color: inherit; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                <i class="fa-solid fa-plus"></i> Set Monthly Target
+            </a>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Card 4: Highest Category (Copper Bronze Gradient) -->
@@ -246,22 +257,32 @@
             <a href="{{ url_for('budget') }}" style="font-size: 0.75rem; color: var(--accent-orange);">View All</a>
         </div>
         <div style="display: flex; flex-direction: column; gap: 14px;">
-            {% for b in cat_budgets %}
-            {% set limit_val = b.budget_limit if b.budget_limit and b.budget_limit > 0 else 1 %}
-            {% set pct = [100, (((b.spent or 0) / limit_val) * 100)|round|int]|min %}
-            <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
-                    <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                        <span class="badge-dot-cat {{ b.name|cat_class }}"></span>
-                        {{ b.name }}
-                    </span>
-                    <span style="color: var(--text-dim);">₹{{ "{:,.0f}".format(b.spent or 0) }} / ₹{{ "{:,.0f}".format(b.budget_limit or 0) }}</span>
+            {% if cat_budgets %}
+                {% for b in cat_budgets %}
+                {% set limit_val = b.budget_limit if b.budget_limit and b.budget_limit > 0 else 1 %}
+                {% set pct = [100, (((b.spent or 0) / limit_val) * 100)|round|int]|min %}
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
+                        <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <span class="badge-dot-cat {{ b.name|cat_class }}"></span>
+                            {{ b.name }}
+                        </span>
+                        <span style="color: var(--text-dim);">₹{{ "{:,.0f}".format(b.spent or 0) }} / ₹{{ "{:,.0f}".format(b.budget_limit or 0) }}</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ pct }}%; background: {{ b.color }}; border-radius: 10px;"></div>
+                    </div>
                 </div>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
-                    <div style="height: 100%; width: {{ pct }}%; background: {{ b.color }}; border-radius: 10px;"></div>
+                {% endfor %}
+            {% else %}
+                <div style="padding: 18px 8px; text-align: center; color: var(--text-dim);">
+                    <i class="fa-solid fa-bullseye" style="font-size: 1.6rem; margin-bottom: 8px; opacity: 0.35;"></i>
+                    <p style="font-size: 0.78rem; margin-bottom: 8px;">No category budgets set yet.</p>
+                    <a href="{{ url_for('budget') }}" class="btn-outline" style="display: inline-block; padding: 4px 12px; font-size: 0.72rem; border-radius: 6px; color: var(--accent-orange); text-decoration: none;">
+                        <i class="fa-solid fa-plus"></i> Set Category Limits
+                    </a>
                 </div>
-            </div>
-            {% endfor %}
+            {% endif %}
         </div>
     </div>
 

@@ -4,51 +4,80 @@
 
 {% block content %}
 <!-- Module 5 Header -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 800;">Budget Management</h1>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
-            Set and track your category and monthly spending budgets
+            Set and manage your monthly spending target and individual category thresholds
         </p>
     </div>
     <button class="btn-primary" onclick="openModal('setBudgetModal')">
-        <i class="fa-solid fa-plus"></i> Set Budget
+        <i class="fa-solid fa-sliders" style="margin-right: 6px;"></i> Manage All Budgets
     </button>
 </div>
 
-<!-- Overall Monthly Budget Card (Module 5 screenshot top) -->
-<div class="card" style="margin-bottom: 24px; padding: 24px;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+<!-- Overall Monthly Budget Card -->
+<div class="card" style="margin-bottom: 24px; padding: 24px; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; background: radial-gradient(circle, var(--accent-orange-glow) 0%, transparent 70%); pointer-events: none; opacity: 0.4;"></div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 16px;">
         <div>
-            <span style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Overall Monthly Budget</span>
-            <div style="font-size: 2rem; font-weight: 800; color: var(--text-main); margin-top: 4px;">
+            <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; display: block;">Overall Monthly Budget</span>
+            {% if overall_budget > 0 %}
+            <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin-top: 4px; letter-spacing: -0.02em;">
                 ₹ {{ "{:,.0f}".format(overall_budget) }}
             </div>
-            <div style="font-size: 0.8rem; color: var(--accent-orange); font-weight: 600; margin-top: 4px;">
-                {{ overall_percent }}% used
+            <div style="font-size: 0.82rem; color: var(--accent-orange); font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                <span class="badge-dot" style="background: var(--accent-orange);"></span>
+                {{ overall_percent }}% of monthly cap used
             </div>
+            {% else %}
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-dim); margin-top: 4px;">
+                Not Set
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                No monthly spending cap configured yet
+            </div>
+            {% endif %}
         </div>
-        <div style="text-align: right;">
-            <div style="font-size: 0.85rem; color: var(--text-dim);">
-                <strong style="color: var(--text-main);">₹ {{ "{:,.0f}".format(total_spent) }}</strong> spent
+        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+            <div style="font-size: 0.9rem; color: var(--text-dim);">
+                Spent: <strong style="color: var(--text-main); font-weight: 700;">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
             </div>
-            <div style="font-size: 0.85rem; color: var(--accent-emerald); margin-top: 4px;">
+            {% if overall_budget > 0 %}
+            <div style="font-size: 0.9rem; color: var(--accent-emerald); margin-top: 4px; font-weight: 600;">
                 ₹ {{ "{:,.0f}".format(remaining) }} remaining
             </div>
+            {% else %}
+            <button class="btn-primary" style="margin-top: 8px; padding: 6px 14px; font-size: 0.78rem;" onclick="openModal('setBudgetModal')">
+                <i class="fa-solid fa-plus"></i> Set Monthly Target
+            </button>
+            {% endif %}
         </div>
     </div>
 
     <!-- Progress Bar with Gradient -->
-    <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.06); border-radius: 20px; overflow: hidden;">
-        <div style="height: 100%; width: {{ overall_percent }}%; background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); border-radius: 20px; box-shadow: 0 0 10px var(--accent-orange-glow);"></div>
+    {% if overall_budget > 0 %}
+    <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.06); border-radius: 20px; overflow: hidden; margin-top: 8px;">
+        <div style="height: 100%; width: {{ overall_percent }}%; background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); border-radius: 20px; box-shadow: 0 0 10px var(--accent-orange-glow); transition: width 0.4s ease;"></div>
     </div>
+    {% else %}
+    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.04); border-radius: 20px; overflow: hidden; margin-top: 8px;">
+        <div style="height: 100%; width: 0%; background: transparent;"></div>
+    </div>
+    {% endif %}
 </div>
 
-<!-- Category Budgets Table matching Module 5 Screenshot -->
+<!-- Category Budgets Table matching Module 5 Design -->
 <div class="card" style="padding: 0; overflow: hidden;">
-    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="font-size: 1rem; font-weight: 700;">Category Budgets</h3>
-        <span style="font-size: 0.75rem; color: var(--text-dim);">Track individual category thresholds</span>
+    <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h3 style="font-size: 1.05rem; font-weight: 700;">Category Budgets</h3>
+            <span style="font-size: 0.78rem; color: var(--text-dim);">Custom thresholds per category. Set limits individually or in bulk.</span>
+        </div>
+        <button class="btn-outline" style="font-size: 0.78rem; padding: 6px 14px;" onclick="openModal('setBudgetModal')">
+            <i class="fa-solid fa-pen-to-square"></i> Bulk Edit
+        </button>
     </div>
     <div class="table-responsive">
         <table class="data-table">
@@ -57,8 +86,9 @@
                     <th>Category</th>
                     <th style="text-align: right;">Budget</th>
                     <th style="text-align: right;">Spent</th>
-                    <th style="width: 250px;">Progress</th>
+                    <th style="width: 240px;">Progress</th>
                     <th style="text-align: center;">Status</th>
+                    <th style="text-align: center; width: 100px;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -70,23 +100,46 @@
                             <span style="font-weight: 600;">{{ b.name }}</span>
                         </div>
                     </td>
-                    <td style="text-align: right; color: var(--text-muted);">
-                        ₹ {{ "{:,.0f}".format(b.limit) }}
+                    <td style="text-align: right;">
+                        {% if b.limit > 0 %}
+                        <span style="color: var(--text-main); font-weight: 600;">₹ {{ "{:,.0f}".format(b.limit) }}</span>
+                        {% else %}
+                        <span style="color: var(--text-dim); font-size: 0.8rem; font-style: italic;">Not Set</span>
+                        {% endif %}
                     </td>
                     <td style="text-align: right; font-weight: 600;">
                         ₹ {{ "{:,.0f}".format(b.spent) }}
                     </td>
                     <td>
+                        {% if b.limit > 0 %}
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
-                                <div style="height: 100%; width: {{ b.percent }}%; background: {{ b.color }}; border-radius: 10px;"></div>
+                                <div style="height: 100%; width: {{ b.percent }}%; background: {{ b.color }}; border-radius: 10px; transition: width 0.3s ease;"></div>
                             </div>
-                            <span style="font-size: 0.75rem; color: var(--text-dim); min-width: 32px;">{{ b.percent }}%</span>
+                            <span style="font-size: 0.75rem; color: var(--text-dim); min-width: 32px; text-align: right;">{{ b.percent }}%</span>
                         </div>
+                        {% else %}
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.03); border-radius: 10px; overflow: hidden;"></div>
+                            <span style="font-size: 0.72rem; color: var(--text-dim); font-style: italic;">No limit</span>
+                        </div>
+                        {% endif %}
+                    </td>
                     <td style="text-align: center;">
+                        {% if b.limit > 0 %}
                         <span class="status-badge status-badge-{{ b.status }}">
                             {{ b.status }}
                         </span>
+                        {% else %}
+                        <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 3px 8px; border-radius: 4px;">
+                            Uncapped
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        <button type="button" class="btn-outline" style="padding: 4px 10px; font-size: 0.72rem; border-radius: 6px; border-color: rgba(255,255,255,0.12);" onclick="openQuickBudgetModal('{{ b.id }}', '{{ b.name|escape }}', {{ b.limit }})">
+                            <i class="fa-solid fa-pen" style="margin-right: 4px;"></i> {{ 'Edit' if b.limit > 0 else 'Set' }}
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -95,30 +148,39 @@
     </div>
 </div>
 
-<!-- Modal: Set Budget Limits -->
+<!-- Modal 1: Manage All Budgets (Overall + Category Limits) -->
 <div class="modal-overlay" id="setBudgetModal">
-    <div class="modal-content" style="max-width: 520px;">
+    <div class="modal-content" style="max-width: 540px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="font-size: 1.1rem; font-weight: 700;">Set Budget Goals</h3>
-            <button onclick="closeModal('setBudgetModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+            <div>
+                <h3 style="font-size: 1.15rem; font-weight: 700;">Set Budget Goals</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Define your custom spending caps. Leave at 0 for no limit.</p>
+            </div>
+            <button onclick="closeModal('setBudgetModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.1rem;">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
         <form action="{{ url_for('budget') }}" method="POST">
             <div class="form-group">
                 <label>Overall Monthly Budget Limit (₹)</label>
-                <input type="number" step="500" name="overall_budget" value="{{ overall_budget }}" required class="form-input">
+                <input type="number" step="500" min="0" name="overall_budget" value="{{ overall_budget if overall_budget > 0 else '' }}" placeholder="e.g. 25000 (0 or blank for no monthly limit)" class="form-input">
+                <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px;">
+                    This sets your aggregate monthly spending benchmark shown on the dashboard.
+                </small>
             </div>
 
-            <div style="border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 14px;">
-                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 10px;">Category Limits (₹)</span>
-                <div style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px;">
+            <div style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Category Limits (₹)</span>
+                    <span style="font-size: 0.72rem; color: var(--text-dim);">0 = No limit</span>
+                </div>
+                <div style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 6px;">
                     {% for b in budget_items %}
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                        <span style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px;">
+                        <span style="font-size: 0.82rem; display: flex; align-items: center; gap: 8px; font-weight: 500;">
                             <span class="badge-dot-cat {{ b.name|cat_class }}"></span> {{ b.name }}
                         </span>
-                        <input type="number" step="100" name="cat_limit_{{ b.id }}" value="{{ b.limit }}" class="form-input" style="width: 130px; padding: 6px 10px; font-size: 0.8rem;">
+                        <input type="number" step="100" min="0" name="cat_limit_{{ b.id }}" value="{{ b.limit if b.limit > 0 else '' }}" placeholder="0 (No limit)" class="form-input" style="width: 140px; padding: 6px 10px; font-size: 0.8rem; text-align: right;">
                     </div>
                     {% endfor %}
                 </div>
@@ -126,9 +188,51 @@
 
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
                 <button type="button" class="btn-outline" onclick="closeModal('setBudgetModal')">Cancel</button>
-                <button type="submit" class="btn-primary">Update All Budgets</button>
+                <button type="submit" class="btn-primary">Save All Budgets</button>
             </div>
         </form>
     </div>
 </div>
+
+<!-- Modal 2: Quick Set / Edit Single Category Budget -->
+<div class="modal-overlay" id="quickBudgetModal">
+    <div class="modal-content" style="max-width: 420px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">Category Budget</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" id="quickCatDesc">Set monthly limit</p>
+            </div>
+            <button onclick="closeModal('quickBudgetModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.1rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form action="{{ url_for('budget') }}" method="POST">
+            <input type="hidden" name="action" value="single_category">
+            <input type="hidden" name="category_id" id="quickCatId">
+
+            <div class="form-group">
+                <label id="quickCatLabel" style="font-weight: 600;">Monthly Limit (₹)</label>
+                <input type="number" step="100" min="0" name="budget_limit" id="quickCatLimit" class="form-input" placeholder="e.g. 5000 (0 for no limit)" required autofocus>
+                <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px;">
+                    Set to 0 to remove the spending limit for this category.
+                </small>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-outline" onclick="closeModal('quickBudgetModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Save Category Limit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openQuickBudgetModal(catId, catName, currentLimit) {
+    document.getElementById('quickCatId').value = catId;
+    document.getElementById('quickCatDesc').innerText = 'Configure spending limit for ' + catName;
+    document.getElementById('quickCatLabel').innerText = catName + ' Limit (₹)';
+    document.getElementById('quickCatLimit').value = (currentLimit > 0) ? currentLimit : '';
+    openModal('quickBudgetModal');
+}
+</script>
 {% endblock %}

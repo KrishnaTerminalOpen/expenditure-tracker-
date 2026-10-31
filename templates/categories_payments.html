@@ -44,7 +44,7 @@
         </div>
         <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted);">
             <span>Spent: ₹{{ "{:,.0f}".format(cat.total_spent) }}</span>
-            <span>Limit: ₹{{ "{:,.0f}".format(cat.budget_limit) }}</span>
+            <span>Limit: {% if cat.budget_limit > 0 %}₹{{ "{:,.0f}".format(cat.budget_limit) }}{% else %}<span style="color: var(--text-dim); font-style: italic;">Not Set</span>{% endif %}</span>
         </div>
     </div>
     {% endfor %}
@@ -122,8 +122,8 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>Monthly Budget Limit (₹)</label>
-                <input type="number" step="100" name="budget_limit" value="3000" class="form-input">
+                <label>Monthly Budget Limit (₹) <span style="font-size: 0.72rem; color: var(--text-dim);">(Optional)</span></label>
+                <input type="number" step="100" min="0" name="budget_limit" value="0" placeholder="0 (No limit)" class="form-input">
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
                 <button type="button" class="btn-outline" onclick="closeModal('addCategoryModal')">Cancel</button>
