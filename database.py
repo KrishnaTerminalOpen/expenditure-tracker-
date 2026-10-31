@@ -4,7 +4,6 @@ Handles SQLite schema, seed data, and connection helpers.
 """
 import sqlite3
 import os
-from datetime import datetime
 import bcrypt
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spendwise.db")

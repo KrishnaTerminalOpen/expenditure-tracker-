@@ -104,15 +104,22 @@
                     <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation">
                         <i class="fa-solid fa-bars"></i>
                     </button>
-                    <div class="search-bar-global">
+                    <div class="search-bar-global" onclick="openCommandPalette()" title="Press Ctrl+K to open Command Palette" style="cursor: pointer;">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <form action="{{ url_for('expenses') }}" method="GET" style="display: flex; width: 100%;">
-                            <input type="text" name="search" placeholder="Search expenses, tags..." value="{{ request.args.get('search', '') }}">
-                        </form>
+                        <input type="text" placeholder="Search expenses, commands (Ctrl+K)..." readonly style="cursor: pointer;">
+                        <span class="search-bar-cmd-badge">Ctrl+K</span>
                     </div>
                 </div>
 
                 <div class="top-nav-right">
+                    <!-- Sound FX Toggle -->
+                    <button type="button" class="sound-toggle-btn sound-on" id="navSoundToggleBtn" onclick="toggleAppAudio()" title="Sound Effects: Toggle (Key: M)">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <!-- Command Palette Button -->
+                    <button type="button" class="btn-outline" style="padding: 6px 10px; font-size: 0.78rem;" onclick="openCommandPalette()" title="Command Palette (Ctrl+K)">
+                        <i class="fa-solid fa-terminal"></i>
+                    </button>
                     <a href="{{ url_for('insights') }}" class="icon-btn-badge" title="Notifications & Insights" id="btn-top-notifs">
                         <i class="fa-regular fa-bell"></i>
                         <span class="badge-dot"></span>
@@ -239,8 +246,308 @@
         </div>
     </div>
 
+    <!-- Canvas for celebratory confetti bursts -->
+    <canvas id="confettiCanvas" style="position: fixed; inset: 0; pointer-events: none; z-index: 999999;"></canvas>
+
+    <!-- Toast Container for modern micro-alerts -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Pro Command Palette (Ctrl+K) -->
+    <div class="command-palette-overlay" id="commandPalette" onclick="handlePaletteBackdrop(event)">
+        <div class="command-palette" onclick="event.stopPropagation()">
+            <div class="command-search-header">
+                <i class="fa-solid fa-terminal"></i>
+                <input type="text" class="command-search-input" id="commandInput" placeholder="Type a command or search page (e.g. 'Add', 'Budget', 'Theme')..." autocomplete="off" oninput="filterCommandPalette()">
+                <span class="kbd-badge">ESC</span>
+            </div>
+            <div class="command-list" id="commandList">
+                <div class="command-category-title">Quick Actions</div>
+                <div class="command-item" onclick="executeCommand('add_expense')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-plus"></i></div>
+                        <div><strong>Add Expense</strong> <span style="font-size:0.75rem; color:var(--text-dim); margin-left:6px;">Record purchase</span></div>
+                    </div>
+                    <span class="kbd-badge">N</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('toggle_theme')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-circle-half-stroke"></i></div>
+                        <div><strong>Toggle Theme</strong> <span style="font-size:0.75rem; color:var(--text-dim); margin-left:6px;">Dark / Light</span></div>
+                    </div>
+                    <span class="kbd-badge">T</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('toggle_sound')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-volume-high"></i></div>
+                        <div><strong>Toggle UI Sound Effects</strong></div>
+                    </div>
+                    <span class="kbd-badge">M</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('export_pdf')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon" style="color: #ef4444;"><i class="fa-solid fa-file-pdf"></i></div>
+                        <div><strong>Export PDF Report</strong> <span style="font-size:0.75rem; color:var(--text-dim); margin-left:6px;">Download summary</span></div>
+                    </div>
+                </div>
+                <div class="command-item" onclick="executeCommand('export_csv')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon" style="color: #10b981;"><i class="fa-solid fa-file-csv"></i></div>
+                        <div><strong>Export CSV Spreadsheet</strong> <span style="font-size:0.75rem; color:var(--text-dim); margin-left:6px;">All records</span></div>
+                    </div>
+                </div>
+
+                <div class="command-category-title">Navigation</div>
+                <div class="command-item" onclick="executeCommand('nav_dashboard')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-table-columns"></i></div>
+                        <div><strong>Dashboard</strong></div>
+                    </div>
+                    <span class="kbd-badge">G D</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_expenses')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-credit-card"></i></div>
+                        <div><strong>Expenses Feed & Filter</strong></div>
+                    </div>
+                    <span class="kbd-badge">G E</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_budget')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-wallet"></i></div>
+                        <div><strong>Budget Goals & Limits</strong></div>
+                    </div>
+                    <span class="kbd-badge">G B</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_analytics')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div><strong>Analytics & Visual Trends</strong></div>
+                    </div>
+                    <span class="kbd-badge">G A</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_insights')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                        <div><strong>Smart Insights & Alerts</strong></div>
+                    </div>
+                    <span class="kbd-badge">G I</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_history')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <div><strong>History & Advanced Search</strong></div>
+                    </div>
+                    <span class="kbd-badge">G H</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_categories')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-solid fa-shapes"></i></div>
+                        <div><strong>Categories & Payments</strong></div>
+                    </div>
+                    <span class="kbd-badge">G C</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_profile')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon"><i class="fa-regular fa-user"></i></div>
+                        <div><strong>Profile & Preferences</strong></div>
+                    </div>
+                    <span class="kbd-badge">G P</span>
+                </div>
+            </div>
+            <div class="command-footer">
+                <span>Navigation: <span class="kbd-badge">↑</span> <span class="kbd-badge">↓</span> Select: <span class="kbd-badge">↵</span></span>
+                <span>SpendWise Intelligent OS</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Cheatsheet Modal -->
+    <div class="modal-overlay" id="shortcutsModal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-keyboard" style="color: var(--accent-orange);"></i> Pro Keyboard Shortcuts
+                </h3>
+                <button onclick="closeModal('shortcutsModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                    <span>Command Palette</span> <span class="kbd-badge">Ctrl + K</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                    <span>Add New Expense</span> <span class="kbd-badge">N</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                    <span>Toggle Dark / Light Theme</span> <span class="kbd-badge">T</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                    <span>Toggle Sound Effects</span> <span class="kbd-badge">M</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                    <span>Close Active Modal</span> <span class="kbd-badge">Esc</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                    <span>Open Shortcuts Help</span> <span class="kbd-badge">?</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Web Audio Synthesizer Engine
+        let appAudioCtx = null;
+        let appSoundEnabled = localStorage.getItem('spendwise_sound') !== 'false';
+
+        function getAppAudioCtx() {
+            if (!appAudioCtx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) appAudioCtx = new AudioCtx();
+            }
+            if (appAudioCtx && appAudioCtx.state === 'suspended') {
+                appAudioCtx.resume();
+            }
+            return appAudioCtx;
+        }
+
+        function playClickSound() {
+            if (!appSoundEnabled) return;
+            const ctx = getAppAudioCtx();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(480, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(720, ctx.currentTime + 0.035);
+            gain.gain.setValueAtTime(0.06, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.035);
+        }
+
+        function playSuccessSound() {
+            if (!appSoundEnabled) return;
+            const ctx = getAppAudioCtx();
+            if (!ctx) return;
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.06);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.06);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.06 + 0.22);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + i * 0.06);
+                osc.stop(ctx.currentTime + i * 0.06 + 0.22);
+            });
+        }
+
+        function toggleAppAudio() {
+            appSoundEnabled = !appSoundEnabled;
+            localStorage.setItem('spendwise_sound', appSoundEnabled ? 'true' : 'false');
+            updateSoundBtnState();
+            if (appSoundEnabled) playSuccessSound();
+        }
+
+        function updateSoundBtnState() {
+            const btn = document.getElementById('navSoundToggleBtn');
+            if (!btn) return;
+            if (appSoundEnabled) {
+                btn.className = 'sound-toggle-btn sound-on';
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                btn.title = 'Sound Effects: ON (M)';
+            } else {
+                btn.className = 'sound-toggle-btn';
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                btn.title = 'Sound Effects: OFF (M)';
+            }
+        }
+
+        // Particle Confetti Burst Engine
+        function fireConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f97316', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#f59e0b', '#ffffff'];
+
+            for (let i = 0; i < 85; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height * 0.35,
+                    vx: (Math.random() - 0.5) * 16,
+                    vy: (Math.random() - 0.85) * 14,
+                    size: Math.random() * 7 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * 360,
+                    vrot: (Math.random() - 0.5) * 10,
+                    life: 1.0
+                });
+            }
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.42;
+                    p.rot += p.vrot;
+                    p.life -= 0.016;
+
+                    if (p.life > 0) {
+                        alive = true;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rot * Math.PI) / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = Math.max(0, p.life);
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+                        ctx.restore();
+                    }
+                });
+                if (alive) requestAnimationFrame(render);
+            }
+            render();
+        }
+
+        // Dynamic Number CountUp Animation
+        function animateCounters() {
+            const counters = document.querySelectorAll('.count-up');
+            counters.forEach(counter => {
+                const target = parseFloat(counter.getAttribute('data-target') || '0');
+                const prefix = counter.getAttribute('data-prefix') || '';
+                const suffix = counter.getAttribute('data-suffix') || '';
+                const duration = 800; // ms
+                const startTime = performance.now();
+
+                function step(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const ease = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+                    const currentVal = Math.round(target * ease);
+                    counter.innerText = prefix + currentVal.toLocaleString('en-IN') + suffix;
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        counter.innerText = prefix + target.toLocaleString('en-IN') + suffix;
+                    }
+                }
+                requestAnimationFrame(step);
+            });
+        }
+
+        // Navigation & Modals
         function toggleMobileSidebar() {
+            playClickSound();
             const sidebar = document.querySelector('.sidebar');
             const overlay = document.getElementById('sidebarOverlay');
             if (sidebar && overlay) {
@@ -248,7 +555,9 @@
                 overlay.classList.toggle('active');
             }
         }
+
         function openModal(id) {
+            playClickSound();
             const el = document.getElementById(id);
             if(el) {
                 el.style.display = 'flex';
@@ -260,17 +569,159 @@
                 }
             }
         }
+
         function closeModal(id) {
+            playClickSound();
             const el = document.getElementById(id);
             if(el) el.style.display = 'none';
         }
+
         function toggleAppTheme() {
+            playClickSound();
             fetch('{{ url_for("toggle_theme") }}', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
                 document.documentElement.setAttribute('data-theme', data.theme);
+                const chk = document.getElementById('theme-toggle-chk');
+                if (chk) chk.checked = (data.theme === 'dark');
             });
         }
+
+        // Pro Command Palette Controller
+        function openCommandPalette() {
+            playClickSound();
+            const palette = document.getElementById('commandPalette');
+            palette.classList.add('active');
+            const input = document.getElementById('commandInput');
+            input.value = '';
+            filterCommandPalette();
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function closeCommandPalette() {
+            playClickSound();
+            document.getElementById('commandPalette').classList.remove('active');
+        }
+
+        function handlePaletteBackdrop(e) {
+            if (e.target.id === 'commandPalette') {
+                closeCommandPalette();
+            }
+        }
+
+        function filterCommandPalette() {
+            const query = (document.getElementById('commandInput').value || '').toLowerCase();
+            const items = document.querySelectorAll('#commandList .command-item');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                item.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        }
+
+        function executeCommand(action) {
+            closeCommandPalette();
+            playClickSound();
+            switch (action) {
+                case 'add_expense':
+                    openModal('quickAddExpenseModal');
+                    break;
+                case 'toggle_theme':
+                    toggleAppTheme();
+                    break;
+                case 'toggle_sound':
+                    toggleAppAudio();
+                    break;
+                case 'export_pdf':
+                    window.location.href = "{{ url_for('export_pdf') }}";
+                    break;
+                case 'export_csv':
+                    window.location.href = "{{ url_for('export_csv') }}";
+                    break;
+                case 'nav_dashboard':
+                    window.location.href = "{{ url_for('dashboard') }}";
+                    break;
+                case 'nav_expenses':
+                    window.location.href = "{{ url_for('expenses') }}";
+                    break;
+                case 'nav_budget':
+                    window.location.href = "{{ url_for('budget') }}";
+                    break;
+                case 'nav_analytics':
+                    window.location.href = "{{ url_for('analytics') }}";
+                    break;
+                case 'nav_insights':
+                    window.location.href = "{{ url_for('insights') }}";
+                    break;
+                case 'nav_history':
+                    window.location.href = "{{ url_for('history') }}";
+                    break;
+                case 'nav_categories':
+                    window.location.href = "{{ url_for('categories_payments') }}";
+                    break;
+                case 'nav_profile':
+                    window.location.href = "{{ url_for('profile') }}";
+                    break;
+            }
+        }
+
+        // Global Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+            const isTyping = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+
+            // Ctrl+K / Cmd+K -> Open Command Palette
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                const palette = document.getElementById('commandPalette');
+                if (palette.classList.contains('active')) {
+                    closeCommandPalette();
+                } else {
+                    openCommandPalette();
+                }
+                return;
+            }
+
+            // ESC -> Close active modal or command palette
+            if (e.key === 'Escape') {
+                const palette = document.getElementById('commandPalette');
+                if (palette && palette.classList.contains('active')) {
+                    closeCommandPalette();
+                    return;
+                }
+                closeModal('quickAddExpenseModal');
+                closeModal('shortcutsModal');
+                return;
+            }
+
+            // Below single key shortcuts only when not typing inside an input
+            if (isTyping) return;
+
+            if (e.key === 'n' || e.key === 'N') {
+                e.preventDefault();
+                openModal('quickAddExpenseModal');
+            } else if (e.key === 't' || e.key === 'T') {
+                e.preventDefault();
+                toggleAppTheme();
+            } else if (e.key === 'm' || e.key === 'M') {
+                e.preventDefault();
+                toggleAppAudio();
+            } else if (e.key === '?') {
+                e.preventDefault();
+                openModal('shortcutsModal');
+            }
+        });
+
+        // Initialize state on DOM ready
+        window.addEventListener('DOMContentLoaded', () => {
+            updateSoundBtnState();
+            animateCounters();
+            // Check for celebration query param
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('first_txn') || urlParams.get('welcome')) {
+                playSuccessSound();
+                fireConfetti();
+            }
+        });
     </script>
     {% block scripts %}{% endblock %}
 </body>

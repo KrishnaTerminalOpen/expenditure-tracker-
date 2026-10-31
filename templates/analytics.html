@@ -83,13 +83,7 @@
                 {% for cat in cat_breakdown[:6] %}
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="display: flex; align-items: center; gap: 6px;">
-                        <span class="badge-dot-cat" style="background: 
-                            {% if cat.category == 'Food & Dining' %}#f97316
-                            {% elif cat.category == 'Shopping' %}#ec4899
-                            {% elif cat.category == 'Transport' %}#3b82f6
-                            {% elif cat.category == 'Bills & Utilities' %}#10b981
-                            {% elif cat.category == 'Entertainment' %}#8b5cf6
-                            {% else %}#64748b{% endif %};"></span>
+                        <span class="badge-dot-cat {{ cat.category|cat_class }}"></span>
                         {{ cat.category }}
                     </span>
                     <strong style="color: var(--text-main);">{{ ((cat.cat_sum / (total_expenses if total_expenses > 0 else 1)) * 100)|round|int }}%</strong>
