@@ -3,11 +3,18 @@
 {% block title %}Budget Management - SpendWise{% endblock %}
 
 {% block content %}
-<!-- Module 5 Header -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+<!-- Module 5 Header with Glow Accent -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; flex-wrap: wrap; gap: 14px;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 800;">Budget Management</h1>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <h1 style="font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">
+                Budget Management
+            </h1>
+            <span class="status-badge status-badge-Good" style="font-size: 0.68rem; padding: 2px 8px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);">
+                <i class="fa-solid fa-bolt" style="font-size: 0.65rem;"></i> Active Engine
+            </span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
             Set and manage your monthly spending target and individual category thresholds
         </p>
     </div>
@@ -16,66 +23,79 @@
     </button>
 </div>
 
-<!-- Overall Monthly Budget Card -->
-<div class="card" style="margin-bottom: 24px; padding: 24px; position: relative; overflow: hidden;">
-    <div style="position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; background: radial-gradient(circle, var(--accent-orange-glow) 0%, transparent 70%); pointer-events: none; opacity: 0.4;"></div>
+<!-- Overall Monthly Budget Card with Deep Ambient Glass Glow -->
+<div class="card" style="margin-bottom: 28px; padding: 28px; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(26, 34, 52, 0.85) 0%, rgba(16, 22, 34, 0.95) 100%); border: 1px solid rgba(255, 255, 255, 0.09); border-top: 1px solid rgba(255, 255, 255, 0.24); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 24px 50px -10px rgba(0, 0, 0, 0.7), 0 0 35px -8px rgba(249, 115, 22, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.18);">
     
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 16px;">
+    <!-- Ambient Floating Light Orbs -->
+    <div style="position: absolute; top: -50px; right: -50px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(249, 115, 22, 0.25) 0%, transparent 70%); filter: blur(30px); pointer-events: none;"></div>
+    <div style="position: absolute; bottom: -60px; left: 20%; width: 200px; height: 140px; background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%); filter: blur(40px); pointer-events: none;"></div>
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 18px; position: relative; z-index: 1;">
         <div>
-            <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; display: block;">Overall Monthly Budget</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; display: block;">Overall Monthly Budget</span>
+                {% if overall_budget > 0 %}
+                <span class="pulse-beacon" style="color: var(--accent-orange); width: 8px; height: 8px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent-orange); display: block;"></span>
+                </span>
+                {% endif %}
+            </div>
+
             {% if overall_budget > 0 %}
-            <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin-top: 4px; letter-spacing: -0.02em;">
+            <div style="font-size: 2.35rem; font-weight: 800; color: #ffffff; margin-top: 6px; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(249, 115, 22, 0.35), 0 0 30px rgba(249, 115, 22, 0.15);">
                 ₹ {{ "{:,.0f}".format(overall_budget) }}
             </div>
-            <div style="font-size: 0.82rem; color: var(--accent-orange); font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                <span class="badge-dot" style="background: var(--accent-orange);"></span>
-                {{ overall_percent }}% of monthly cap used
+            <div style="font-size: 0.82rem; color: var(--accent-orange); font-weight: 600; margin-top: 5px; display: flex; align-items: center; gap: 8px;">
+                <span class="badge-dot" style="background: var(--accent-orange); box-shadow: 0 0 10px rgba(249, 115, 22, 0.8);"></span>
+                <span>{{ overall_percent }}% of monthly cap used</span>
             </div>
             {% else %}
-            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-dim); margin-top: 4px;">
+            <div style="font-size: 1.9rem; font-weight: 800; color: var(--text-dim); margin-top: 6px; letter-spacing: -0.01em;">
                 Not Set
             </div>
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+            <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 5px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-circle-info" style="color: var(--accent-blue); font-size: 0.78rem;"></i>
                 No monthly spending cap configured yet
             </div>
             {% endif %}
         </div>
+
         <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-            <div style="font-size: 0.9rem; color: var(--text-dim);">
-                Spent: <strong style="color: var(--text-main); font-weight: 700;">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
+            <div style="font-size: 0.92rem; color: var(--text-dim);">
+                Spent: <strong style="color: #ffffff; font-weight: 700; text-shadow: 0 1px 8px rgba(0,0,0,0.5);">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
             </div>
             {% if overall_budget > 0 %}
-            <div style="font-size: 0.9rem; color: var(--accent-emerald); margin-top: 4px; font-weight: 600;">
+            <div style="font-size: 0.92rem; color: var(--accent-emerald); margin-top: 5px; font-weight: 700; text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);">
                 ₹ {{ "{:,.0f}".format(remaining) }} remaining
             </div>
             {% else %}
-            <button class="btn-primary" style="margin-top: 8px; padding: 6px 14px; font-size: 0.78rem;" onclick="openModal('setBudgetModal')">
+            <button class="btn-primary" style="margin-top: 10px; padding: 7px 16px; font-size: 0.8rem; box-shadow: 0 4px 16px var(--accent-orange-glow);" onclick="openModal('setBudgetModal')">
                 <i class="fa-solid fa-plus"></i> Set Monthly Target
             </button>
             {% endif %}
         </div>
     </div>
 
-    <!-- Progress Bar with Gradient -->
+    <!-- Glowing Progress Bar with Specular Shimmer -->
     {% if overall_budget > 0 %}
-    <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.06); border-radius: 20px; overflow: hidden; margin-top: 8px;">
-        <div style="height: 100%; width: {{ overall_percent }}%; background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); border-radius: 20px; box-shadow: 0 0 10px var(--accent-orange-glow); transition: width 0.4s ease;"></div>
+    <div style="width: 100%; height: 12px; background: rgba(0, 0, 0, 0.4); border-radius: 20px; overflow: hidden; padding: 2px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); position: relative; z-index: 1;">
+        <div class="shimmer-active" style="height: 100%; width: {{ overall_percent }}%; background: linear-gradient(90deg, #f97316 0%, #ea580c 50%, #f97316 100%); border-radius: 20px; box-shadow: 0 0 14px rgba(249, 115, 22, 0.65), 0 0 24px rgba(249, 115, 22, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45); transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);"></div>
     </div>
     {% else %}
-    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.04); border-radius: 20px; overflow: hidden; margin-top: 8px;">
+    <div style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.03); border-radius: 20px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); position: relative; z-index: 1;">
         <div style="height: 100%; width: 0%; background: transparent;"></div>
     </div>
     {% endif %}
 </div>
 
-<!-- Category Budgets Table matching Module 5 Design -->
-<div class="card" style="padding: 0; overflow: hidden;">
-    <div style="padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+<!-- Category Budgets Table Card with Layered Shadow & Lighting -->
+<div class="card" style="padding: 0; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08); border-top: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 20px 48px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+    <div style="padding: 20px 26px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(19, 25, 37, 0.65);">
         <div>
-            <h3 style="font-size: 1.05rem; font-weight: 700;">Category Budgets</h3>
+            <h3 style="font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em;">Category Budgets</h3>
             <span style="font-size: 0.78rem; color: var(--text-dim);">Custom thresholds per category. Set limits individually or in bulk.</span>
         </div>
-        <button class="btn-outline" style="font-size: 0.78rem; padding: 6px 14px;" onclick="openModal('setBudgetModal')">
+        <button class="btn-outline" style="font-size: 0.78rem; padding: 7px 15px;" onclick="openModal('setBudgetModal')">
             <i class="fa-solid fa-pen-to-square"></i> Bulk Edit
         </button>
     </div>
@@ -86,9 +106,9 @@
                     <th>Category</th>
                     <th style="text-align: right;">Budget</th>
                     <th style="text-align: right;">Spent</th>
-                    <th style="width: 240px;">Progress</th>
+                    <th style="width: 250px;">Progress</th>
                     <th style="text-align: center;">Status</th>
-                    <th style="text-align: center; width: 100px;">Action</th>
+                    <th style="text-align: center; width: 110px;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -102,7 +122,7 @@
                     </td>
                     <td style="text-align: right;">
                         {% if b.limit > 0 %}
-                        <span style="color: var(--text-main); font-weight: 600;">₹ {{ "{:,.0f}".format(b.limit) }}</span>
+                        <span style="color: var(--text-main); font-weight: 700; text-shadow: 0 1px 6px rgba(0,0,0,0.3);">₹ {{ "{:,.0f}".format(b.limit) }}</span>
                         {% else %}
                         <span style="color: var(--text-dim); font-size: 0.8rem; font-style: italic;">Not Set</span>
                         {% endif %}
@@ -112,11 +132,11 @@
                     </td>
                     <td>
                         {% if b.limit > 0 %}
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
-                                <div style="height: 100%; width: {{ b.percent }}%; background: {{ b.color }}; border-radius: 10px; transition: width 0.3s ease;"></div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="flex: 1; height: 8px; background: rgba(0, 0, 0, 0.35); border-radius: 10px; overflow: hidden; padding: 1px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);">
+                                <div style="height: 100%; width: {{ b.percent }}%; background: {{ b.color }}; border-radius: 10px; box-shadow: 0 0 10px {{ b.color }}88, inset 0 1px 0 rgba(255,255,255,0.4); transition: width 0.4s ease;"></div>
                             </div>
-                            <span style="font-size: 0.75rem; color: var(--text-dim); min-width: 32px; text-align: right;">{{ b.percent }}%</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); min-width: 34px; text-align: right; font-weight: 600;">{{ b.percent }}%</span>
                         </div>
                         {% else %}
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -131,13 +151,13 @@
                             {{ b.status }}
                         </span>
                         {% else %}
-                        <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 3px 8px; border-radius: 4px;">
+                        <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.04); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 1px 4px rgba(0,0,0,0.2);">
                             Uncapped
                         </span>
                         {% endif %}
                     </td>
                     <td style="text-align: center;">
-                        <button type="button" class="btn-outline" style="padding: 4px 10px; font-size: 0.72rem; border-radius: 6px; border-color: rgba(255,255,255,0.12);" onclick="openQuickBudgetModal('{{ b.id }}', '{{ b.name|escape }}', {{ b.limit }})">
+                        <button type="button" class="btn-outline" style="padding: 4px 12px; font-size: 0.73rem; border-radius: 6px; border-color: rgba(255,255,255,0.14);" onclick="openQuickBudgetModal('{{ b.id }}', '{{ b.name|escape }}', {{ b.limit }})">
                             <i class="fa-solid fa-pen" style="margin-right: 4px;"></i> {{ 'Edit' if b.limit > 0 else 'Set' }}
                         </button>
                     </td>
@@ -148,15 +168,15 @@
     </div>
 </div>
 
-<!-- Modal 1: Manage All Budgets (Overall + Category Limits) -->
+<!-- Modal 1: Manage All Budgets with Specular Lighting & Deep Ambient Shadow -->
 <div class="modal-overlay" id="setBudgetModal">
-    <div class="modal-content" style="max-width: 540px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div class="modal-content" style="max-width: 540px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 20px 48px rgba(0, 0, 0, 0.6), 0 45px 90px -15px rgba(0, 0, 0, 0.85), 0 0 50px -5px rgba(249, 115, 22, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px;">
             <div>
-                <h3 style="font-size: 1.15rem; font-weight: 700;">Set Budget Goals</h3>
-                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Define your custom spending caps. Leave at 0 for no limit.</p>
+                <h3 style="font-size: 1.18rem; font-weight: 700; letter-spacing: -0.01em;">Set Budget Goals</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">Define your custom spending caps. Leave at 0 for no limit.</p>
             </div>
-            <button onclick="closeModal('setBudgetModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.1rem;">
+            <button onclick="closeModal('setBudgetModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.15rem; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-dim)'">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -164,29 +184,29 @@
             <div class="form-group">
                 <label>Overall Monthly Budget Limit (₹)</label>
                 <input type="number" step="500" min="0" name="overall_budget" value="{{ overall_budget if overall_budget > 0 else '' }}" placeholder="e.g. 25000 (0 or blank for no monthly limit)" class="form-input">
-                <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px;">
+                <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 5px;">
                     This sets your aggregate monthly spending benchmark shown on the dashboard.
                 </small>
             </div>
 
-            <div style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Category Limits (₹)</span>
-                    <span style="font-size: 0.72rem; color: var(--text-dim);">0 = No limit</span>
+            <div style="border-top: 1px solid var(--border-color); padding-top: 18px; margin-top: 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-main);">Category Limits (₹)</span>
+                    <span style="font-size: 0.72rem; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">0 = No limit</span>
                 </div>
-                <div style="max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 6px;">
+                <div style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 6px;">
                     {% for b in budget_items %}
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 9px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
                         <span style="font-size: 0.82rem; display: flex; align-items: center; gap: 8px; font-weight: 500;">
                             <span class="badge-dot-cat {{ b.name|cat_class }}"></span> {{ b.name }}
                         </span>
-                        <input type="number" step="100" min="0" name="cat_limit_{{ b.id }}" value="{{ b.limit if b.limit > 0 else '' }}" placeholder="0 (No limit)" class="form-input" style="width: 140px; padding: 6px 10px; font-size: 0.8rem; text-align: right;">
+                        <input type="number" step="100" min="0" name="cat_limit_{{ b.id }}" value="{{ b.limit if b.limit > 0 else '' }}" placeholder="0 (No limit)" class="form-input" style="width: 140px; padding: 7px 10px; font-size: 0.8rem; text-align: right;">
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 26px;">
                 <button type="button" class="btn-outline" onclick="closeModal('setBudgetModal')">Cancel</button>
                 <button type="submit" class="btn-primary">Save All Budgets</button>
             </div>
@@ -196,13 +216,13 @@
 
 <!-- Modal 2: Quick Set / Edit Single Category Budget -->
 <div class="modal-overlay" id="quickBudgetModal">
-    <div class="modal-content" style="max-width: 420px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+    <div class="modal-content" style="max-width: 420px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 20px 48px rgba(0, 0, 0, 0.6), 0 45px 90px -15px rgba(0, 0, 0, 0.85), 0 0 50px -5px rgba(249, 115, 22, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <div>
-                <h3 style="font-size: 1.1rem; font-weight: 700;">Category Budget</h3>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" id="quickCatDesc">Set monthly limit</p>
+                <h3 style="font-size: 1.15rem; font-weight: 700;">Category Budget</h3>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px;" id="quickCatDesc">Set monthly limit</p>
             </div>
-            <button onclick="closeModal('quickBudgetModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.1rem;">
+            <button onclick="closeModal('quickBudgetModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.15rem; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-dim)'">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -213,12 +233,12 @@
             <div class="form-group">
                 <label id="quickCatLabel" style="font-weight: 600;">Monthly Limit (₹)</label>
                 <input type="number" step="100" min="0" name="budget_limit" id="quickCatLimit" class="form-input" placeholder="e.g. 5000 (0 for no limit)" required autofocus>
-                <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 4px;">
+                <small style="color: var(--text-dim); font-size: 0.72rem; display: block; margin-top: 5px;">
                     Set to 0 to remove the spending limit for this category.
                 </small>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
                 <button type="button" class="btn-outline" onclick="closeModal('quickBudgetModal')">Cancel</button>
                 <button type="submit" class="btn-primary">Save Category Limit</button>
             </div>
