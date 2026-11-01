@@ -67,22 +67,17 @@ def login():
         password = request.form.get('password', '').strip()
         conn = get_db()
         user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-        conn.close()
 
         if user and check_pw(password, user['password_hash']):
             session['user_id'] = user['id']
             session['user_name'] = user['name']
             session['user_email'] = user['email']
-
-            # Check if user has recorded any transactions
-            txn_count = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user['id'],)).fetchone()[0]
-            if txn_count == 0:
-                flash(f"Welcome, {user['name']}! Let's record your first expense to activate your dashboard.", "info")
-                return redirect(url_for('first_transaction'))
+            conn.close()
 
             flash("Welcome back!", "success")
             return redirect(url_for('dashboard'))
         else:
+            conn.close()
             flash("Invalid email or password. Please try again.", "danger")
             return render_template('auth.html', active_tab='login', email=email)
 
@@ -162,7 +157,7 @@ def register():
         session['user_name'] = name
         session['user_email'] = email
         flash(f"Account created successfully! Welcome, {name}.", "success")
-        return redirect(url_for('first_transaction'))
+        return redirect(url_for('dashboard'))
 
     return render_template('auth.html', active_tab='register')
 
@@ -274,12 +269,6 @@ def dashboard():
 
     # Check total transaction count
     txn_count = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
-    if txn_count == 0 and not request.args.get('skip_onboarding') and not session.get('skip_onboarding'):
-        conn.close()
-        return redirect(url_for('first_transaction'))
-
-    if request.args.get('skip_onboarding'):
-        session['skip_onboarding'] = True
 
     # Total expenses (All time)
     total_expenses = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
