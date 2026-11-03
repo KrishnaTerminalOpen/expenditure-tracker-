@@ -45,6 +45,14 @@
                         <i class="fa-solid fa-wallet"></i>
                         <span>Budget</span>
                     </a>
+                    <a href="{{ url_for('subscriptions') }}" class="nav-item {{ 'active' if current_page == 'subscriptions' else '' }}" id="nav-subscriptions">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>Subscriptions</span>
+                    </a>
+                    <a href="{{ url_for('savings_goals') }}" class="nav-item {{ 'active' if current_page == 'savings_goals' else '' }}" id="nav-savings-goals">
+                        <i class="fa-solid fa-bullseye"></i>
+                        <span>Savings Goals</span>
+                    </a>
                     <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if current_page == 'analytics' else '' }}" id="nav-analytics">
                         <i class="fa-solid fa-chart-line"></i>
                         <span>Analytics</span>
@@ -331,6 +339,20 @@
                         <div><strong>Budget Goals & Limits</strong></div>
                     </div>
                     <span class="kbd-badge">G B</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_subscriptions')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon" style="color: #38bdf8;"><i class="fa-solid fa-arrows-rotate"></i></div>
+                        <div><strong>Subscriptions & Bills</strong></div>
+                    </div>
+                    <span class="kbd-badge">G S</span>
+                </div>
+                <div class="command-item" onclick="executeCommand('nav_savings_goals')">
+                    <div class="command-item-left">
+                        <div class="command-item-icon" style="color: #10b981;"><i class="fa-solid fa-bullseye"></i></div>
+                        <div><strong>Savings Goals & Milestones</strong></div>
+                    </div>
+                    <span class="kbd-badge">G G</span>
                 </div>
                 <div class="command-item" onclick="executeCommand('nav_analytics')">
                     <div class="command-item-left">
@@ -659,6 +681,12 @@
                     break;
                 case 'nav_budget':
                     window.location.href = "{{ url_for('budget') }}";
+                    break;
+                case 'nav_subscriptions':
+                    window.location.href = "{{ url_for('subscriptions') }}";
+                    break;
+                case 'nav_savings_goals':
+                    window.location.href = "{{ url_for('savings_goals') }}";
                     break;
                 case 'nav_analytics':
                     window.location.href = "{{ url_for('analytics') }}";

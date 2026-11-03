@@ -12,7 +12,7 @@ Full Python Flask Backend powering the 8 modules shown in the design:
 """
 import io
 import csv
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from functools import wraps
 from flask import (
     Flask, render_template, request, redirect, url_for,
@@ -385,6 +385,29 @@ def dashboard():
         health_status_class = "positive"
         health_tip = "Define your custom monthly budget in Budget Management to enable real-time tracking & threshold alerts."
 
+    # Predictive Financial Runway & Velocity
+    import calendar
+    today = date.today()
+    total_days_in_month = calendar.monthrange(today.year, today.month)[1]
+    day_of_month = today.day
+    days_remaining = max(1, total_days_in_month - day_of_month)
+    daily_velocity = total_expenses / max(1, day_of_month)
+    projected_month_end = total_expenses + (daily_velocity * days_remaining)
+    projected_surplus = (monthly_budget - projected_month_end) if monthly_budget > 0 else 0
+
+    # Subscriptions Summary
+    subs_rows = conn.execute("SELECT * FROM subscriptions WHERE user_id = ? AND status = 'active'", (uid,)).fetchall()
+    mrc_total = sum(
+        r['amount'] if r['billing_cycle'] == 'monthly' else (r['amount']/12 if r['billing_cycle'] == 'yearly' else r['amount']*4.33)
+        for r in subs_rows
+    )
+
+    # Savings Goals Summary
+    goals_rows = conn.execute("SELECT * FROM savings_goals WHERE user_id = ? ORDER BY id DESC", (uid,)).fetchall()
+    total_goals_saved = sum(g['current_amount'] for g in goals_rows)
+    total_goals_target = sum(g['target_amount'] for g in goals_rows)
+    goals_progress_pct = round((total_goals_saved / total_goals_target) * 100) if total_goals_target > 0 else 0
+
     conn.close()
 
     return render_template(
@@ -410,7 +433,17 @@ def dashboard():
         health_score=health_score,
         health_status=health_status,
         health_status_class=health_status_class,
-        health_tip=health_tip
+        health_tip=health_tip,
+        days_remaining=days_remaining,
+        daily_velocity=daily_velocity,
+        projected_month_end=projected_month_end,
+        projected_surplus=projected_surplus,
+        mrc_total=mrc_total,
+        active_subs_count=len(subs_rows),
+        total_goals_saved=total_goals_saved,
+        total_goals_target=total_goals_target,
+        goals_progress_pct=goals_progress_pct,
+        goals_rows=goals_rows[:3]
     )
 
 # ==========================================
@@ -1011,6 +1044,515 @@ def toggle_theme():
     conn.commit()
     conn.close()
     return jsonify({"theme": new_theme})
+
+# ==========================================
+# MODULE 9: RECURRING SUBSCRIPTIONS & BILLS
+# ==========================================
+
+@app.route('/subscriptions')
+@login_required
+def subscriptions():
+    user = get_current_user()
+    conn = get_db()
+    uid = user['id']
+
+    raw_subs = conn.execute("""
+        SELECT * FROM subscriptions
+        WHERE user_id = ?
+        ORDER BY next_due_date ASC, id DESC
+    """, (uid,)).fetchall()
+
+    today_dt = date.today()
+    subs = []
+    monthly_cost = 0.0
+    annual_cost = 0.0
+    active_count = 0
+    next_due_sub = None
+
+    for r in raw_subs:
+        d = dict(r)
+        try:
+            due_dt = datetime.strptime(d['next_due_date'], '%Y-%m-%d').date()
+            days_diff = (due_dt - today_dt).days
+        except Exception:
+            days_diff = 30
+        d['days_until'] = days_diff
+
+        if d['status'] == 'active':
+            active_count += 1
+            if d['billing_cycle'] == 'monthly':
+                m_amt = d['amount']
+            elif d['billing_cycle'] == 'yearly':
+                m_amt = d['amount'] / 12.0
+            else:
+                m_amt = d['amount'] * 4.33
+            monthly_cost += m_amt
+            annual_cost += m_amt * 12.0
+
+            if next_due_sub is None and days_diff >= 0:
+                next_due_sub = d
+
+        subs.append(d)
+
+    conn.close()
+    return render_template(
+        'subscriptions.html',
+        user=user,
+        current_page='subscriptions',
+        subscriptions=subs,
+        monthly_cost=monthly_cost,
+        annual_cost=annual_cost,
+        active_count=active_count,
+        next_due_sub=next_due_sub
+    )
+
+@app.route('/subscriptions/add', methods=['POST'])
+@login_required
+def subscription_add():
+    user = get_current_user()
+    name = request.form.get('name', '').strip()
+    amount = float(request.form.get('amount', 0.0))
+    category = request.form.get('category', 'Others')
+    billing_cycle = request.form.get('billing_cycle', 'monthly')
+    next_due_date = request.form.get('next_due_date', date.today().strftime('%Y-%m-%d'))
+    payment_method = request.form.get('payment_method', 'UPI')
+    notes = request.form.get('notes', '').strip()
+
+    if not name or amount <= 0:
+        flash("Valid subscription name and positive amount required.", "danger")
+        return redirect(url_for('subscriptions'))
+
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO subscriptions (user_id, name, amount, category, billing_cycle, next_due_date, payment_method, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (user['id'], name, amount, category, billing_cycle, next_due_date, payment_method, notes))
+    conn.commit()
+    conn.close()
+
+    flash(f"Subscription '{name}' added successfully!", "success")
+    return redirect(url_for('subscriptions'))
+
+@app.route('/subscriptions/edit/<int:sub_id>', methods=['POST'])
+@login_required
+def subscription_edit(sub_id):
+    user = get_current_user()
+    name = request.form.get('name', '').strip()
+    amount = float(request.form.get('amount', 0.0))
+    category = request.form.get('category', 'Others')
+    billing_cycle = request.form.get('billing_cycle', 'monthly')
+    next_due_date = request.form.get('next_due_date', '')
+    payment_method = request.form.get('payment_method', 'UPI')
+    notes = request.form.get('notes', '').strip()
+
+    conn = get_db()
+    conn.execute("""
+        UPDATE subscriptions
+        SET name = ?, amount = ?, category = ?, billing_cycle = ?, next_due_date = ?, payment_method = ?, notes = ?
+        WHERE id = ? AND user_id = ?
+    """, (name, amount, category, billing_cycle, next_due_date, payment_method, notes, sub_id, user['id']))
+    conn.commit()
+    conn.close()
+
+    flash(f"Subscription '{name}' updated.", "success")
+    return redirect(url_for('subscriptions'))
+
+@app.route('/subscriptions/delete/<int:sub_id>', methods=['POST'])
+@login_required
+def subscription_delete(sub_id):
+    user = get_current_user()
+    conn = get_db()
+    conn.execute("DELETE FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id']))
+    conn.commit()
+    conn.close()
+
+    flash("Subscription removed.", "info")
+    return redirect(url_for('subscriptions'))
+
+@app.route('/subscriptions/toggle-status/<int:sub_id>', methods=['POST'])
+@login_required
+def subscription_toggle_status(sub_id):
+    user = get_current_user()
+    conn = get_db()
+    sub = conn.execute("SELECT status, name FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id'])).fetchone()
+    if sub:
+        new_status = 'paused' if sub['status'] == 'active' else 'active'
+        conn.execute("UPDATE subscriptions SET status = ? WHERE id = ?", (new_status, sub_id))
+        conn.commit()
+        flash(f"Subscription '{sub['name']}' is now {new_status}.", "info")
+    conn.close()
+    return redirect(url_for('subscriptions'))
+
+@app.route('/subscriptions/log-as-expense/<int:sub_id>', methods=['POST'])
+@login_required
+def subscription_log_expense(sub_id):
+    user = get_current_user()
+    conn = get_db()
+    sub = conn.execute("SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id'])).fetchone()
+    if sub:
+        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        conn.execute("""
+            INSERT INTO expenses (user_id, title, amount, category, payment_method, expense_date, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (user['id'], f"{sub['name']} (Subscription Renewal)", sub['amount'], sub['category'], sub['payment_method'], now_str, sub['notes'] or 'Auto-logged subscription renewal'))
+
+        try:
+            curr_due = datetime.strptime(sub['next_due_date'], '%Y-%m-%d').date()
+            if sub['billing_cycle'] == 'yearly':
+                new_due = curr_due.replace(year=curr_due.year + 1)
+            elif sub['billing_cycle'] == 'weekly':
+                new_due = curr_due + timedelta(days=7)
+            else:
+                month = curr_due.month + 1
+                year = curr_due.year
+                if month > 12:
+                    month = 1
+                    year += 1
+                import calendar
+                day = min(curr_due.day, calendar.monthrange(year, month)[1])
+                new_due = date(year, month, day)
+            new_due_str = new_due.strftime('%Y-%m-%d')
+        except Exception:
+            new_due_str = (date.today() + timedelta(days=30)).strftime('%Y-%m-%d')
+
+        conn.execute("UPDATE subscriptions SET next_due_date = ? WHERE id = ?", (new_due_str, sub_id))
+        conn.commit()
+        flash(f"Logged ₹{sub['amount']:,.0f} payment for {sub['name']} into expenses! Next due set to {new_due_str}.", "success")
+    conn.close()
+    return redirect(url_for('subscriptions'))
+
+
+# ==========================================
+# MODULE 10: SAVINGS GOALS & TARGETS
+# ==========================================
+
+@app.route('/savings-goals')
+@login_required
+def savings_goals():
+    user = get_current_user()
+    conn = get_db()
+    uid = user['id']
+
+    raw_goals = conn.execute("""
+        SELECT * FROM savings_goals
+        WHERE user_id = ?
+        ORDER BY status ASC, id DESC
+    """, (uid,)).fetchall()
+
+    goals = []
+    total_saved = 0.0
+    total_target = 0.0
+    achieved_count = 0
+    closest_goal = None
+
+    for r in raw_goals:
+        d = dict(r)
+        pct = round((d['current_amount'] / d['target_amount']) * 100) if d['target_amount'] > 0 else 0
+        d['pct'] = pct
+        total_saved += d['current_amount']
+        total_target += d['target_amount']
+        if pct >= 100:
+            achieved_count += 1
+        elif closest_goal is None or pct > closest_goal['pct']:
+            closest_goal = d
+        goals.append(d)
+
+    overall_pct = round((total_saved / total_target) * 100) if total_target > 0 else 0
+    remaining_target = max(0.0, total_target - total_saved)
+
+    conn.close()
+    return render_template(
+        'savings_goals.html',
+        user=user,
+        current_page='savings_goals',
+        goals=goals,
+        total_saved=total_saved,
+        total_target=total_target,
+        remaining_target=remaining_target,
+        overall_pct=overall_pct,
+        achieved_count=achieved_count,
+        closest_goal=closest_goal
+    )
+
+@app.route('/savings-goals/add', methods=['POST'])
+@login_required
+def savings_goal_add():
+    user = get_current_user()
+    title = request.form.get('title', '').strip()
+    target_amount = float(request.form.get('target_amount', 0.0))
+    initial_amount = float(request.form.get('initial_amount', 0.0))
+    category = request.form.get('category', 'General')
+    color = request.form.get('color', '#10b981')
+    target_date = request.form.get('target_date', '')
+
+    icon_map = {
+        'Emergency': 'shield-halved',
+        'Gadgets': 'laptop-code',
+        'Travel': 'plane-departure',
+        'Vehicle': 'car',
+        'Home': 'house',
+        'Investments': 'chart-line',
+        'General': 'bullseye'
+    }
+    icon = icon_map.get(category, 'bullseye')
+
+    if not title or target_amount <= 0:
+        flash("Valid goal title and positive target required.", "danger")
+        return redirect(url_for('savings_goals'))
+
+    status = 'achieved' if initial_amount >= target_amount else 'in_progress'
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO savings_goals (user_id, title, target_amount, current_amount, target_date, category, color, icon, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (user['id'], title, target_amount, initial_amount, target_date, category, color, icon, status))
+    goal_id = cursor.lastrowid
+
+    if initial_amount > 0:
+        cursor.execute("""
+            INSERT INTO savings_contributions (goal_id, user_id, amount, contribution_date, notes)
+            VALUES (?, ?, ?, ?, 'Initial seed deposit')
+        """, (goal_id, user['id'], initial_amount, date.today().strftime('%Y-%m-%d')))
+
+    conn.commit()
+    conn.close()
+
+    flash(f"Goal '{title}' created successfully!", "success")
+    return redirect(url_for('savings_goals'))
+
+@app.route('/savings-goals/edit/<int:goal_id>', methods=['POST'])
+@login_required
+def savings_goal_edit(goal_id):
+    user = get_current_user()
+    title = request.form.get('title', '').strip()
+    target_amount = float(request.form.get('target_amount', 0.0))
+    category = request.form.get('category', 'General')
+    color = request.form.get('color', '#10b981')
+    target_date = request.form.get('target_date', '')
+
+    conn = get_db()
+    conn.execute("""
+        UPDATE savings_goals
+        SET title = ?, target_amount = ?, category = ?, color = ?, target_date = ?
+        WHERE id = ? AND user_id = ?
+    """, (title, target_amount, category, color, target_date, goal_id, user['id']))
+    conn.commit()
+    conn.close()
+
+    flash(f"Goal '{title}' updated.", "success")
+    return redirect(url_for('savings_goals'))
+
+@app.route('/savings-goals/delete/<int:goal_id>', methods=['POST'])
+@login_required
+def savings_goal_delete(goal_id):
+    user = get_current_user()
+    conn = get_db()
+    conn.execute("DELETE FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user['id']))
+    conn.execute("DELETE FROM savings_contributions WHERE goal_id = ? AND user_id = ?", (goal_id, user['id']))
+    conn.commit()
+    conn.close()
+
+    flash("Goal removed.", "info")
+    return redirect(url_for('savings_goals'))
+
+@app.route('/savings-goals/deposit/<int:goal_id>', methods=['POST'])
+@login_required
+def savings_goal_deposit(goal_id):
+    user = get_current_user()
+    amount = float(request.form.get('amount', 0.0))
+    notes = request.form.get('notes', 'Direct goal deposit').strip()
+
+    if amount <= 0:
+        flash("Please enter a positive deposit amount.", "danger")
+        return redirect(url_for('savings_goals'))
+
+    conn = get_db()
+    goal = conn.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user['id'])).fetchone()
+    if goal:
+        new_amt = goal['current_amount'] + amount
+        new_status = 'achieved' if new_amt >= goal['target_amount'] else 'in_progress'
+
+        conn.execute("UPDATE savings_goals SET current_amount = ?, status = ? WHERE id = ?", (new_amt, new_status, goal_id))
+        conn.execute("""
+            INSERT INTO savings_contributions (goal_id, user_id, amount, contribution_date, notes)
+            VALUES (?, ?, ?, ?, ?)
+        """, (goal_id, user['id'], amount, date.today().strftime('%Y-%m-%d'), notes))
+        conn.commit()
+
+        if new_status == 'achieved' and goal['status'] != 'achieved':
+            flash(f"🎉 CONGRATULATIONS! You achieved your milestone goal '{goal['title']}'!", "success")
+        else:
+            flash(f"Successfully deposited ₹{amount:,.0f} to '{goal['title']}'! Current progress: ₹{new_amt:,.0f}.", "success")
+
+    conn.close()
+    return redirect(url_for('savings_goals'))
+
+
+# ==========================================
+# SMART CSV BANK STATEMENT IMPORT ENGINE
+# ==========================================
+
+def auto_detect_category(text: str) -> tuple[str, str]:
+    t = text.lower()
+    if any(k in t for k in ['swiggy', 'zomato', 'cafe', 'coffee', 'starbucks', 'restaurant', 'food', 'mcdonald', 'burger', 'pizza', 'domino', 'dine', 'lunch', 'dinner', 'bakery']):
+        cat = 'Food & Dining'
+    elif any(k in t for k in ['amazon', 'flipkart', 'myntra', 'zara', 'nike', 'shopping', 'retail', 'mart', 'grocer', 'store', 'cloth', 'blinkit', 'zepto', 'instamart']):
+        cat = 'Shopping'
+    elif any(k in t for k in ['uber', 'ola', 'rapido', 'fuel', 'petrol', 'diesel', 'shell', 'irctc', 'train', 'metro', 'bus', 'flight', 'indigo', 'airline', 'toll', 'fastag']):
+        cat = 'Transport'
+    elif any(k in t for k in ['netflix', 'spotify', 'hotstar', 'prime', 'cinema', 'pvr', 'movie', 'theatre', 'gaming', 'steam', 'playstation', 'concert', 'event']):
+        cat = 'Entertainment'
+    elif any(k in t for k in ['electricity', 'water', 'gas', 'broadband', 'wifi', 'airtel', 'jio', 'vi', 'bill', 'recharge', 'power', 'bescom', 'tneb', 'aws', 'cloud', 'github']):
+        cat = 'Bills & Utilities'
+    elif any(k in t for k in ['hospital', 'pharmacy', 'medicine', 'apollo', 'doctor', 'clinic', 'dentist', 'health', 'cult', 'gym', 'fitness', 'opticals']):
+        cat = 'Health'
+    elif any(k in t for k in ['udemy', 'coursera', 'course', 'book', 'education', 'school', 'college', 'tuition', 'exam', 'cert']):
+        cat = 'Education'
+    else:
+        cat = 'Others'
+
+    if any(k in t for k in ['upi', 'gpay', 'phonepe', 'paytm']):
+        pm = 'UPI'
+    elif any(k in t for k in ['atm', 'cash', 'wdl']):
+        pm = 'Cash'
+    elif any(k in t for k in ['credit card', 'cc']):
+        pm = 'Credit Card'
+    elif any(k in t for k in ['debit card', 'dc', 'pos']):
+        pm = 'Debit Card'
+    elif any(k in t for k in ['neft', 'rtgs', 'imps', 'transfer', 'ach']):
+        pm = 'Bank Transfer'
+    else:
+        pm = 'UPI'
+
+    return cat, pm
+
+@app.route('/import/csv', methods=['POST'])
+@login_required
+def import_csv():
+    user = get_current_user()
+    if 'statement_file' not in request.files:
+        flash("No CSV file selected.", "danger")
+        return redirect(url_for('expenses'))
+
+    file = request.files['statement_file']
+    if not file or file.filename == '':
+        flash("No file selected for statement import.", "danger")
+        return redirect(url_for('expenses'))
+
+    try:
+        content = file.stream.read().decode('utf-8-sig', errors='replace')
+        stream = io.StringIO(content)
+        reader = csv.reader(stream)
+        rows = list(reader)
+
+        if not rows:
+            flash("The uploaded CSV statement file is empty.", "danger")
+            return redirect(url_for('expenses'))
+
+        header = [col.strip().lower() for col in rows[0]]
+        
+        date_idx = -1
+        desc_idx = -1
+        amount_idx = -1
+        cat_idx = -1
+        pm_idx = -1
+
+        for idx, col in enumerate(header):
+            if any(k in col for k in ['date', 'txn date', 'transaction date', 'value date']):
+                if date_idx == -1: date_idx = idx
+            elif any(k in col for k in ['desc', 'narration', 'particulars', 'title', 'merchant', 'payee']):
+                if desc_idx == -1: desc_idx = idx
+            elif any(k in col for k in ['amount', 'debit', 'spent', 'withdrawal', 'cost']):
+                if amount_idx == -1: amount_idx = idx
+            elif 'category' in col:
+                cat_idx = idx
+            elif any(k in col for k in ['payment', 'method', 'mode', 'channel']):
+                pm_idx = idx
+
+        if date_idx == -1: date_idx = 0
+        if desc_idx == -1: desc_idx = 1 if len(header) > 1 else 0
+        if amount_idx == -1: amount_idx = 2 if len(header) > 2 else -1
+
+        if amount_idx == -1:
+            flash("Could not detect Amount column in your CSV statement.", "danger")
+            return redirect(url_for('expenses'))
+
+        conn = get_db()
+        imported_count = 0
+        auto_cat_count = 0
+
+        for r in rows[1:]:
+            if len(r) <= max(date_idx, desc_idx, amount_idx):
+                continue
+            
+            raw_title = r[desc_idx].strip() if desc_idx < len(r) else 'Imported Expense'
+            raw_amt_str = r[amount_idx].replace('₹', '').replace('$', '').replace(',', '').strip()
+            if not raw_title or not raw_amt_str:
+                continue
+
+            try:
+                amt = abs(float(raw_amt_str))
+                if amt <= 0:
+                    continue
+            except ValueError:
+                continue
+
+            raw_date = r[date_idx].strip()
+            formatted_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y', '%d/%m/%y'):
+                try:
+                    d_parsed = datetime.strptime(raw_date, fmt)
+                    formatted_date = d_parsed.strftime('%Y-%m-%d 12:00:00')
+                    break
+                except ValueError:
+                    pass
+
+            auto_cat, auto_pm = auto_detect_category(raw_title)
+
+            cat = r[cat_idx].strip() if (cat_idx != -1 and cat_idx < len(r) and r[cat_idx].strip()) else auto_cat
+            pm = r[pm_idx].strip() if (pm_idx != -1 and pm_idx < len(r) and r[pm_idx].strip()) else auto_pm
+            if cat == auto_cat:
+                auto_cat_count += 1
+
+            conn.execute("""
+                INSERT INTO expenses (user_id, title, amount, category, payment_method, expense_date, notes)
+                VALUES (?, ?, ?, ?, ?, ?, 'Imported via Bank Statement CSV Parser')
+            """, (user['id'], raw_title, amt, cat, pm, formatted_date))
+            imported_count += 1
+
+        conn.commit()
+        conn.close()
+
+        if imported_count > 0:
+            flash(f"⚡ Successfully imported {imported_count} transactions! Auto-categorized {auto_cat_count} entries using intelligent heuristics.", "success")
+        else:
+            flash("No valid expense rows could be parsed from the CSV statement.", "warning")
+
+    except Exception as e:
+        flash(f"Error processing CSV statement: {str(e)}", "danger")
+
+    return redirect(url_for('expenses'))
+
+@app.route('/import/template')
+@login_required
+def import_template():
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Description", "Amount", "Category", "Payment Method"])
+    writer.writerow(["2026-11-01", "Starbucks Coffee & Croissant", "380.00", "Food & Dining", "UPI"])
+    writer.writerow(["2026-11-02", "Uber Ride to Tech Park", "240.00", "Transport", "UPI"])
+    writer.writerow(["2026-11-02", "Amazon Pantry Essentials", "1450.00", "Shopping", "Credit Card"])
+    writer.writerow(["2026-11-03", "Airtel Broadband Fiber", "999.00", "Bills & Utilities", "UPI"])
+    writer.writerow(["2026-11-03", "Cult.fit Monthly Gym Pass", "1800.00", "Health", "Debit Card"])
+    output.seek(0)
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=spendwise_sample_statement.csv"}
+    )
 
 if __name__ == '__main__':
     print("SpendWise server running at http://127.0.0.1:5000")

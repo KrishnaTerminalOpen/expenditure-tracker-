@@ -4,7 +4,7 @@
 
 {% block content %}
 <!-- Module 3: Expense Management Header -->
-<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 800;">Expenses</h1>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
@@ -12,11 +12,14 @@
         </p>
     </div>
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="btn-outline" style="font-size: 0.82rem; padding: 9px 14px;" onclick="openModal('importCsvModal')" title="Import Bank Statement CSV with Auto-Categorization">
+            <i class="fa-solid fa-file-import" style="color: #38bdf8;"></i> Import Statement
+        </button>
         <a href="{{ url_for('export_pdf') }}" class="btn-outline" style="font-size: 0.82rem; padding: 9px 14px;" title="Export PDF">
             <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Export PDF
         </a>
         <a href="{{ url_for('export_csv') }}" class="btn-outline" style="font-size: 0.82rem; padding: 9px 14px;" title="Export CSV">
-            <i class="fa-solid fa-file-csv" style="color: #10b981;"></i> Export CSV
+            <i class="fa-solid fa-file-csv" style="color: #10b981;"></i> CSV
         </a>
         <button class="btn-primary" onclick="openModal('addExpenseMainModal')">
             <i class="fa-solid fa-plus"></i> Add Expense
@@ -237,6 +240,50 @@
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
                 <button type="button" class="btn-outline" onclick="closeModal('editExpenseModal')">Cancel</button>
                 <button type="submit" class="btn-primary">Update Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Smart CSV Bank Statement Import -->
+<div class="modal-overlay" id="importCsvModal">
+    <div class="modal-content" style="max-width: 520px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-file-import" style="color: #38bdf8;"></i> Import Bank Statement CSV
+            </h3>
+            <button onclick="closeModal('importCsvModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div style="padding: 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; margin-bottom: 20px;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Intelligent Categorization Active
+            </div>
+            <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px; line-height: 1.45;">
+                Our parser automatically detects Dates, Merchants, and Amounts, and uses keyword intelligence to classify entries into Food, Shopping, Utilities, and Transport.
+            </p>
+        </div>
+
+        <form action="{{ url_for('import_csv') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Choose CSV Statement File</label>
+                <input type="file" name="statement_file" accept=".csv" required class="form-input" style="padding: 10px;">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 0.78rem;">
+                <a href="{{ url_for('import_template') }}" style="color: var(--accent-orange); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-download"></i> Download Sample CSV Template
+                </a>
+                <span style="color: var(--text-dim);">UTF-8 Encoded</span>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn-outline" onclick="closeModal('importCsvModal')">Cancel</button>
+                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Start Import
+                </button>
             </div>
         </form>
     </div>

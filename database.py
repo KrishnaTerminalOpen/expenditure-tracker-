@@ -87,12 +87,67 @@ def init_db():
     )
     """)
 
+    # Subscriptions & Recurring Bills table (Module 9)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        amount REAL NOT NULL,
+        category TEXT NOT NULL,
+        billing_cycle TEXT NOT NULL DEFAULT 'monthly', -- monthly, yearly, weekly
+        next_due_date TEXT NOT NULL,
+        payment_method TEXT NOT NULL DEFAULT 'UPI',
+        status TEXT NOT NULL DEFAULT 'active', -- active, paused, cancelled
+        auto_renew INTEGER DEFAULT 1,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+    """)
+
+    # Financial Savings Goals & Targets table (Module 10)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS savings_goals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        target_amount REAL NOT NULL,
+        current_amount REAL NOT NULL DEFAULT 0.0,
+        target_date TEXT,
+        category TEXT DEFAULT 'General',
+        color TEXT DEFAULT '#10b981',
+        icon TEXT DEFAULT 'bullseye',
+        status TEXT NOT NULL DEFAULT 'in_progress', -- in_progress, achieved
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+    """)
+
+    # Savings Goal Contributions Audit table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS savings_contributions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        goal_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        contribution_date TEXT NOT NULL,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (goal_id) REFERENCES savings_goals (id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+    """)
+
     conn.commit()
 
     # Seed demo user if none exists
-    cursor.execute("SELECT COUNT(*) FROM users WHERE email = 'krishna@example.com'")
-    if cursor.fetchone()[0] == 0:
+    cursor.execute("SELECT id FROM users WHERE email = 'krishna@example.com'")
+    user_row = cursor.fetchone()
+    if not user_row:
         seed_demo_data(cursor, conn)
+    else:
+        seed_advanced_demo_features(cursor, conn, user_row['id'])
 
     conn.close()
 
@@ -188,6 +243,47 @@ def seed_demo_data(cursor, conn):
             INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (uid, title, msg, ntype, read, created))
+
+    conn.commit()
+
+    seed_advanced_demo_features(cursor, conn, user_id)
+
+def seed_advanced_demo_features(cursor, conn, user_id):
+    # Seed Recurring Subscriptions if none exist
+    cursor.execute("SELECT COUNT(*) FROM subscriptions WHERE user_id = ?", (user_id,))
+    if cursor.fetchone()[0] == 0:
+        subscriptions = [
+            ("Netflix 4K Ultra", 649.0, "Entertainment", "monthly", "2026-11-15", "Credit Card", "active", 1, "Family 4K plan"),
+            ("Spotify Family Premium", 179.0, "Entertainment", "monthly", "2026-11-22", "UPI", "active", 1, "Lossless audio streaming"),
+            ("Airtel Fiber Gigabit", 999.0, "Bills & Utilities", "monthly", "2026-11-10", "UPI", "active", 1, "300 Mbps unlimited broadband"),
+            ("AWS Cloud Infrastructure", 1250.0, "Bills & Utilities", "monthly", "2026-11-28", "Credit Card", "active", 1, "EC2 & S3 backend hosting"),
+            ("Cult.fit Elite Fitness Club", 2000.0, "Health", "monthly", "2026-11-05", "UPI", "active", 1, "Gym and boxing classes")
+        ]
+        for name, amt, cat, cycle, due, pm, status, renew, notes in subscriptions:
+            cursor.execute("""
+                INSERT INTO subscriptions (user_id, name, amount, category, billing_cycle, next_due_date, payment_method, status, auto_renew, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (user_id, name, amt, cat, cycle, due, pm, status, renew, notes))
+
+    # Seed Savings Goals if none exist
+    cursor.execute("SELECT COUNT(*) FROM savings_goals WHERE user_id = ?", (user_id,))
+    if cursor.fetchone()[0] == 0:
+        goals = [
+            ("Emergency Rainy-Day Fund", 100000.0, 65000.0, "2026-12-31", "Emergency", "#10b981", "shield-halved", "in_progress"),
+            ("Apple MacBook Pro M3", 150000.0, 95000.0, "2026-08-31", "Gadgets", "#f97316", "laptop-code", "in_progress"),
+            ("Tokyo & Kyoto Summer Trip", 80000.0, 36000.0, "2026-10-31", "Travel", "#3b82f6", "plane-departure", "in_progress")
+        ]
+        for title, target, current, target_dt, cat, color, icon, status in goals:
+            cursor.execute("""
+                INSERT INTO savings_goals (user_id, title, target_amount, current_amount, target_date, category, color, icon, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (user_id, title, target, current, target_dt, cat, color, icon, status))
+            gid = cursor.lastrowid
+            # Seed an audit contribution
+            cursor.execute("""
+                INSERT INTO savings_contributions (goal_id, user_id, amount, contribution_date, notes)
+                VALUES (?, ?, ?, '2026-11-01', 'Initial monthly automated savings allocation')
+            """, (gid, user_id, min(current, 10000.0)))
 
     conn.commit()
 

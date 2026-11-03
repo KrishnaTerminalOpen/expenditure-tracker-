@@ -11,8 +11,11 @@
             Full audit log of all financial transactions with instant CSV & PDF export
         </p>
     </div>
-    <!-- Export Buttons matching Screenshot Module 8 top right -->
-    <div style="display: flex; gap: 10px;">
+    <!-- Export & Import Buttons matching Screenshot Module 8 top right -->
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('expenses') }}" class="btn-outline" style="font-size: 0.82rem; padding: 9px 14px;" title="Import Bank Statement CSV">
+            <i class="fa-solid fa-file-import" style="color: #38bdf8;"></i> Import Statement
+        </a>
         <a href="{{ url_for('export_csv') }}" class="btn-primary" style="background: linear-gradient(90deg, #10b981 0%, #059669 100%);">
             <i class="fa-solid fa-file-csv"></i> Export CSV
         </a>

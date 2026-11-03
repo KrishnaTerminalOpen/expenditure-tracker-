@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block title %}Savings Goals & Milestones - SpendWise{% endblock %}
+
+{% block content %}
+<!-- Module 10: Savings Goals Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <span class="live-sync-pill" style="padding: 3px 10px; font-size: 0.7rem;">
+                <span class="pulse-dot-green" style="width: 6px; height: 6px;"></span>
+                <span>Wealth Milestones</span>
+            </span>
+            <span style="font-size: 0.78rem; color: var(--text-dim);">Automated Capital Targets</span>
+        </div>
+        <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.2;">
+            Financial Savings Goals 🎯
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+            Set strategic financial milestones, track allocations, and monitor progress toward emergency funds, travel, and investments.
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <button class="btn-primary" onclick="openModal('addGoalModal')">
+            <i class="fa-solid fa-plus"></i> Create New Goal
+        </button>
+    </div>
+</div>
+
+<!-- 4 Key Metric Cards for Savings Goals -->
+<div class="kpi-grid">
+    <!-- Card 1: Total Capital Saved Across Goals -->
+    <div class="kpi-card kpi-emerald">
+        <div class="kpi-header">
+            <span class="kpi-title">Total Capital Saved</span>
+            <div class="kpi-icon icon-emerald">
+                <i class="fa-solid fa-vault"></i>
+            </div>
+        </div>
+        <div class="kpi-value">
+            ₹ <span class="count-up" data-target="{{ total_saved }}">0</span>
+        </div>
+        <div class="kpi-sub" style="color: #6ee7b7;">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <span>{{ overall_pct }}% of total ₹{{ "{:,.0f}".format(total_target) }} goal target</span>
+        </div>
+    </div>
+
+    <!-- Card 2: Overall Target Capital -->
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+            <span class="kpi-title">Total Target Capital</span>
+            <div class="kpi-icon icon-blue">
+                <i class="fa-solid fa-bullseye"></i>
+            </div>
+        </div>
+        <div class="kpi-value">
+            ₹ <span class="count-up" data-target="{{ total_target }}">0</span>
+        </div>
+        <div class="kpi-sub positive">
+            <span>₹{{ "{:,.0f}".format(remaining_target) }} remaining to fund</span>
+        </div>
+    </div>
+
+    <!-- Card 3: Goals Completed -->
+    <div class="kpi-card kpi-orange">
+        <div class="kpi-header">
+            <span class="kpi-title">Milestones Achieved</span>
+            <div class="kpi-icon icon-orange">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+        </div>
+        <div class="kpi-value">
+            <span class="count-up" data-target="{{ achieved_count }}">0</span> / {{ goals|length }}
+        </div>
+        <div class="kpi-sub" style="color: #fdba74;">
+            <span>Completed financial milestones</span>
+        </div>
+    </div>
+
+    <!-- Card 4: Next Target Milestone -->
+    <div class="kpi-card kpi-copper">
+        <div class="kpi-header">
+            <span class="kpi-title">Active Target Milestone</span>
+            <div class="kpi-icon icon-copper">
+                <i class="fa-regular fa-flag"></i>
+            </div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.25rem;">
+            {{ closest_goal['title'] if closest_goal else 'All Goals Met' }}
+        </div>
+        <div class="kpi-sub" style="color: #fb923c;">
+            {% if closest_goal %}
+            <span>{{ closest_goal['pct'] }}% complete (₹{{ "{:,.0f}".format(closest_goal['current_amount']) }})</span>
+            {% else %}
+            <span>Create new goals to begin</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Goals Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 22px; margin-top: 10px;">
+    {% for g in goals %}
+    <div class="card" style="position: relative; display: flex; flex-direction: column; justify-content: space-between; border-top: 3px solid {{ g.color }};">
+        <div>
+            <!-- Header with Category & Status -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: {{ g.color }}; border: 1px solid rgba(255,255,255,0.08);">
+                        <i class="fa-solid fa-{{ g.icon }}"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">{{ g.title }}</h3>
+                        <span style="font-size: 0.74rem; color: var(--text-dim);">{{ g.category }} Milestone</span>
+                    </div>
+                </div>
+
+                {% if g.pct >= 100 %}
+                <span style="font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-circle-check"></i> Achieved
+                </span>
+                {% else %}
+                <span style="font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
+                    {{ g.pct }}% Funded
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Balances -->
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 8px 0;">
+                <div>
+                    <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Saved So Far</span>
+                    <div style="font-size: 1.45rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
+                        ₹ {{ "{:,.0f}".format(g.current_amount) }}
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Target Goal</span>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-muted);">
+                        ₹ {{ "{:,.0f}".format(g.target_amount) }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar with Specular Glow & Milestone Markers -->
+            <div style="width: 100%; height: 10px; background: rgba(0, 0, 0, 0.35); border-radius: 20px; overflow: hidden; padding: 2px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); position: relative; margin: 12px 0 16px 0;">
+                <div style="height: 100%; width: {{ [g.pct, 100]|min }}%; background: linear-gradient(90deg, {{ g.color }} 0%, #ffffff 150%); border-radius: 20px; box-shadow: 0 0 12px {{ g.color }}; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+            </div>
+
+            <!-- Target Date & Required Monthly Contribution -->
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 10px 12px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 16px;">
+                <span style="color: var(--text-dim);">
+                    <i class="fa-regular fa-calendar-check" style="margin-right: 4px;"></i> Deadline: <strong>{{ g.target_date or 'Ongoing' }}</strong>
+                </span>
+                <span style="color: var(--text-muted); font-weight: 600;">
+                    Remaining: <strong style="color: {{ g.color }};">₹{{ "{:,.0f}".format(g.target_amount - g.current_amount if g.target_amount > g.current_amount else 0) }}</strong>
+                </span>
+            </div>
+        </div>
+
+        <!-- Action Toolbar -->
+        <div style="display: flex; gap: 8px; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; margin-top: auto;">
+            <!-- Deposit Button -->
+            <button type="button" class="btn-primary" style="flex: 1; justify-content: center; padding: 7px 12px; font-size: 0.78rem;" onclick="openDepositModal('{{ g.id }}', '{{ g.title|escape }}', '{{ g.current_amount }}', '{{ g.target_amount }}')">
+                <i class="fa-solid fa-plus-circle"></i> Deposit Funds
+            </button>
+
+            <!-- Edit Button -->
+            <button type="button" class="btn-outline" style="padding: 7px 10px; font-size: 0.78rem;" onclick="openEditGoalModal('{{ g.id }}', '{{ g.title|escape }}', '{{ g.target_amount }}', '{{ g.target_date or '' }}', '{{ g.category|escape }}', '{{ g.color }}')">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+
+            <!-- Delete Button -->
+            <form action="{{ url_for('savings_goal_delete', goal_id=g.id) }}" method="POST" onsubmit="return confirm('Delete savings goal {{ g.title }}?');">
+                <button type="submit" class="btn-outline" style="padding: 7px 10px; font-size: 0.78rem; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" title="Delete goal">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 50px 20px;">
+        <i class="fa-solid fa-bullseye" style="font-size: 2.8rem; color: var(--accent-orange); opacity: 0.4; margin-bottom: 12px; display: block;"></i>
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 6px;">No Financial Goals Created Yet</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 480px; margin: 0 auto 20px auto;">
+            Define target milestones like emergency savings, gadget purchases, or home down payments to visualize your path to financial independence.
+        </p>
+        <button class="btn-primary" onclick="openModal('addGoalModal')">
+            <i class="fa-solid fa-plus"></i> Create First Goal
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal: Add Savings Goal -->
+<div class="modal-overlay" id="addGoalModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-bullseye" style="color: var(--accent-orange);"></i> Create Financial Goal
+            </h3>
+            <button onclick="closeModal('addGoalModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size: 1.1rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form action="{{ url_for('savings_goal_add') }}" method="POST">
+            <div class="form-group">
+                <label>Goal Title</label>
+                <input type="text" name="title" required class="form-input" placeholder="e.g. Emergency Rainy-Day Fund, MacBook Pro, Vacation">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Target Amount (₹)</label>
+                    <input type="number" step="1000" min="100" name="target_amount" required class="form-input" placeholder="100000">
+                </div>
+                <div class="form-group">
+                    <label>Initial Saved (₹)</label>
+                    <input type="number" step="500" min="0" name="initial_amount" class="form-input" placeholder="0">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Milestone Category</label>
+                    <select name="category" class="form-select">
+                        <option value="Emergency">Emergency Fund</option>
+                        <option value="Gadgets">Gadgets & Tech</option>
+                        <option value="Travel">Travel & Vacation</option>
+                        <option value="Vehicle">Vehicle / Car</option>
+                        <option value="Home">Home / Property</option>
+                        <option value="Investments">Investments</option>
+                        <option value="General">General Savings</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Accent Color</label>
+                    <select name="color" class="form-select">
+                        <option value="#10b981">Emerald Green</option>
+                        <option value="#f97316">Sunset Orange</option>
+                        <option value="#3b82f6">Sapphire Blue</option>
+                        <option value="#8b5cf6">Electric Purple</option>
+                        <option value="#ec4899">Rose Pink</option>
+                        <option value="#f59e0b">Warm Amber</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Target Completion Date</label>
+                <input type="date" name="target_date" class="form-input" id="new-goal-date">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn-outline" onclick="closeModal('addGoalModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Launch Goal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Quick Deposit Funds to Goal -->
+<div class="modal-overlay" id="depositModal">
+    <div class="modal-content" style="max-width: 440px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-vault" style="color: #10b981;"></i> Deposit to Goal
+            </h3>
+            <button onclick="closeModal('depositModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form id="depositForm" method="POST">
+            <div style="padding: 14px; background: rgba(0,0,0,0.25); border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Target Goal</div>
+                <div id="deposit-goal-title" style="font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 2px;"></div>
+                <div style="font-size: 0.78rem; color: #10b981; margin-top: 4px;" id="deposit-goal-progress"></div>
+            </div>
+            <div class="form-group">
+                <label>Deposit Amount (₹)</label>
+                <input type="number" step="100" min="1" name="amount" required class="form-input" placeholder="e.g. 5000">
+            </div>
+            <div class="form-group">
+                <label>Allocation Notes (Optional)</label>
+                <input type="text" name="notes" class="form-input" placeholder="e.g. Monthly salary savings allocation, bonus">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn-outline" onclick="closeModal('depositModal')">Cancel</button>
+                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Confirm Deposit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edit Savings Goal -->
+<div class="modal-overlay" id="editGoalModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-pen" style="color: var(--accent-orange);"></i> Edit Goal
+            </h3>
+            <button onclick="closeModal('editGoalModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form id="editGoalForm" method="POST">
+            <div class="form-group">
+                <label>Goal Title</label>
+                <input type="text" id="edit-goal-title" name="title" required class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Target Amount (₹)</label>
+                <input type="number" step="1000" min="100" id="edit-goal-target" name="target_amount" required class="form-input">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="edit-goal-cat" name="category" class="form-select">
+                        <option value="Emergency">Emergency Fund</option>
+                        <option value="Gadgets">Gadgets & Tech</option>
+                        <option value="Travel">Travel & Vacation</option>
+                        <option value="Vehicle">Vehicle / Car</option>
+                        <option value="Home">Home / Property</option>
+                        <option value="Investments">Investments</option>
+                        <option value="General">General Savings</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Color Accent</label>
+                    <select id="edit-goal-color" name="color" class="form-select">
+                        <option value="#10b981">Emerald Green</option>
+                        <option value="#f97316">Sunset Orange</option>
+                        <option value="#3b82f6">Sapphire Blue</option>
+                        <option value="#8b5cf6">Electric Purple</option>
+                        <option value="#ec4899">Rose Pink</option>
+                        <option value="#f59e0b">Warm Amber</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Target Date</label>
+                <input type="date" id="edit-goal-date" name="target_date" class="form-input">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn-outline" onclick="closeModal('editGoalModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Update Goal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openDepositModal(id, title, current, target) {
+        document.getElementById('depositForm').action = "/savings-goals/deposit/" + id;
+        document.getElementById('deposit-goal-title').textContent = title;
+        document.getElementById('deposit-goal-progress').textContent = "Current: ₹" + parseFloat(current).toLocaleString('en-IN') + " of ₹" + parseFloat(target).toLocaleString('en-IN');
+        openModal('depositModal');
+    }
+
+    function openEditGoalModal(id, title, target, dt, cat, color) {
+        document.getElementById('editGoalForm').action = "/savings-goals/edit/" + id;
+        document.getElementById('edit-goal-title').value = title;
+        document.getElementById('edit-goal-target').value = target;
+        document.getElementById('edit-goal-date').value = dt;
+        document.getElementById('edit-goal-cat').value = cat;
+        document.getElementById('edit-goal-color').value = color;
+        openModal('editGoalModal');
+    }
+</script>
+{% endblock %}
