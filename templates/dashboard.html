@@ -23,17 +23,30 @@
 </div>
 {% endif %}
 
-<!-- Module 2: Dashboard Header -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+<!-- Module 2: Dashboard Header with Executive Status Bar -->
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
     <div>
-        <h1 style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em;">
-            Good Morning, {{ (user.name.split(' ')[0] if (user and user.name) else 'Krishna') }}! 👋
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <span class="live-sync-pill" style="padding: 3px 10px; font-size: 0.7rem;">
+                <span class="pulse-dot-green" style="width: 6px; height: 6px;"></span>
+                <span id="greetingTime">Live Dashboard</span>
+            </span>
+            <span style="font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px;">
+                <i class="fa-regular fa-calendar-days"></i>
+                <span id="dashLiveDate"></span>
+            </span>
+        </div>
+        <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.2;">
+            Welcome back, <span style="background: linear-gradient(135deg, #ffffff 30%, #f97316 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ (user.name.split(' ')[0] if (user and user.name) else 'Krishna') }}</span> 👋
         </h1>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
-            Here's what's happening with your finances today.
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+            Real-time capital balance, category burn pacing, and intelligent financial insights.
         </p>
     </div>
-    <div style="display: flex; gap: 12px;">
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('export_pdf') }}" class="btn-outline" style="font-size: 0.82rem; padding: 9px 15px;" title="Export Comprehensive PDF Audit Report">
+            <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Export PDF
+        </a>
         <button class="btn-primary" onclick="openModal('quickAddExpenseModal')">
             <i class="fa-solid fa-plus"></i> Add Expense (N)
         </button>
@@ -42,28 +55,39 @@
 
 <!-- AI Financial Health Score & Intelligence Banner -->
 <div class="health-score-card">
-    <div style="display: flex; align-items: center; gap: 18px;">
+    <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
         <div class="health-score-gauge" style="--score-deg: {{ (health_score * 3.6)|round }}deg;">
             <div class="health-score-gauge-inner">
                 <span class="health-score-value count-up" data-target="{{ health_score }}">0</span>
-                <span class="health-score-label">Score</span>
+                <span class="health-score-label">Rating</span>
             </div>
         </div>
-        <div>
+        <div style="max-width: 580px;">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                <h3 style="font-size: 1.05rem; font-weight: 800;">Financial Health: {{ health_status }}</h3>
-                <span class="kpi-sub {{ health_status_class }}" style="padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700;">
-                    {{ health_score }}/100 Rating
+                <h3 style="font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em;">Financial Health: {{ health_status }}</h3>
+                <span class="kpi-sub {{ health_status_class }}" style="padding: 2px 10px; border-radius: 12px; font-size: 0.74rem; font-weight: 700; border: 1px solid currentColor;">
+                    {{ health_score }}/100 Score
                 </span>
             </div>
-            <p style="color: var(--text-muted); font-size: 0.82rem; max-width: 650px; line-height: 1.4;">
+            <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.45;">
                 {{ health_tip }}
             </p>
         </div>
     </div>
-    <div style="display: flex; gap: 10px; flex-shrink: 0;">
-        <button class="btn-outline" style="font-size: 0.78rem; padding: 6px 14px;" onclick="openCommandPalette()">
-            <i class="fa-solid fa-terminal" style="margin-right: 6px;"></i> Commands (Ctrl+K)
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 16px; padding: 8px 16px; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="text-align: right;">
+                <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Today's Run-rate</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">₹ {{ "{:,.0f}".format(todays_expenses) }}</div>
+            </div>
+            <div style="width: 1px; background: rgba(255,255,255,0.08);"></div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Top Driver</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #fb923c;">{{ highest_category.split(' ')[0] }}</div>
+            </div>
+        </div>
+        <button class="btn-outline" style="font-size: 0.78rem; padding: 8px 12px;" onclick="openCommandPalette()" title="Command Palette">
+            <i class="fa-solid fa-terminal"></i>
         </button>
     </div>
 </div>
@@ -413,6 +437,21 @@
                 }
             }
         });
+    }
+
+    // Set Live Formatted Date & Greeting
+    const now = new Date();
+    const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+    const dateEl = document.getElementById('dashLiveDate');
+    if (dateEl) {
+        dateEl.textContent = now.toLocaleDateString('en-US', dateOptions);
+    }
+    const hr = now.getHours();
+    const greetingEl = document.getElementById('greetingTime');
+    if (greetingEl) {
+        if (hr < 12) greetingEl.textContent = 'Morning Overview';
+        else if (hr < 17) greetingEl.textContent = 'Afternoon Overview';
+        else greetingEl.textContent = 'Evening Overview';
     }
 </script>
 {% endblock %}
