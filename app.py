@@ -20,6 +20,7 @@ from flask import (
 )
 from database import get_db, init_db, hash_pw, check_pw
 from pdf_generator import generate_expense_pdf
+from avatars import get_avatar_for_user, get_all_avatars, detect_gender
 
 app = Flask(__name__)
 app.secret_key = "spendwise-super-secret-production-key-2026"
@@ -53,6 +54,12 @@ def get_current_user():
         return None
     conn = get_db()
     user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+    if user and (not user['avatar'] or 'photo-1534528741775' in (user['avatar'] or '')):
+        # Auto-heal legacy or blank avatar to unique gender-appropriate avatar
+        auto_avatar = get_avatar_for_user(user['name'], user['email'])
+        conn.execute("UPDATE users SET avatar = ? WHERE id = ?", (auto_avatar, user['id']))
+        conn.commit()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
     conn.close()
     return user
 
@@ -109,11 +116,12 @@ def register():
             return render_template('auth.html', active_tab='register', name=name)
 
         hashed = hash_pw(password)
+        user_avatar = get_avatar_for_user(name, email)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO users (name, email, password_hash, monthly_budget)
-            VALUES (?, ?, ?, 0.0)
-        """, (name, email, hashed))
+            INSERT INTO users (name, email, password_hash, monthly_budget, avatar)
+            VALUES (?, ?, ?, 0.0, ?)
+        """, (name, email, hashed, user_avatar))
         new_user_id = cursor.lastrowid
 
         # Seed initial categories for new user (0.0 limit until user configures it)
@@ -239,11 +247,15 @@ def profile():
         monthly_budget = float(request.form.get('monthly_budget', 0.0) or 0.0)
         currency = request.form.get('currency', '₹')
         theme = request.form.get('theme', 'dark')
+        avatar = request.form.get('avatar', '').strip()
+
+        if not avatar:
+            avatar = get_avatar_for_user(name, user['email'])
 
         conn.execute("""
-            UPDATE users SET name = ?, monthly_budget = ?, currency = ?, theme = ?
+            UPDATE users SET name = ?, monthly_budget = ?, currency = ?, theme = ?, avatar = ?
             WHERE id = ?
-        """, (name, monthly_budget, currency, theme, user['id']))
+        """, (name, monthly_budget, currency, theme, avatar, user['id']))
         conn.commit()
         session['user_name'] = name
         flash("Profile updated successfully!", "success")
@@ -253,7 +265,17 @@ def profile():
     total_spent = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (user['id'],)).fetchone()[0]
     total_txns = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user['id'],)).fetchone()[0]
     conn.close()
-    return render_template('profile.html', user=user, current_page='profile', total_spent=total_spent, total_txns=total_txns)
+    all_avatars = get_all_avatars()
+    user_gender = detect_gender(user['name'])
+    return render_template(
+        'profile.html',
+        user=user,
+        current_page='profile',
+        total_spent=total_spent,
+        total_txns=total_txns,
+        all_avatars=all_avatars,
+        user_gender=user_gender
+    )
 
 # ==========================================
 # MODULE 2: DASHBOARD

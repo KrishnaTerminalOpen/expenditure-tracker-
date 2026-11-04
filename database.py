@@ -5,6 +5,7 @@ Handles SQLite schema, seed data, and connection helpers.
 import sqlite3
 import os
 import bcrypt
+from avatars import get_avatar_for_user
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spendwise.db")
 
@@ -27,7 +28,7 @@ def init_db():
         monthly_budget REAL DEFAULT 0.0,
         currency TEXT DEFAULT '₹',
         theme TEXT DEFAULT 'dark',
-        avatar TEXT DEFAULT 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+        avatar TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
@@ -141,6 +142,9 @@ def init_db():
 
     conn.commit()
 
+    # Migrate any legacy shared avatar to unique gender-appropriate avatars
+    migrate_user_avatars(cursor, conn)
+
     # Seed demo user if none exists
     cursor.execute("SELECT id FROM users WHERE email = 'krishna@example.com'")
     user_row = cursor.fetchone()
@@ -150,6 +154,27 @@ def init_db():
         seed_advanced_demo_features(cursor, conn, user_row['id'])
 
     conn.close()
+
+def migrate_user_avatars(cursor, conn):
+    """
+    Ensures each user receives a unique, gender-appropriate avatar
+    instead of sharing a generic default image.
+    """
+    try:
+        cursor.execute("SELECT id, name, email, avatar FROM users")
+        rows = cursor.fetchall()
+        for row in rows:
+            uid = row['id']
+            name = row['name'] or ''
+            email = row['email'] or ''
+            curr = (row['avatar'] or '').strip()
+            # If empty or using old hardcoded female photo
+            if not curr or 'photo-1534528741775' in curr:
+                new_av = get_avatar_for_user(name, email)
+                cursor.execute("UPDATE users SET avatar = ? WHERE id = ?", (new_av, uid))
+        conn.commit()
+    except Exception as e:
+        print(f"Avatar migration error: {e}")
 
 def hash_pw(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -162,10 +187,11 @@ def check_pw(password: str, hashed: str) -> bool:
 
 def seed_demo_data(cursor, conn):
     pw_hash = hash_pw("password123")
+    demo_avatar = get_avatar_for_user('Krishna Sahu', 'krishna@example.com')
     cursor.execute("""
-        INSERT INTO users (name, email, password_hash, monthly_budget, currency, theme)
-        VALUES ('Krishna Sahu', 'krishna@example.com', ?, 20000.0, '₹', 'dark')
-    """, (pw_hash,))
+        INSERT INTO users (name, email, password_hash, monthly_budget, currency, theme, avatar)
+        VALUES ('Krishna Sahu', 'krishna@example.com', ?, 20000.0, '₹', 'dark', ?)
+    """, (pw_hash, demo_avatar))
     user_id = cursor.lastrowid
 
     # Seed Categories with exact matches to screenshot
