@@ -6,7 +6,7 @@
     <title>SpendWise - Sign In & Registration</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <style>
@@ -17,6 +17,13 @@
                                 #090d16;
         }
 
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Zero window scrolling */
+        }
+
         body {
             background-color: #090d16;
             background-image: var(--auth-bg-gradient);
@@ -24,13 +31,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 24px;
-            margin: 0;
+            height: 100vh;
+            padding: 16px;
+            box-sizing: border-box;
             font-family: var(--font-main);
             color: var(--text-main);
             position: relative;
-            overflow-x: hidden;
         }
 
         /* Ambient floating ambient glows */
@@ -40,60 +46,62 @@
             filter: blur(80px);
             pointer-events: none;
             z-index: 0;
-            opacity: 0.6;
-            animation: floatOrb 12s ease-in-out infinite alternate;
+            opacity: 0.55;
+            animation: floatOrb 14s ease-in-out infinite alternate;
         }
         .orb-1 {
-            width: 380px;
-            height: 380px;
-            background: rgba(249, 115, 22, 0.18);
+            width: 320px;
+            height: 320px;
+            background: rgba(249, 115, 22, 0.16);
             top: 5%;
             left: 10%;
         }
         .orb-2 {
-            width: 420px;
-            height: 420px;
-            background: rgba(59, 130, 246, 0.14);
+            width: 360px;
+            height: 360px;
+            background: rgba(59, 130, 246, 0.12);
             bottom: 5%;
             right: 8%;
-            animation-duration: 16s;
+            animation-duration: 18s;
         }
 
         @keyframes floatOrb {
             0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(30px, 40px) scale(1.08); }
+            100% { transform: translate(25px, 30px) scale(1.05); }
         }
 
         .auth-container {
             display: flex;
             width: 100%;
-            max-width: 1040px;
-            background: rgba(18, 24, 38, 0.75);
+            max-width: 980px;
+            max-height: min(620px, calc(100vh - 32px));
+            background: rgba(18, 24, 38, 0.82);
             backdrop-filter: blur(28px) saturate(190%);
             -webkit-backdrop-filter: blur(28px) saturate(190%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-top: 1px solid rgba(255, 255, 255, 0.22);
-            border-radius: 24px;
+            border-radius: 20px;
             overflow: hidden;
             box-shadow: 
                 0 4px 20px rgba(0, 0, 0, 0.4),
-                0 30px 80px -15px rgba(0, 0, 0, 0.8),
-                0 0 60px -10px rgba(249, 115, 22, 0.15);
+                0 25px 60px -15px rgba(0, 0, 0, 0.8),
+                0 0 50px -10px rgba(249, 115, 22, 0.15);
             position: relative;
             z-index: 10;
         }
 
         /* Left Showcase Panel */
         .auth-left-preview {
-            flex: 1.15;
+            flex: 1.1;
             background: linear-gradient(145deg, rgba(22, 30, 48, 0.85) 0%, rgba(13, 17, 26, 0.95) 100%);
-            padding: 48px;
+            padding: 28px 32px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             border-right: 1px solid rgba(255, 255, 255, 0.08);
             position: relative;
             overflow: hidden;
+            box-sizing: border-box;
         }
 
         .auth-left-preview::before {
@@ -109,25 +117,25 @@
         .auth-badge-pill {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 5px 14px;
+            gap: 6px;
+            padding: 3px 10px;
             background: rgba(249, 115, 22, 0.12);
             border: 1px solid rgba(249, 115, 22, 0.3);
-            border-radius: 30px;
-            font-size: 0.74rem;
+            border-radius: 20px;
+            font-size: 0.68rem;
             font-weight: 700;
             color: #fb923c;
             letter-spacing: 0.04em;
             text-transform: uppercase;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
         }
 
         .auth-hero-title {
-            font-size: 1.95rem;
+            font-size: 1.55rem;
             font-weight: 800;
-            line-height: 1.22;
-            letter-spacing: -0.03em;
-            margin-bottom: 14px;
+            line-height: 1.24;
+            letter-spacing: -0.025em;
+            margin-bottom: 6px;
             color: #ffffff;
         }
 
@@ -139,19 +147,19 @@
 
         .auth-hero-desc {
             color: var(--text-muted);
-            font-size: 0.9rem;
-            line-height: 1.55;
-            margin-bottom: 28px;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            margin-bottom: 16px;
         }
 
         /* Mock Live Financial Card */
         .live-mock-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 18px 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.35);
             position: relative;
         }
 
@@ -159,55 +167,55 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.78rem;
+            font-size: 0.74rem;
             color: var(--text-dim);
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
         .live-mock-value {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: #ffffff;
             letter-spacing: -0.02em;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .live-mock-trend {
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 700;
             color: #10b981;
             background: rgba(16, 185, 129, 0.15);
-            padding: 3px 8px;
-            border-radius: 12px;
+            padding: 2px 7px;
+            border-radius: 10px;
             border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         .live-mock-bar {
-            height: 6px;
+            height: 5px;
             width: 100%;
             background: rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
-            margin-top: 14px;
+            margin-top: 10px;
         }
 
         .live-mock-bar-fill {
             height: 100%;
             width: 68%;
             background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
-            border-radius: 10px;
+            border-radius: 8px;
         }
 
         .live-mock-feed {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 14px;
-            padding-top: 12px;
+            margin-top: 10px;
+            padding-top: 8px;
             border-top: 1px solid rgba(255, 255, 255, 0.06);
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
         }
 
@@ -215,21 +223,21 @@
         .demo-credentials-box {
             background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
             border: 1px dashed rgba(249, 115, 22, 0.4);
-            border-radius: 14px;
-            padding: 14px 18px;
+            border-radius: 12px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 14px;
+            gap: 12px;
         }
 
         .demo-btn-instant {
             background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
             color: #ffffff;
             border: none;
-            padding: 9px 16px;
-            border-radius: 10px;
-            font-size: 0.8rem;
+            padding: 8px 14px;
+            border-radius: 9px;
+            font-size: 0.76rem;
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
@@ -241,44 +249,46 @@
         }
 
         .demo-btn-instant:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(249, 115, 22, 0.5);
         }
 
         /* Right Form Panel */
         .auth-right-form {
             flex: 1.1;
-            padding: 48px;
+            padding: 28px 36px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             background: rgba(19, 25, 40, 0.95);
+            box-sizing: border-box;
+            overflow-y: auto;
         }
 
         .auth-tabs-wrapper {
             background: rgba(14, 19, 31, 0.85);
-            padding: 5px;
-            border-radius: 14px;
+            padding: 4px;
+            border-radius: 12px;
             display: flex;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            margin-bottom: 28px;
+            margin-bottom: 18px;
         }
 
         .auth-tab-btn {
             flex: 1;
-            padding: 11px;
+            padding: 8px 12px;
             background: transparent;
             border: none;
             color: var(--text-muted);
-            font-size: 0.88rem;
+            font-size: 0.82rem;
             font-weight: 600;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .auth-tab-btn.active {
@@ -291,15 +301,15 @@
 
         .form-input-container {
             position: relative;
-            margin-bottom: 18px;
+            margin-bottom: 13px;
         }
 
         .form-input-container label {
             display: block;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             font-weight: 600;
             color: var(--text-muted);
-            margin-bottom: 7px;
+            margin-bottom: 5px;
         }
 
         .input-icon-box {
@@ -308,11 +318,11 @@
 
         .input-icon-box i.prefix-icon {
             position: absolute;
-            left: 15px;
+            left: 13px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-dim);
-            font-size: 0.9rem;
+            font-size: 0.82rem;
             transition: color 0.2s;
         }
 
@@ -320,13 +330,14 @@
             width: 100%;
             background: rgba(14, 19, 30, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.09);
-            padding: 12px 16px 12px 42px;
-            border-radius: 12px;
+            padding: 10px 14px 10px 38px;
+            border-radius: 10px;
             color: #ffffff;
-            font-size: 0.9rem;
+            font-size: 0.86rem;
             font-family: var(--font-main);
             outline: none;
             transition: all 0.2s ease;
+            box-sizing: border-box;
         }
 
         .input-icon-box input:focus {
@@ -335,21 +346,17 @@
             box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
         }
 
-        .input-icon-box input:focus + i.prefix-icon {
-            color: var(--accent-orange);
-        }
-
         .password-toggle-btn {
             position: absolute;
-            right: 14px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             color: var(--text-dim);
             cursor: pointer;
-            padding: 4px;
-            font-size: 0.9rem;
+            padding: 3px;
+            font-size: 0.85rem;
         }
 
         .password-toggle-btn:hover {
@@ -358,26 +365,26 @@
 
         .btn-submit-auth {
             width: 100%;
-            padding: 14px;
+            padding: 11px;
             background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
             color: #ffffff;
             border: none;
-            border-radius: 12px;
-            font-size: 0.95rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 18px rgba(249, 115, 22, 0.35);
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            margin-top: 10px;
+            margin-top: 6px;
         }
 
         .btn-submit-auth:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(249, 115, 22, 0.5);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
         }
 
         .btn-submit-auth:active {
@@ -390,24 +397,34 @@
 
         .panel-active {
             display: block;
-            animation: fadeIn 0.2s ease;
+            animation: fadeIn 0.18s ease;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 860px) {
+            html, body {
+                overflow-y: auto; /* Fallback on small mobile screens */
+                height: auto;
+                min-height: 100%;
+            }
+            body {
+                height: auto;
+                padding: 12px;
+            }
             .auth-container {
                 flex-direction: column;
-                max-width: 500px;
+                max-width: 480px;
+                max-height: none;
             }
             .auth-left-preview {
-                padding: 32px 24px;
+                padding: 24px 20px;
             }
             .auth-right-form {
-                padding: 32px 24px;
+                padding: 24px 20px;
             }
         }
     </style>
@@ -422,13 +439,13 @@
         <div class="auth-left-preview">
             <div>
                 <!-- Brand Identity -->
-                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px;">
-                    <div style="width: 44px; height: 44px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.25rem; box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+                    <div style="width: 38px; height: 38px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);">
                         <i class="fa-solid fa-chart-simple"></i>
                     </div>
                     <div>
-                        <div style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: #ffffff;">SpendWise</div>
-                        <span style="font-size: 0.72rem; color: var(--accent-orange); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;">Intelligent Financial OS</span>
+                        <div style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; color: #ffffff; line-height: 1.1;">SpendWise</div>
+                        <span style="font-size: 0.68rem; color: var(--accent-orange); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">Intelligent Financial OS</span>
                     </div>
                 </div>
 
@@ -440,14 +457,14 @@
                     Master your capital with <span>real-time intelligence</span>.
                 </h1>
                 <p class="auth-hero-desc">
-                    High-fidelity personal expense tracking, automated category limits, multi-account analytics, and native PDF audit generators.
+                    Personal expense tracking, automated category pacing, subscriptions hub, and instant PDF audits.
                 </p>
 
                 <!-- Mock Live Widget -->
                 <div class="live-mock-card">
                     <div class="live-mock-header">
-                        <span><i class="fa-solid fa-shield-halved" style="color: #10b981; margin-right: 6px;"></i> Active Budget Balance</span>
-                        <span style="color: var(--accent-orange); font-weight: 700;">LIVE</span>
+                        <span><i class="fa-solid fa-shield-halved" style="color: #10b981; margin-right: 5px;"></i> Active Monthly Budget</span>
+                        <span style="color: var(--accent-orange); font-weight: 700; font-size: 0.68rem;">LIVE</span>
                     </div>
                     <div class="live-mock-value">
                         ₹ 20,000.00
@@ -457,7 +474,7 @@
                         <div class="live-mock-bar-fill"></div>
                     </div>
                     <div class="live-mock-feed">
-                        <span><i class="fa-solid fa-receipt" style="margin-right: 6px;"></i> Recent: Lunch at Cafe</span>
+                        <span><i class="fa-solid fa-receipt" style="margin-right: 5px;"></i> Recent: Team Cafe Lunch</span>
                         <strong style="color: #ffffff;">₹ 250.00 (UPI)</strong>
                     </div>
                 </div>
@@ -465,8 +482,8 @@
                 <!-- Instant Demo Login Box -->
                 <div class="demo-credentials-box">
                     <div>
-                        <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em;">Demo Sandbox</div>
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #ffffff; margin-top: 2px;">krishna@example.com</div>
+                        <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Demo Sandbox</div>
+                        <div style="font-size: 0.8rem; font-weight: 600; color: #ffffff; margin-top: 1px;">krishna@example.com</div>
                     </div>
                     <button type="button" class="demo-btn-instant" onclick="instantDemoLogin()" id="btnInstantDemo">
                         <i class="fa-solid fa-bolt"></i> 1-Click Demo Login
@@ -475,9 +492,9 @@
             </div>
 
             <!-- Footer Security Guarantee -->
-            <div style="font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; margin-top: 32px;">
-                <i class="fa-solid fa-lock" style="color: #10b981;"></i>
-                <span>Bank-grade bcrypt hash encryption • Local SQLite WAL persistence</span>
+            <div style="font-size: 0.72rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; margin-top: 14px;">
+                <i class="fa-solid fa-lock" style="color: #10b981; font-size: 0.72rem;"></i>
+                <span>Bank-grade bcrypt hashing • SQLite WAL persistence</span>
             </div>
         </div>
 
@@ -496,9 +513,9 @@
             <!-- Flash Alerts -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    <div style="margin-bottom: 20px;">
+                    <div style="margin-bottom: 12px;">
                         {% for category, message in messages %}
-                            <div class="alert alert-{{ category }}" style="padding: 12px 16px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
+                            <div class="alert alert-{{ category }}" style="padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-circle-exclamation"></i>
                                 <span>{{ message }}</span>
                             </div>
@@ -509,9 +526,9 @@
 
             <!-- LOGIN PANEL -->
             <div id="login-panel" class="{{ 'panel-active' if active_tab != 'register' else 'panel-hidden' }}">
-                <div style="margin-bottom: 22px;">
-                    <h2 style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px;">Welcome Back 👋</h2>
-                    <p style="font-size: 0.84rem; color: var(--text-muted);">Enter your credentials to access your financial dashboard.</p>
+                <div style="margin-bottom: 16px;">
+                    <h2 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 3px;">Welcome Back 👋</h2>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Enter your credentials to access your financial dashboard.</p>
                 </div>
 
                 <form id="loginForm" action="{{ url_for('login') }}" method="POST">
@@ -524,9 +541,9 @@
                     </div>
 
                     <div class="form-input-container">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                             <label for="login-password" style="margin: 0;">Password</label>
-                            <a href="javascript:void(0)" onclick="alert('Demo account credentials: email: krishna@example.com, password: password123')" style="font-size: 0.76rem; color: var(--accent-orange); font-weight: 600;">Forgot Password?</a>
+                            <a href="javascript:void(0)" onclick="alert('Demo account credentials: email: krishna@example.com, password: password123')" style="font-size: 0.74rem; color: var(--accent-orange); font-weight: 600;">Forgot?</a>
                         </div>
                         <div class="input-icon-box">
                             <input type="password" id="login-password" name="password" value="password123" placeholder="••••••••" required>
@@ -537,12 +554,12 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-muted); cursor: pointer;">
-                            <input type="checkbox" id="remember-me" checked style="accent-color: var(--accent-orange); width: 16px; height: 16px; border-radius: 4px;">
-                            Remember this device
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-muted); cursor: pointer;">
+                            <input type="checkbox" id="remember-me" checked style="accent-color: var(--accent-orange); width: 14px; height: 14px; border-radius: 3px;">
+                            Remember device
                         </label>
-                        <span style="font-size: 0.74rem; color: #10b981; display: flex; align-items: center; gap: 4px;">
+                        <span style="font-size: 0.72rem; color: #10b981; display: flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-circle-check"></i> SSL Secure
                         </span>
                     </div>
@@ -553,37 +570,39 @@
                     </button>
                 </form>
 
-                <div style="text-align: center; margin-top: 22px; font-size: 0.82rem; color: var(--text-dim);">
+                <div style="text-align: center; margin-top: 14px; font-size: 0.78rem; color: var(--text-dim);">
                     Don't have an account yet? 
-                    <a href="javascript:void(0)" onclick="switchTab('register')" style="color: var(--accent-orange); font-weight: 700; margin-left: 4px;">Create one now</a>
+                    <a href="javascript:void(0)" onclick="switchTab('register')" style="color: var(--accent-orange); font-weight: 700; margin-left: 3px;">Create account</a>
                 </div>
             </div>
 
             <!-- REGISTER PANEL -->
             <div id="register-panel" class="{{ 'panel-active' if active_tab == 'register' else 'panel-hidden' }}">
-                <div style="margin-bottom: 22px;">
-                    <h2 style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px;">Create Account 🚀</h2>
-                    <p style="font-size: 0.84rem; color: var(--text-muted);">Start taking control of your financial freedom in 30 seconds.</p>
+                <div style="margin-bottom: 14px;">
+                    <h2 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 2px;">Create Account 🚀</h2>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Start taking control of your financial freedom.</p>
                 </div>
 
                 <form id="registerForm" action="{{ url_for('register') }}" method="POST">
-                    <div class="form-input-container">
-                        <label for="reg-name">Full Name</label>
-                        <div class="input-icon-box">
-                            <input type="text" id="reg-name" name="name" value="{{ name or '' }}" placeholder="Krishna Sahu" required>
-                            <i class="fa-regular fa-user prefix-icon"></i>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-input-container">
+                            <label for="reg-name">Full Name</label>
+                            <div class="input-icon-box">
+                                <input type="text" id="reg-name" name="name" value="{{ name or '' }}" placeholder="Krishna Sahu" required>
+                                <i class="fa-regular fa-user prefix-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-input-container">
+                            <label for="reg-email">Email Address</label>
+                            <div class="input-icon-box">
+                                <input type="email" id="reg-email" name="email" value="{{ email or '' }}" placeholder="krishna@example.com" required>
+                                <i class="fa-regular fa-envelope prefix-icon"></i>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-input-container">
-                        <label for="reg-email">Email Address</label>
-                        <div class="input-icon-box">
-                            <input type="email" id="reg-email" name="email" value="{{ email or '' }}" placeholder="krishna@example.com" required>
-                            <i class="fa-regular fa-envelope prefix-icon"></i>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div class="form-input-container">
                             <label for="reg-password">Password</label>
                             <div class="input-icon-box">
@@ -600,10 +619,10 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 22px;">
-                        <input type="checkbox" id="terms-agree" required checked style="accent-color: var(--accent-orange); width: 16px; height: 16px;">
-                        <label for="terms-agree" style="font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
-                            I accept the <a href="javascript:void(0)" style="color: var(--accent-orange);">Terms of Service</a> & <a href="javascript:void(0)" style="color: var(--accent-orange);">Privacy Policy</a>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 14px;">
+                        <input type="checkbox" id="terms-agree" required checked style="accent-color: var(--accent-orange); width: 14px; height: 14px;">
+                        <label for="terms-agree" style="font-size: 0.76rem; color: var(--text-muted); cursor: pointer;">
+                            I accept the <a href="javascript:void(0)" style="color: var(--accent-orange);">Terms</a> & <a href="javascript:void(0)" style="color: var(--accent-orange);">Privacy Policy</a>
                         </label>
                     </div>
 
@@ -613,9 +632,9 @@
                     </button>
                 </form>
 
-                <div style="text-align: center; margin-top: 22px; font-size: 0.82rem; color: var(--text-dim);">
+                <div style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
                     Already have an account? 
-                    <a href="javascript:void(0)" onclick="switchTab('login')" style="color: var(--accent-orange); font-weight: 700; margin-left: 4px;">Sign In here</a>
+                    <a href="javascript:void(0)" onclick="switchTab('login')" style="color: var(--accent-orange); font-weight: 700; margin-left: 3px;">Sign In</a>
                 </div>
             </div>
         </div>
