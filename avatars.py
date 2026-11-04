@@ -162,3 +162,4 @@ def get_all_avatars() -> Dict[str, List[str]]:
         "boys": BOY_AVATARS,
         "girls": GIRL_AVATARS
     }
+
