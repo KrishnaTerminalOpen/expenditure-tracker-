@@ -6,38 +6,56 @@
 <!-- Profile & Settings View -->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 800;">User Profile & Preferences</h1>
+        <h1 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">User Profile & Preferences</h1>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
-            Configure your personal account, currency, monthly threshold, and visual theme
+            Configure your personal account, personalized avatar, monthly threshold, and visual theme
         </p>
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; max-width: 1000px;">
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; max-width: 1040px;">
     <!-- Profile Card (Left) -->
-    <div class="card" style="text-align: center; padding: 30px 20px;">
-        <div style="position: relative; width: 90px; height: 90px; margin: 0 auto 16px auto;">
-            <img src="{{ user.avatar }}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-orange);">
-            <div style="position: absolute; bottom: 0; right: 0; width: 26px; height: 26px; background: var(--accent-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem;">
+    <div class="card" style="text-align: center; padding: 32px 24px; display: flex; flex-direction: column; align-items: center;">
+        <!-- Interactive Avatar with Hover Glow -->
+        <div class="profile-avatar-wrapper" onclick="openModal('avatarModal')" title="Click to choose a new avatar"
+             style="position: relative; width: 104px; height: 104px; margin: 0 auto 14px auto; cursor: pointer; transition: transform 0.25s ease;">
+            <img id="profileCardAvatar" src="{{ user.avatar }}" alt="{{ user.name }}"
+                 style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3.5px solid var(--accent-orange); box-shadow: 0 0 24px rgba(249, 115, 22, 0.35);">
+            <div style="position: absolute; bottom: 2px; right: 2px; width: 30px; height: 30px; background: linear-gradient(135deg, #f97316, #ea580c); border: 2.5px solid #131929; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">
                 <i class="fa-solid fa-camera"></i>
             </div>
         </div>
 
-        <h3 style="font-size: 1.15rem; font-weight: 700;">{{ user.name }}</h3>
-        <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">{{ user.email }}</p>
+        <h3 style="font-size: 1.2rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 2px;">{{ user.name }}</h3>
+        <p style="font-size: 0.82rem; color: var(--text-dim); margin-bottom: 8px;">{{ user.email }}</p>
 
-        <div style="display: flex; justify-content: space-around; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+        <!-- Gender Detection Smart Pill -->
+        {% if user_gender == 'boy' %}
+        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; color: #60a5fa; background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.3); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px;">
+            <i class="fa-solid fa-mars"></i> Boy Profile (Custom Avatar)
+        </span>
+        {% else %}
+        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; color: #f472b6; background: rgba(236, 72, 153, 0.14); border: 1px solid rgba(236, 72, 153, 0.3); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px;">
+            <i class="fa-solid fa-venus"></i> Girl Profile (Custom Avatar)
+        </span>
+        {% endif %}
+
+        <button type="button" onclick="openModal('avatarModal')" class="btn-outline" style="font-size: 0.78rem; padding: 6px 14px; border-radius: 10px; width: 100%; justify-content: center; margin-bottom: 20px;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-orange);"></i> Change Avatar
+        </button>
+
+        <div style="display: flex; justify-content: space-around; width: 100%; padding-top: 18px; border-top: 1px solid var(--border-color);">
             <div>
                 <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">Total Spent</span>
-                <strong style="font-size: 1rem; color: var(--accent-orange);">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
+                <strong style="font-size: 1.05rem; color: var(--accent-orange); font-family: var(--font-mono);">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
             </div>
             <div>
                 <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">Total Entries</span>
-                <strong style="font-size: 1rem; color: var(--text-main);">{{ total_txns }}</strong>
+                <strong style="font-size: 1.05rem; color: var(--text-main); font-family: var(--font-mono);">{{ total_txns }}</strong>
             </div>
         </div>
 
-        <div style="margin-top: 24px;">
+        <div style="margin-top: 24px; width: 100%;">
             <a href="{{ url_for('logout') }}" class="btn-outline" style="width: 100%; justify-content: center; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
             </a>
@@ -46,17 +64,32 @@
 
     <!-- Preferences Form (Right) -->
     <div class="card" style="padding: 28px;">
-        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px;">Account Settings</h3>
-        <form action="{{ url_for('profile') }}" method="POST">
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.01em;">Account Settings</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 22px;">
+            Manage your personal credentials, monthly spending thresholds, and account preferences.
+        </p>
+
+        <form action="{{ url_for('profile') }}" method="POST" id="profilePreferencesForm">
+            <!-- Hidden avatar field synced with picker modal -->
+            <input type="hidden" name="avatar" id="selectedAvatarInput" value="{{ user.avatar }}">
+
             <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" name="name" value="{{ user.name }}" required class="form-input">
+                <label style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Full Name</span>
+                    <span style="font-size: 0.72rem; color: var(--accent-orange); font-weight: 500;">
+                        <i class="fa-solid fa-robot"></i> Smart gender detection enabled
+                    </span>
+                </label>
+                <input type="text" name="name" id="userNameInput" value="{{ user.name }}" required class="form-input" placeholder="e.g. Krishna Sahu">
+                <span style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; display: block;">
+                    Boy names automatically receive distinct boy avatars; girl names automatically receive distinct girl avatars.
+                </span>
             </div>
 
             <div class="form-group">
                 <label>Email Address</label>
                 <input type="email" value="{{ user.email }}" disabled class="form-input" style="opacity: 0.6; cursor: not-allowed;">
-                <span style="font-size: 0.7rem; color: var(--text-dim);">Email address is associated with your unique database record.</span>
+                <span style="font-size: 0.7rem; color: var(--text-dim);">Email address is associated with your unique database record and avatar seed.</span>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
@@ -83,12 +116,221 @@
                 </select>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
-                <button type="submit" class="btn-primary">
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 26px;">
+                <button type="submit" class="btn-primary" style="padding: 10px 22px;">
                     <i class="fa-solid fa-floppy-disk"></i> Save Preferences
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<!-- ========================================== -->
+<!-- AVATAR PICKER MODAL                        -->
+<!-- ========================================== -->
+<div class="modal-overlay" id="avatarModal" style="display: none;">
+    <div class="modal-content" style="max-width: 620px; padding: 24px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 20px 48px rgba(0, 0, 0, 0.7), 0 0 50px -5px rgba(249, 115, 22, 0.25);">
+        <!-- Modal Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 8px; letter-spacing: -0.01em;">
+                    <i class="fa-solid fa-user-astronaut" style="color: var(--accent-orange);"></i> Choose Profile Avatar
+                </h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;">
+                    Select from handpicked boy & girl avatars or enter a custom photo link
+                </p>
+            </div>
+            <button type="button" onclick="closeModal('avatarModal')" style="background: none; border: none; color: var(--text-dim); font-size: 1.1rem; cursor: pointer; padding: 4px;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div style="display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+            <button type="button" id="tabBtnBoys" onclick="switchAvatarTab('boys')"
+                    class="btn-outline" style="font-size: 0.82rem; padding: 7px 14px; border-radius: 8px; {% if user_gender == 'boy' %}background: rgba(59, 130, 246, 0.18); border-color: #3b82f6; color: white;{% endif %}">
+                <i class="fa-solid fa-mars" style="color: #60a5fa;"></i> Boys ({{ all_avatars.boys|length }})
+            </button>
+            <button type="button" id="tabBtnGirls" onclick="switchAvatarTab('girls')"
+                    class="btn-outline" style="font-size: 0.82rem; padding: 7px 14px; border-radius: 8px; {% if user_gender == 'girl' %}background: rgba(236, 72, 153, 0.18); border-color: #ec4899; color: white;{% endif %}">
+                <i class="fa-solid fa-venus" style="color: #f472b6;"></i> Girls ({{ all_avatars.girls|length }})
+            </button>
+            <button type="button" id="tabBtnCustom" onclick="switchAvatarTab('custom')"
+                    class="btn-outline" style="font-size: 0.82rem; padding: 7px 14px; border-radius: 8px;">
+                <i class="fa-solid fa-link" style="color: #10b981;"></i> Custom Link
+            </button>
+        </div>
+
+        <!-- Current Selection Preview Bar -->
+        <div style="display: flex; align-items: center; gap: 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px;">
+            <img id="modalPreviewAvatar" src="{{ user.avatar }}" alt="Preview"
+                 style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2.5px solid var(--accent-orange); flex-shrink: 0;">
+            <div style="flex: 1; min-width: 0;">
+                <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">Selected Profile Avatar</span>
+                <span id="selectedAvatarLabel" style="font-size: 0.82rem; font-weight: 600; color: var(--text-main); word-break: break-all;">
+                    Active Avatar
+                </span>
+            </div>
+            <span style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); font-weight: 600;">
+                Ready to Apply
+            </span>
+        </div>
+
+        <!-- Boys Avatar Gallery Panel -->
+        <div id="tabPanelBoys" style="display: {% if user_gender == 'boy' %}block{% else %}none{% endif %};">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 12px; max-height: 270px; overflow-y: auto; padding: 6px 4px;">
+                {% for av_url in all_avatars.boys %}
+                <div class="avatar-option-card {% if user.avatar == av_url %}active-avatar{% endif %}"
+                     onclick="selectAvatar('{{ av_url }}', this)"
+                     title="Select Boy Avatar #{{ loop.index }}"
+                     style="position: relative; cursor: pointer; text-align: center; border-radius: 50%; padding: 3px;">
+                    <img src="{{ av_url }}" alt="Boy Avatar"
+                         style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2.5px solid transparent; transition: all 0.2s ease;">
+                    <div class="avatar-check-badge" style="display: {% if user.avatar == av_url %}flex{% else %}none{% endif %}; position: absolute; top: 0; right: 4px; width: 20px; height: 20px; background: #10b981; border: 2px solid #131929; border-radius: 50%; align-items: center; justify-content: center; color: white; font-size: 0.65rem;">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Girls Avatar Gallery Panel -->
+        <div id="tabPanelGirls" style="display: {% if user_gender == 'girl' %}block{% else %}none{% endif %};">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 12px; max-height: 270px; overflow-y: auto; padding: 6px 4px;">
+                {% for av_url in all_avatars.girls %}
+                <div class="avatar-option-card {% if user.avatar == av_url %}active-avatar{% endif %}"
+                     onclick="selectAvatar('{{ av_url }}', this)"
+                     title="Select Girl Avatar #{{ loop.index }}"
+                     style="position: relative; cursor: pointer; text-align: center; border-radius: 50%; padding: 3px;">
+                    <img src="{{ av_url }}" alt="Girl Avatar"
+                         style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2.5px solid transparent; transition: all 0.2s ease;">
+                    <div class="avatar-check-badge" style="display: {% if user.avatar == av_url %}flex{% else %}none{% endif %}; position: absolute; top: 0; right: 4px; width: 20px; height: 20px; background: #10b981; border: 2px solid #131929; border-radius: 50%; align-items: center; justify-content: center; color: white; font-size: 0.65rem;">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Custom Image URL Panel -->
+        <div id="tabPanelCustom" style="display: none; padding: 10px 0;">
+            <div class="form-group">
+                <label>Direct Image / Unsplash / Gravatar URL</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="url" id="customAvatarInput" placeholder="https://images.unsplash.com/photo-..." class="form-input" style="flex: 1;">
+                    <button type="button" onclick="previewCustomUrl()" class="btn-outline" style="white-space: nowrap;">
+                        <i class="fa-solid fa-eye"></i> Preview
+                    </button>
+                </div>
+                <span style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; display: block;">
+                    Provide any public HTTPS image link.
+                </span>
+            </div>
+        </div>
+
+        <!-- Modal Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+            <button type="button" onclick="closeModal('avatarModal')" class="btn-outline" style="font-size: 0.85rem;">
+                Cancel
+            </button>
+            <button type="button" onclick="applyAvatarSelection()" class="btn-primary" style="font-size: 0.85rem; padding: 9px 20px;">
+                <i class="fa-solid fa-check"></i> Apply & Save Avatar
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-avatar-wrapper:hover {
+    transform: scale(1.05);
+}
+.profile-avatar-wrapper:hover img {
+    border-color: #fb923c !important;
+    box-shadow: 0 0 32px rgba(249, 115, 22, 0.5) !important;
+}
+.avatar-option-card:hover img {
+    transform: scale(1.08);
+    border-color: rgba(249, 115, 22, 0.5) !important;
+}
+.avatar-option-card.active-avatar img {
+    border-color: var(--accent-orange) !important;
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.6) !important;
+}
+</style>
+
+<script>
+    let currentSelectedAvatar = "{{ user.avatar }}";
+
+    function switchAvatarTab(tab) {
+        document.getElementById('tabPanelBoys').style.display = (tab === 'boys') ? 'block' : 'none';
+        document.getElementById('tabPanelGirls').style.display = (tab === 'girls') ? 'block' : 'none';
+        document.getElementById('tabPanelCustom').style.display = (tab === 'custom') ? 'block' : 'none';
+
+        // Update button states
+        const boysBtn = document.getElementById('tabBtnBoys');
+        const girlsBtn = document.getElementById('tabBtnGirls');
+        const customBtn = document.getElementById('tabBtnCustom');
+
+        boysBtn.style.background = (tab === 'boys') ? 'rgba(59, 130, 246, 0.18)' : '';
+        boysBtn.style.borderColor = (tab === 'boys') ? '#3b82f6' : '';
+        boysBtn.style.color = (tab === 'boys') ? 'white' : '';
+
+        girlsBtn.style.background = (tab === 'girls') ? 'rgba(236, 72, 153, 0.18)' : '';
+        girlsBtn.style.borderColor = (tab === 'girls') ? '#ec4899' : '';
+        girlsBtn.style.color = (tab === 'girls') ? 'white' : '';
+
+        customBtn.style.background = (tab === 'custom') ? 'rgba(16, 185, 129, 0.18)' : '';
+        customBtn.style.borderColor = (tab === 'custom') ? '#10b981' : '';
+        customBtn.style.color = (tab === 'custom') ? 'white' : '';
+    }
+
+    function selectAvatar(url, cardElem) {
+        currentSelectedAvatar = url;
+
+        // Deselect all cards across both tabs
+        document.querySelectorAll('.avatar-option-card').forEach(card => {
+            card.classList.remove('active-avatar');
+            const badge = card.querySelector('.avatar-check-badge');
+            if (badge) badge.style.display = 'none';
+        });
+
+        // Activate current card
+        if (cardElem) {
+            cardElem.classList.add('active-avatar');
+            const badge = cardElem.querySelector('.avatar-check-badge');
+            if (badge) badge.style.display = 'flex';
+        }
+
+        // Live update previews
+        document.getElementById('modalPreviewAvatar').src = url;
+        document.getElementById('selectedAvatarLabel').textContent = 'Selected Gallery Photo';
+    }
+
+    function previewCustomUrl() {
+        const url = document.getElementById('customAvatarInput').value.trim();
+        if (!url) return;
+        currentSelectedAvatar = url;
+        document.getElementById('modalPreviewAvatar').src = url;
+        document.getElementById('selectedAvatarLabel').textContent = 'Custom Link Preview';
+    }
+
+    function applyAvatarSelection() {
+        if (!currentSelectedAvatar) return;
+
+        // Update hidden form input
+        const input = document.getElementById('selectedAvatarInput');
+        if (input) input.value = currentSelectedAvatar;
+
+        // Update page profile card avatar
+        const cardImg = document.getElementById('profileCardAvatar');
+        if (cardImg) cardImg.src = currentSelectedAvatar;
+
+        // Update top navbar avatar
+        const navImg = document.getElementById('globalUserAvatar');
+        if (navImg) navImg.src = currentSelectedAvatar;
+
+        // Automatically submit preferences form to persist immediately
+        document.getElementById('profilePreferencesForm').submit();
+    }
+</script>
 {% endblock %}
