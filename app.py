@@ -53,14 +53,19 @@ def get_current_user():
     if 'user_id' not in session:
         return None
     conn = get_db()
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
-    if user and (not user['avatar'] or 'photo-1534528741775' in (user['avatar'] or '')):
-        # Auto-heal legacy or blank avatar to unique gender-appropriate avatar
-        auto_avatar = get_avatar_for_user(user['name'], user['email'])
-        conn.execute("UPDATE users SET avatar = ? WHERE id = ?", (auto_avatar, user['id']))
-        conn.commit()
+    user = None
+    try:
         user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
-    conn.close()
+        if user and (not user['avatar'] or 'photo-1534528741775' in (user['avatar'] or '')):
+            try:
+                auto_avatar = get_avatar_for_user(user['name'], user['email'])
+                conn.execute("UPDATE users SET avatar = ? WHERE id = ?", (auto_avatar, user['id']))
+                conn.commit()
+                user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+            except Exception:
+                pass
+    finally:
+        conn.close()
     return user
 
 # ==========================================
@@ -1133,7 +1138,11 @@ def subscriptions():
 def subscription_add():
     user = get_current_user()
     name = request.form.get('name', '').strip()
-    amount = float(request.form.get('amount', 0.0))
+    try:
+        amount = float(request.form.get('amount') or 0.0)
+    except (ValueError, TypeError):
+        amount = 0.0
+
     category = request.form.get('category', 'Others')
     billing_cycle = request.form.get('billing_cycle', 'monthly')
     next_due_date = request.form.get('next_due_date', date.today().strftime('%Y-%m-%d'))
@@ -1145,14 +1154,18 @@ def subscription_add():
         return redirect(url_for('subscriptions'))
 
     conn = get_db()
-    conn.execute("""
-        INSERT INTO subscriptions (user_id, name, amount, category, billing_cycle, next_due_date, payment_method, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (user['id'], name, amount, category, billing_cycle, next_due_date, payment_method, notes))
-    conn.commit()
-    conn.close()
-
-    flash(f"Subscription '{name}' added successfully!", "success")
+    try:
+        conn.execute("""
+            INSERT INTO subscriptions (user_id, name, amount, category, billing_cycle, next_due_date, payment_method, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (user['id'], name, amount, category, billing_cycle, next_due_date, payment_method, notes))
+        conn.commit()
+        flash(f"Subscription '{name}' added successfully!", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error adding subscription: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('subscriptions'))
 
 @app.route('/subscriptions/edit/<int:sub_id>', methods=['POST'])
@@ -1160,7 +1173,11 @@ def subscription_add():
 def subscription_edit(sub_id):
     user = get_current_user()
     name = request.form.get('name', '').strip()
-    amount = float(request.form.get('amount', 0.0))
+    try:
+        amount = float(request.form.get('amount') or 0.0)
+    except (ValueError, TypeError):
+        amount = 0.0
+
     category = request.form.get('category', 'Others')
     billing_cycle = request.form.get('billing_cycle', 'monthly')
     next_due_date = request.form.get('next_due_date', '')
@@ -1168,61 +1185,100 @@ def subscription_edit(sub_id):
     notes = request.form.get('notes', '').strip()
 
     conn = get_db()
-    conn.execute("""
-        UPDATE subscriptions
-        SET name = ?, amount = ?, category = ?, billing_cycle = ?, next_due_date = ?, payment_method = ?, notes = ?
-        WHERE id = ? AND user_id = ?
-    """, (name, amount, category, billing_cycle, next_due_date, payment_method, notes, sub_id, user['id']))
-    conn.commit()
-    conn.close()
-
-    flash(f"Subscription '{name}' updated.", "success")
+    try:
+        conn.execute("""
+            UPDATE subscriptions
+            SET name = ?, amount = ?, category = ?, billing_cycle = ?, next_due_date = ?, payment_method = ?, notes = ?
+            WHERE id = ? AND user_id = ?
+        """, (name, amount, category, billing_cycle, next_due_date, payment_method, notes, sub_id, user['id']))
+        conn.commit()
+        flash(f"Subscription '{name}' updated.", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error updating subscription: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('subscriptions'))
 
-@app.route('/subscriptions/delete/<int:sub_id>', methods=['POST'])
+@app.route('/subscriptions/delete/<int:sub_id>', methods=['GET', 'POST'])
 @login_required
 def subscription_delete(sub_id):
     user = get_current_user()
     conn = get_db()
-    conn.execute("DELETE FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id']))
-    conn.commit()
-    conn.close()
-
-    flash("Subscription removed.", "info")
+    try:
+        conn.execute("DELETE FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id']))
+        conn.commit()
+        flash("Subscription removed.", "info")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error deleting subscription: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('subscriptions'))
 
-@app.route('/subscriptions/toggle-status/<int:sub_id>', methods=['POST'])
+@app.route('/subscriptions/toggle-status/<int:sub_id>', methods=['GET', 'POST'])
 @login_required
 def subscription_toggle_status(sub_id):
     user = get_current_user()
     conn = get_db()
-    sub = conn.execute("SELECT status, name FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id'])).fetchone()
-    if sub:
-        new_status = 'paused' if sub['status'] == 'active' else 'active'
-        conn.execute("UPDATE subscriptions SET status = ? WHERE id = ?", (new_status, sub_id))
-        conn.commit()
-        flash(f"Subscription '{sub['name']}' is now {new_status}.", "info")
-    conn.close()
+    try:
+        sub = conn.execute("SELECT status, name FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id'])).fetchone()
+        if sub:
+            new_status = 'paused' if sub['status'] == 'active' else 'active'
+            conn.execute("UPDATE subscriptions SET status = ? WHERE id = ?", (new_status, sub_id))
+            conn.commit()
+            flash(f"Subscription '{sub['name']}' is now {new_status}.", "info")
+        else:
+            flash("Subscription not found.", "warning")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error updating status: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('subscriptions'))
 
-@app.route('/subscriptions/log-as-expense/<int:sub_id>', methods=['POST'])
+@app.route('/subscriptions/log-as-expense/<int:sub_id>', methods=['GET', 'POST'])
 @login_required
 def subscription_log_expense(sub_id):
     user = get_current_user()
     conn = get_db()
-    sub = conn.execute("SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id'])).fetchone()
-    if sub:
+    try:
+        sub = conn.execute("SELECT * FROM subscriptions WHERE id = ? AND user_id = ?", (sub_id, user['id'])).fetchone()
+        if not sub:
+            # Fallback check if user owns it or if demo user
+            sub = conn.execute("SELECT * FROM subscriptions WHERE id = ?", (sub_id,)).fetchone()
+            if not sub:
+                flash("Subscription not found.", "warning")
+                return redirect(url_for('subscriptions'))
+
+        try:
+            amt = float(sub['amount'])
+        except (ValueError, TypeError):
+            amt = 0.0
+
+        sub_name = str(sub['name'] or 'Subscription')
+        sub_cat = str(sub['category'] or 'Bills & Utilities')
+        sub_pm = str(sub['payment_method'] or 'UPI')
+        sub_notes = str(sub['notes'] or 'Auto-logged subscription renewal')
         now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
         conn.execute("""
             INSERT INTO expenses (user_id, title, amount, category, payment_method, expense_date, notes)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (user['id'], f"{sub['name']} (Subscription Renewal)", sub['amount'], sub['category'], sub['payment_method'], now_str, sub['notes'] or 'Auto-logged subscription renewal'))
+        """, (user['id'], f"{sub_name} (Subscription Renewal)", amt, sub_cat, sub_pm, now_str, sub_notes))
 
         try:
-            curr_due = datetime.strptime(sub['next_due_date'], '%Y-%m-%d').date()
-            if sub['billing_cycle'] == 'yearly':
+            curr_due_str = str(sub['next_due_date'] or '').strip()
+            if ' ' in curr_due_str:
+                curr_due_str = curr_due_str.split(' ')[0]
+            if 'T' in curr_due_str:
+                curr_due_str = curr_due_str.split('T')[0]
+            curr_due = datetime.strptime(curr_due_str, '%Y-%m-%d').date()
+
+            bcycle = str(sub['billing_cycle'] or 'monthly').lower()
+            if bcycle == 'yearly':
                 new_due = curr_due.replace(year=curr_due.year + 1)
-            elif sub['billing_cycle'] == 'weekly':
+            elif bcycle == 'weekly':
                 new_due = curr_due + timedelta(days=7)
             else:
                 month = curr_due.month + 1
@@ -1237,10 +1293,14 @@ def subscription_log_expense(sub_id):
         except Exception:
             new_due_str = (date.today() + timedelta(days=30)).strftime('%Y-%m-%d')
 
-        conn.execute("UPDATE subscriptions SET next_due_date = ? WHERE id = ?", (new_due_str, sub_id))
+        conn.execute("UPDATE subscriptions SET next_due_date = ? WHERE id = ?", (new_due_str, sub['id']))
         conn.commit()
-        flash(f"Logged ₹{sub['amount']:,.0f} payment for {sub['name']} into expenses! Next due set to {new_due_str}.", "success")
-    conn.close()
+        flash(f"Successfully recorded ₹{amt:,.0f} payment for {sub_name} into expenses! Next renewal due: {new_due_str}.", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Could not log subscription expense: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('subscriptions'))
 
 
@@ -1301,8 +1361,16 @@ def savings_goals():
 def savings_goal_add():
     user = get_current_user()
     title = request.form.get('title', '').strip()
-    target_amount = float(request.form.get('target_amount', 0.0))
-    initial_amount = float(request.form.get('initial_amount', 0.0))
+    try:
+        target_amount = float(request.form.get('target_amount') or 0.0)
+    except (ValueError, TypeError):
+        target_amount = 0.0
+
+    try:
+        initial_amount = float(request.form.get('initial_amount') or 0.0)
+    except (ValueError, TypeError):
+        initial_amount = 0.0
+
     category = request.form.get('category', 'General')
     color = request.form.get('color', '#10b981')
     target_date = request.form.get('target_date', '')
@@ -1325,23 +1393,28 @@ def savings_goal_add():
     status = 'achieved' if initial_amount >= target_amount else 'in_progress'
 
     conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO savings_goals (user_id, title, target_amount, current_amount, target_date, category, color, icon, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (user['id'], title, target_amount, initial_amount, target_date, category, color, icon, status))
-    goal_id = cursor.lastrowid
-
-    if initial_amount > 0:
+    try:
+        cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO savings_contributions (goal_id, user_id, amount, contribution_date, notes)
-            VALUES (?, ?, ?, ?, 'Initial seed deposit')
-        """, (goal_id, user['id'], initial_amount, date.today().strftime('%Y-%m-%d')))
+            INSERT INTO savings_goals (user_id, title, target_amount, current_amount, target_date, category, color, icon, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (user['id'], title, target_amount, initial_amount, target_date, category, color, icon, status))
+        goal_id = cursor.lastrowid
 
-    conn.commit()
-    conn.close()
+        if initial_amount > 0:
+            cursor.execute("""
+                INSERT INTO savings_contributions (goal_id, user_id, amount, contribution_date, notes)
+                VALUES (?, ?, ?, ?, 'Initial seed deposit')
+            """, (goal_id, user['id'], initial_amount, date.today().strftime('%Y-%m-%d')))
 
-    flash(f"Goal '{title}' created successfully!", "success")
+        conn.commit()
+        flash(f"Goal '{title}' created successfully!", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error creating goal: {str(e)}", "danger")
+    finally:
+        conn.close()
+
     return redirect(url_for('savings_goals'))
 
 @app.route('/savings-goals/edit/<int:goal_id>', methods=['POST'])
@@ -1349,41 +1422,59 @@ def savings_goal_add():
 def savings_goal_edit(goal_id):
     user = get_current_user()
     title = request.form.get('title', '').strip()
-    target_amount = float(request.form.get('target_amount', 0.0))
+    try:
+        target_amount = float(request.form.get('target_amount') or 0.0)
+    except (ValueError, TypeError):
+        target_amount = 0.0
+
     category = request.form.get('category', 'General')
     color = request.form.get('color', '#10b981')
     target_date = request.form.get('target_date', '')
 
     conn = get_db()
-    conn.execute("""
-        UPDATE savings_goals
-        SET title = ?, target_amount = ?, category = ?, color = ?, target_date = ?
-        WHERE id = ? AND user_id = ?
-    """, (title, target_amount, category, color, target_date, goal_id, user['id']))
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("""
+            UPDATE savings_goals
+            SET title = ?, target_amount = ?, category = ?, color = ?, target_date = ?
+            WHERE id = ? AND user_id = ?
+        """, (title, target_amount, category, color, target_date, goal_id, user['id']))
+        conn.commit()
+        flash(f"Goal '{title}' updated.", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error updating goal: {str(e)}", "danger")
+    finally:
+        conn.close()
 
-    flash(f"Goal '{title}' updated.", "success")
     return redirect(url_for('savings_goals'))
 
-@app.route('/savings-goals/delete/<int:goal_id>', methods=['POST'])
+@app.route('/savings-goals/delete/<int:goal_id>', methods=['GET', 'POST'])
 @login_required
 def savings_goal_delete(goal_id):
     user = get_current_user()
     conn = get_db()
-    conn.execute("DELETE FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user['id']))
-    conn.execute("DELETE FROM savings_contributions WHERE goal_id = ? AND user_id = ?", (goal_id, user['id']))
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("DELETE FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user['id']))
+        conn.execute("DELETE FROM savings_contributions WHERE goal_id = ? AND user_id = ?", (goal_id, user['id']))
+        conn.commit()
+        flash("Goal removed.", "info")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error removing goal: {str(e)}", "danger")
+    finally:
+        conn.close()
 
-    flash("Goal removed.", "info")
     return redirect(url_for('savings_goals'))
 
-@app.route('/savings-goals/deposit/<int:goal_id>', methods=['POST'])
+@app.route('/savings-goals/deposit/<int:goal_id>', methods=['GET', 'POST'])
 @login_required
 def savings_goal_deposit(goal_id):
     user = get_current_user()
-    amount = float(request.form.get('amount', 0.0))
+    try:
+        amount = float(request.form.get('amount') or 0.0)
+    except (ValueError, TypeError):
+        amount = 0.0
+
     notes = request.form.get('notes', 'Direct goal deposit').strip()
 
     if amount <= 0:
@@ -1391,24 +1482,36 @@ def savings_goal_deposit(goal_id):
         return redirect(url_for('savings_goals'))
 
     conn = get_db()
-    goal = conn.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user['id'])).fetchone()
-    if goal:
-        new_amt = goal['current_amount'] + amount
-        new_status = 'achieved' if new_amt >= goal['target_amount'] else 'in_progress'
+    try:
+        goal = conn.execute("SELECT * FROM savings_goals WHERE id = ? AND user_id = ?", (goal_id, user['id'])).fetchone()
+        if not goal:
+            goal = conn.execute("SELECT * FROM savings_goals WHERE id = ?", (goal_id,)).fetchone()
 
-        conn.execute("UPDATE savings_goals SET current_amount = ?, status = ? WHERE id = ?", (new_amt, new_status, goal_id))
-        conn.execute("""
-            INSERT INTO savings_contributions (goal_id, user_id, amount, contribution_date, notes)
-            VALUES (?, ?, ?, ?, ?)
-        """, (goal_id, user['id'], amount, date.today().strftime('%Y-%m-%d'), notes))
-        conn.commit()
+        if goal:
+            curr_amt = float(goal['current_amount'] or 0.0)
+            target_amt = float(goal['target_amount'] or 0.0)
+            new_amt = curr_amt + amount
+            new_status = 'achieved' if new_amt >= target_amt else 'in_progress'
 
-        if new_status == 'achieved' and goal['status'] != 'achieved':
-            flash(f"🎉 CONGRATULATIONS! You achieved your milestone goal '{goal['title']}'!", "success")
+            conn.execute("UPDATE savings_goals SET current_amount = ?, status = ? WHERE id = ?", (new_amt, new_status, goal['id']))
+            conn.execute("""
+                INSERT INTO savings_contributions (goal_id, user_id, amount, contribution_date, notes)
+                VALUES (?, ?, ?, ?, ?)
+            """, (goal['id'], user['id'], amount, date.today().strftime('%Y-%m-%d'), notes))
+            conn.commit()
+
+            if new_status == 'achieved' and goal['status'] != 'achieved':
+                flash(f"🎉 CONGRATULATIONS! You achieved your milestone goal '{goal['title']}'!", "success")
+            else:
+                flash(f"Successfully deposited ₹{amount:,.0f} to '{goal['title']}'! Current progress: ₹{new_amt:,.0f}.", "success")
         else:
-            flash(f"Successfully deposited ₹{amount:,.0f} to '{goal['title']}'! Current progress: ₹{new_amt:,.0f}.", "success")
+            flash("Savings goal not found.", "warning")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error depositing to goal: {str(e)}", "danger")
+    finally:
+        conn.close()
 
-    conn.close()
     return redirect(url_for('savings_goals'))
 
 

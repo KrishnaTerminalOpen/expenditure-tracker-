@@ -4,13 +4,37 @@ Handles SQLite schema, seed data, and connection helpers.
 """
 import sqlite3
 import os
+import shutil
+import tempfile
 import bcrypt
 from avatars import get_avatar_for_user
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spendwise.db")
+def get_db_path() -> str:
+    """
+    Returns the appropriate SQLite database file path.
+    On Vercel and serverless platforms where /var/task is read-only,
+    copies spendwise.db to the writable /tmp directory if needed.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    source_db = os.path.join(base_dir, "spendwise.db")
+
+    is_vercel = os.environ.get('VERCEL') == '1' or os.environ.get('VERCEL_ENV') is not None
+    is_readonly = not os.access(base_dir, os.W_OK)
+
+    if is_vercel or is_readonly:
+        tmp_dir = tempfile.gettempdir()
+        tmp_db = os.path.join(tmp_dir, "spendwise.db")
+        if not os.path.exists(tmp_db) and os.path.exists(source_db):
+            try:
+                shutil.copy2(source_db, tmp_db)
+                os.chmod(tmp_db, 0o666)
+            except Exception as e:
+                print(f"Error copying DB to tmp: {e}")
+        return tmp_db
+    return source_db
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(get_db_path(), timeout=15)
     conn.row_factory = sqlite3.Row
     return conn
 
