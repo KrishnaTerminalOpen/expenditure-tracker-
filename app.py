@@ -590,15 +590,20 @@ def edit_expense(exp_id):
     flash("Expense updated successfully!", "success")
     return redirect(request.referrer or url_for('expenses'))
 
-@app.route('/expenses/delete/<int:exp_id>', methods=['POST'])
+@app.route('/expenses/delete/<int:exp_id>', methods=['GET', 'POST'])
 @login_required
 def delete_expense(exp_id):
     user = get_current_user()
     conn = get_db()
-    conn.execute("DELETE FROM expenses WHERE id = ? AND user_id = ?", (exp_id, user['id']))
-    conn.commit()
-    conn.close()
-    flash("Expense removed.", "info")
+    try:
+        conn.execute("DELETE FROM expenses WHERE id = ? AND user_id = ?", (exp_id, user['id']))
+        conn.commit()
+        flash("Expense removed.", "info")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error removing expense: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(request.referrer or url_for('expenses'))
 
 # ==========================================
@@ -663,15 +668,20 @@ def add_category():
 
     return redirect(url_for('categories_payments'))
 
-@app.route('/categories/delete/<int:cat_id>', methods=['POST'])
+@app.route('/categories/delete/<int:cat_id>', methods=['GET', 'POST'])
 @login_required
 def delete_category(cat_id):
     user = get_current_user()
     conn = get_db()
-    conn.execute("DELETE FROM categories WHERE id = ? AND user_id = ?", (cat_id, user['id']))
-    conn.commit()
-    conn.close()
-    flash("Category deleted.", "info")
+    try:
+        conn.execute("DELETE FROM categories WHERE id = ? AND user_id = ?", (cat_id, user['id']))
+        conn.commit()
+        flash("Category deleted.", "info")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error deleting category: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('categories_payments'))
 
 @app.route('/payments/add', methods=['POST'])
@@ -693,15 +703,20 @@ def add_payment_method():
 
     return redirect(url_for('categories_payments'))
 
-@app.route('/payments/delete/<int:pm_id>', methods=['POST'])
+@app.route('/payments/delete/<int:pm_id>', methods=['GET', 'POST'])
 @login_required
 def delete_payment_method(pm_id):
     user = get_current_user()
     conn = get_db()
-    conn.execute("DELETE FROM payment_methods WHERE id = ? AND user_id = ?", (pm_id, user['id']))
-    conn.commit()
-    conn.close()
-    flash("Payment method removed.", "info")
+    try:
+        conn.execute("DELETE FROM payment_methods WHERE id = ? AND user_id = ?", (pm_id, user['id']))
+        conn.commit()
+        flash("Payment method removed.", "info")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error removing payment method: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('categories_payments'))
 
 # ==========================================
@@ -918,15 +933,20 @@ def insights():
         notifications=notifs
     )
 
-@app.route('/notifications/mark-all-read', methods=['POST'])
+@app.route('/notifications/mark-all-read', methods=['GET', 'POST'])
 @login_required
 def mark_all_notifications_read():
     user = get_current_user()
     conn = get_db()
-    conn.execute("UPDATE notifications SET is_read = 1 WHERE user_id = ?", (user['id'],))
-    conn.commit()
-    conn.close()
-    flash("All insights marked as read.", "success")
+    try:
+        conn.execute("UPDATE notifications SET is_read = 1 WHERE user_id = ?", (user['id'],))
+        conn.commit()
+        flash("All insights marked as read.", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error updating insights: {str(e)}", "danger")
+    finally:
+        conn.close()
     return redirect(url_for('insights'))
 
 # ==========================================
@@ -1557,13 +1577,9 @@ def auto_detect_category(text: str) -> tuple[str, str]:
 @login_required
 def import_csv():
     user = get_current_user()
-    if 'statement_file' not in request.files:
-        flash("No CSV file selected.", "danger")
-        return redirect(url_for('expenses'))
-
-    file = request.files['statement_file']
+    file = request.files.get('statement_file') or request.files.get('file') or request.files.get('csv_file')
     if not file or file.filename == '':
-        flash("No file selected for statement import.", "danger")
+        flash("No CSV file selected for statement import.", "danger")
         return redirect(url_for('expenses'))
 
     try:
