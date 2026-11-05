@@ -6,8 +6,8 @@
 <!-- Profile & Settings View -->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
     <div>
-        <h1 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;">User Profile & Preferences</h1>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+        <h1 style="font-size: 1.65rem; font-weight: 800; letter-spacing: -0.025em; background: linear-gradient(135deg, #ffffff 40%, #fb923c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">User Profile & Preferences</h1>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
             Configure your personal account, personalized avatar, monthly threshold, and visual theme
         </p>
     </div>
@@ -15,57 +15,71 @@
 
 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; max-width: 1040px;">
     <!-- Profile Card (Left) -->
-    <div class="card" style="text-align: center; padding: 32px 24px; display: flex; flex-direction: column; align-items: center;">
-        <!-- Interactive Avatar with Hover Glow -->
+    <div class="card" style="text-align: center; padding: 34px 26px; display: flex; flex-direction: column; align-items: center; border-top: 3px solid var(--accent-orange); background: linear-gradient(180deg, rgba(22, 30, 48, 0.82) 0%, rgba(13, 18, 30, 0.94) 100%); position: relative; overflow: hidden;">
+        <!-- Top subtle luminous aura -->
+        <div style="position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 200px; height: 120px; background: radial-gradient(circle, rgba(249, 115, 22, 0.22) 0%, transparent 70%); pointer-events: none;"></div>
+
+        <!-- Interactive Avatar with Hover Glow & Pulse -->
         <div class="profile-avatar-wrapper" onclick="openModal('avatarModal')" title="Click to choose a new avatar"
-             style="position: relative; width: 104px; height: 104px; margin: 0 auto 14px auto; cursor: pointer; transition: transform 0.25s ease;">
+             style="position: relative; width: 112px; height: 112px; margin: 0 auto 16px auto; cursor: pointer; transition: all 0.3s ease;">
+            <div style="position: absolute; inset: -4px; border-radius: 50%; background: linear-gradient(135deg, #ff8533, #ea580c, #3b82f6); opacity: 0.85; filter: blur(2px);"></div>
             <img id="profileCardAvatar" src="{{ user.avatar }}" alt="{{ user.name }}"
-                 style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3.5px solid var(--accent-orange); box-shadow: 0 0 24px rgba(249, 115, 22, 0.35);">
-            <div style="position: absolute; bottom: 2px; right: 2px; width: 30px; height: 30px; background: linear-gradient(135deg, #f97316, #ea580c); border: 2.5px solid #131929; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">
+                 style="position: relative; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #0d121f; box-shadow: 0 0 24px rgba(249, 115, 22, 0.45); display: block;">
+            <div style="position: absolute; bottom: 2px; right: 2px; width: 32px; height: 32px; background: linear-gradient(135deg, #ff8533, #ea580c); border: 2.5px solid #0d121f; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.6); z-index: 2;">
                 <i class="fa-solid fa-camera"></i>
             </div>
         </div>
 
-        <h3 style="font-size: 1.2rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 2px;">{{ user.name }}</h3>
-        <p style="font-size: 0.82rem; color: var(--text-dim); margin-bottom: 8px;">{{ user.email }}</p>
+        <h3 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.015em; margin-bottom: 3px; background: linear-gradient(135deg, #ffffff 40%, #fed7aa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ user.name }}</h3>
+        <p style="font-size: 0.84rem; color: var(--text-dim); margin-bottom: 12px; font-family: var(--font-mono);">{{ user.email }}</p>
 
         <!-- Gender Detection Smart Pill -->
         {% if user_gender == 'boy' %}
-        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; color: #60a5fa; background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.3); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px;">
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; color: #60a5fa; background: rgba(59, 130, 246, 0.16); border: 1px solid rgba(59, 130, 246, 0.35); padding: 4px 12px; border-radius: 20px; margin-bottom: 18px; box-shadow: 0 0 14px rgba(59, 130, 246, 0.2);">
             <i class="fa-solid fa-mars"></i> Boy Profile (Custom Avatar)
         </span>
         {% else %}
-        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; color: #f472b6; background: rgba(236, 72, 153, 0.14); border: 1px solid rgba(236, 72, 153, 0.3); padding: 3px 10px; border-radius: 20px; margin-bottom: 14px;">
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; color: #f472b6; background: rgba(236, 72, 153, 0.16); border: 1px solid rgba(236, 72, 153, 0.35); padding: 4px 12px; border-radius: 20px; margin-bottom: 18px; box-shadow: 0 0 14px rgba(236, 72, 153, 0.2);">
             <i class="fa-solid fa-venus"></i> Girl Profile (Custom Avatar)
         </span>
         {% endif %}
 
-        <button type="button" onclick="openModal('avatarModal')" class="btn-outline" style="font-size: 0.78rem; padding: 6px 14px; border-radius: 10px; width: 100%; justify-content: center; margin-bottom: 20px;">
-            <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-orange);"></i> Change Avatar
+        <button type="button" onclick="openModal('avatarModal')" class="btn-outline" style="font-size: 0.8rem; padding: 8px 16px; border-radius: 10px; width: 100%; justify-content: center; margin-bottom: 22px; font-weight: 600;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-orange); margin-right: 6px;"></i> Change Avatar
         </button>
 
-        <div style="display: flex; justify-content: space-around; width: 100%; padding-top: 18px; border-top: 1px solid var(--border-color);">
-            <div>
-                <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">Total Spent</span>
-                <strong style="font-size: 1.05rem; color: var(--accent-orange); font-family: var(--font-mono);">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
+        <!-- Sleek Mini Stat Capsules -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+            <div style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 12px; padding: 12px 10px; text-align: center;">
+                <span style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 4px;">
+                    <i class="fa-solid fa-wallet" style="color: var(--accent-orange);"></i> Total Spent
+                </span>
+                <strong style="font-size: 1.15rem; color: #fb923c; font-family: var(--font-mono); font-weight: 800; display: block; text-shadow: 0 2px 10px rgba(249, 115, 22, 0.3);">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
             </div>
-            <div>
-                <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">Total Entries</span>
-                <strong style="font-size: 1.05rem; color: var(--text-main); font-family: var(--font-mono);">{{ total_txns }}</strong>
+            <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 12px 10px; text-align: center;">
+                <span style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 4px;">
+                    <i class="fa-solid fa-receipt" style="color: #60a5fa;"></i> Entries
+                </span>
+                <strong style="font-size: 1.15rem; color: #ffffff; font-family: var(--font-mono); font-weight: 800; display: block; text-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);">{{ total_txns }}</strong>
             </div>
         </div>
 
         <div style="margin-top: 24px; width: 100%;">
-            <a href="{{ url_for('logout') }}" class="btn-outline" style="width: 100%; justify-content: center; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+            <a href="{{ url_for('logout') }}" class="btn-outline" style="width: 100%; justify-content: center; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.06); font-weight: 600;">
+                <i class="fa-solid fa-arrow-right-from-bracket" style="margin-right: 6px;"></i> Sign Out
             </a>
         </div>
     </div>
 
     <!-- Preferences Form (Right) -->
-    <div class="card" style="padding: 28px;">
-        <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.01em;">Account Settings</h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 22px;">
+    <div class="card" style="padding: 30px; border-top: 3px solid #3b82f6; background: linear-gradient(180deg, rgba(22, 30, 48, 0.82) 0%, rgba(13, 18, 30, 0.94) 100%);">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(59, 130, 246, 0.18); border: 1px solid rgba(59, 130, 246, 0.35); display: flex; align-items: center; justify-content: center; color: #60a5fa;">
+                <i class="fa-solid fa-sliders"></i>
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.015em; background: linear-gradient(135deg, #ffffff 40%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Account Settings</h3>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 24px;">
             Manage your personal credentials, monthly spending thresholds, and account preferences.
         </p>
 
