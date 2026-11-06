@@ -33,41 +33,50 @@
 
                 <!-- Navigation Menu (Modules 1-8) -->
                 <nav class="nav-menu">
-                    <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if current_page == 'dashboard' else '' }}" id="nav-dashboard">
+                    <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if current_page == 'dashboard' else '' }} {{ 'nav-item-locked' if not budget_is_set else '' }}" id="nav-dashboard" {% if not budget_is_set %}onclick="handleLockedNavClick(event)" title="Compulsory: Please set your monthly budget first"{% endif %}>
                         <i class="fa-solid fa-table-columns"></i>
                         <span>Dashboard</span>
+                        {% if not budget_is_set %}<span class="nav-lock-pill"><i class="fa-solid fa-lock"></i></span>{% endif %}
                     </a>
                     <a href="{{ url_for('expenses') }}" class="nav-item {{ 'active' if current_page == 'expenses' else '' }}" id="nav-expenses">
                         <i class="fa-solid fa-credit-card"></i>
                         <span>Expenses</span>
+                        {% if not budget_is_set %}<span class="nav-required-pill">Required</span>{% endif %}
                     </a>
-                    <a href="{{ url_for('budget') }}" class="nav-item {{ 'active' if current_page == 'budget' else '' }}" id="nav-budget">
+                    <a href="{{ url_for('budget') }}" class="nav-item {{ 'active' if current_page == 'budget' else '' }} {{ 'nav-item-locked' if not budget_is_set else '' }}" id="nav-budget" {% if not budget_is_set %}onclick="handleLockedNavClick(event)" title="Compulsory: Please set your monthly budget first"{% endif %}>
                         <i class="fa-solid fa-wallet"></i>
                         <span>Budget</span>
+                        {% if not budget_is_set %}<span class="nav-lock-pill"><i class="fa-solid fa-lock"></i></span>{% endif %}
                     </a>
-                    <a href="{{ url_for('subscriptions') }}" class="nav-item {{ 'active' if current_page == 'subscriptions' else '' }}" id="nav-subscriptions">
+                    <a href="{{ url_for('subscriptions') }}" class="nav-item {{ 'active' if current_page == 'subscriptions' else '' }} {{ 'nav-item-locked' if not budget_is_set else '' }}" id="nav-subscriptions" {% if not budget_is_set %}onclick="handleLockedNavClick(event)" title="Compulsory: Please set your monthly budget first"{% endif %}>
                         <i class="fa-solid fa-arrows-rotate"></i>
                         <span>Subscriptions</span>
+                        {% if not budget_is_set %}<span class="nav-lock-pill"><i class="fa-solid fa-lock"></i></span>{% endif %}
                     </a>
-                    <a href="{{ url_for('savings_goals') }}" class="nav-item {{ 'active' if current_page == 'savings_goals' else '' }}" id="nav-savings-goals">
+                    <a href="{{ url_for('savings_goals') }}" class="nav-item {{ 'active' if current_page == 'savings_goals' else '' }} {{ 'nav-item-locked' if not budget_is_set else '' }}" id="nav-savings-goals" {% if not budget_is_set %}onclick="handleLockedNavClick(event)" title="Compulsory: Please set your monthly budget first"{% endif %}>
                         <i class="fa-solid fa-bullseye"></i>
                         <span>Savings Goals</span>
+                        {% if not budget_is_set %}<span class="nav-lock-pill"><i class="fa-solid fa-lock"></i></span>{% endif %}
                     </a>
-                    <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if current_page == 'analytics' else '' }}" id="nav-analytics">
+                    <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if current_page == 'analytics' else '' }} {{ 'nav-item-locked' if not budget_is_set else '' }}" id="nav-analytics" {% if not budget_is_set %}onclick="handleLockedNavClick(event)" title="Compulsory: Please set your monthly budget first"{% endif %}>
                         <i class="fa-solid fa-chart-line"></i>
                         <span>Analytics</span>
+                        {% if not budget_is_set %}<span class="nav-lock-pill"><i class="fa-solid fa-lock"></i></span>{% endif %}
                     </a>
-                    <a href="{{ url_for('insights') }}" class="nav-item {{ 'active' if current_page == 'insights' else '' }}" id="nav-insights">
+                    <a href="{{ url_for('insights') }}" class="nav-item {{ 'active' if current_page == 'insights' else '' }} {{ 'nav-item-locked' if not budget_is_set else '' }}" id="nav-insights" {% if not budget_is_set %}onclick="handleLockedNavClick(event)" title="Compulsory: Please set your monthly budget first"{% endif %}>
                         <i class="fa-solid fa-lightbulb"></i>
                         <span>Insights</span>
+                        {% if not budget_is_set %}<span class="nav-lock-pill"><i class="fa-solid fa-lock"></i></span>{% endif %}
                     </a>
-                    <a href="{{ url_for('history') }}" class="nav-item {{ 'active' if current_page == 'history' else '' }}" id="nav-history">
+                    <a href="{{ url_for('history') }}" class="nav-item {{ 'active' if current_page == 'history' else '' }} {{ 'nav-item-locked' if not budget_is_set else '' }}" id="nav-history" {% if not budget_is_set %}onclick="handleLockedNavClick(event)" title="Compulsory: Please set your monthly budget first"{% endif %}>
                         <i class="fa-solid fa-clock-rotate-left"></i>
                         <span>History</span>
+                        {% if not budget_is_set %}<span class="nav-lock-pill"><i class="fa-solid fa-lock"></i></span>{% endif %}
                     </a>
-                    <a href="{{ url_for('categories_payments') }}" class="nav-item {{ 'active' if current_page == 'categories' else '' }}" id="nav-categories">
+                    <a href="{{ url_for('categories_payments') }}" class="nav-item {{ 'active' if current_page == 'categories' else '' }} {{ 'nav-item-locked' if not budget_is_set else '' }}" id="nav-categories" {% if not budget_is_set %}onclick="handleLockedNavClick(event)" title="Compulsory: Please set your monthly budget first"{% endif %}>
                         <i class="fa-solid fa-shapes"></i>
                         <span>Categories</span>
+                        {% if not budget_is_set %}<span class="nav-lock-pill"><i class="fa-solid fa-lock"></i></span>{% endif %}
                     </a>
                     <a href="{{ url_for('profile') }}" class="nav-item {{ 'active' if current_page == 'profile' else '' }}" id="nav-profile">
                         <i class="fa-regular fa-user"></i>
@@ -615,9 +624,21 @@
         }
 
         function closeModal(id) {
+            if (id === 'compulsoryBudgetModal') return; // Cannot close compulsory budget setup
             playClickSound();
             const el = document.getElementById(id);
             if(el) el.style.display = 'none';
+        }
+
+        function handleLockedNavClick(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            playClickSound();
+            if (typeof openCompulsoryBudgetModal === 'function') {
+                openCompulsoryBudgetModal();
+            } else {
+                window.location.href = "{{ url_for('expenses') }}";
+            }
         }
 
         function toggleAppTheme() {

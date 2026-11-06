@@ -3,6 +3,29 @@
 {% block title %}Expenses - SpendWise{% endblock %}
 
 {% block content %}
+{% if not budget_is_set %}
+<!-- Compulsory Monthly Budget Setup Alert Banner -->
+<div class="compulsory-budget-alert-banner">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="budget-alert-icon-pulse">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+        <div>
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-bottom: 3px; display: flex; align-items: center; gap: 8px;">
+                <span>Compulsory Setup: Set Your Monthly Budget</span>
+                <span style="font-size: 0.68rem; font-weight: 700; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Required to Proceed</span>
+            </h4>
+            <p style="font-size: 0.84rem; color: #fed7aa; margin: 0; line-height: 1.4;">
+                As a new user, setting your monthly budget is mandatory. Navigation to the Dashboard, Analytics, and other modules is locked until your budget is established.
+            </p>
+        </div>
+    </div>
+    <button type="button" class="btn-primary" onclick="openCompulsoryBudgetModal()" style="padding: 10px 20px; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0; box-shadow: 0 4px 20px rgba(249, 115, 22, 0.5);">
+        <i class="fa-solid fa-wallet" style="margin-right: 6px;"></i> Configure Budget Now
+    </button>
+</div>
+{% endif %}
+
 <!-- Module 3: Expense Management Header -->
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
     <div>
@@ -288,6 +311,64 @@
         </form>
     </div>
 </div>
+{% if not budget_is_set %}
+<!-- ======================================================== -->
+<!-- COMPULSORY ONBOARDING BUDGET SETUP MODAL (UNCLOSABLE)    -->
+<!-- ======================================================== -->
+<div class="modal-overlay compulsory-modal-overlay" id="compulsoryBudgetModal" style="display: flex; z-index: 999999; background: rgba(4, 7, 13, 0.88); backdrop-filter: blur(20px);">
+    <div class="modal-content" style="max-width: 520px; padding: 34px 28px; border-top: 3.5px solid var(--accent-orange); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(249, 115, 22, 0.35); text-align: center; position: relative;">
+        <!-- Glowing Top Icon -->
+        <div style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(234, 88, 12, 0.1) 100%); border: 2px solid rgba(249, 115, 22, 0.5); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px auto; box-shadow: 0 0 25px rgba(249, 115, 22, 0.4);">
+            <i class="fa-solid fa-bullseye" style="font-size: 1.9rem; color: var(--accent-orange);"></i>
+        </div>
+
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; color: #fb923c; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.35); padding: 3px 12px; border-radius: 20px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">
+            <i class="fa-solid fa-lock"></i> Compulsory Step 1 of 1
+        </span>
+
+        <h2 style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; color: #ffffff;">
+            Set Your Monthly Budget
+        </h2>
+        <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 22px; max-width: 440px; margin-left: auto; margin-right: auto;">
+            SpendWise requires a monthly spending limit to calculate budget pacing, month-end runaway forecasts, and category health scores. <strong>You cannot move forward in the website without setting your budget.</strong>
+        </p>
+
+        <form action="{{ url_for('set_initial_budget') }}" method="POST" id="compulsoryBudgetForm">
+            <!-- Large Currency & Amount Input -->
+            <div style="position: relative; margin-bottom: 16px;">
+                <span style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 1.5rem; font-weight: 800; color: var(--accent-orange); font-family: var(--font-mono); pointer-events: none;">₹</span>
+                <input type="number" name="monthly_budget" id="compulsoryBudgetInput" min="500" step="500" required placeholder="e.g. 20000" autofocus
+                       class="form-input" style="font-size: 1.4rem; font-weight: 800; padding-left: 44px; padding-right: 18px; height: 56px; font-family: var(--font-mono); border: 2px solid rgba(249, 115, 22, 0.45); box-shadow: 0 0 20px rgba(249, 115, 22, 0.2); text-align: left; background: rgba(10, 14, 24, 0.9);">
+            </div>
+
+            <!-- Quick Preset Chips -->
+            <div style="margin-bottom: 22px;">
+                <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.04em; display: block; margin-bottom: 8px;">Quick Suggestions</span>
+                <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" class="quick-chip-btn" onclick="setPresetBudget(10000)">₹10,000</button>
+                    <button type="button" class="quick-chip-btn" onclick="setPresetBudget(20000)">₹20,000</button>
+                    <button type="button" class="quick-chip-btn" onclick="setPresetBudget(30000)">₹30,000</button>
+                    <button type="button" class="quick-chip-btn" onclick="setPresetBudget(50000)">₹50,000</button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button type="submit" name="next_action" value="stay_expenses" class="btn-primary" style="width: 100%; height: 48px; font-size: 0.95rem; font-weight: 800; justify-content: center; box-shadow: 0 6px 25px rgba(249, 115, 22, 0.5);">
+                    <i class="fa-solid fa-unlock-keyhole" style="margin-right: 8px;"></i> Set Budget & Unlock Website
+                </button>
+                <button type="submit" name="next_action" value="go_dashboard" class="btn-outline" style="width: 100%; height: 42px; font-size: 0.85rem; font-weight: 700; justify-content: center;">
+                    <i class="fa-solid fa-table-columns" style="color: var(--accent-orange); margin-right: 8px;"></i> Set Budget & Go To Dashboard
+                </button>
+            </div>
+
+            <div style="margin-top: 16px; font-size: 0.72rem; color: var(--text-dim); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fa-solid fa-circle-info"></i> You can adjust or customize category limits anytime from Budget or Settings.
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -301,5 +382,49 @@
         document.getElementById('edit_notes').value = notes;
         openModal('editExpenseModal');
     }
+
+    function openCompulsoryBudgetModal() {
+        const m = document.getElementById('compulsoryBudgetModal');
+        if (m) {
+            m.style.display = 'flex';
+            const inp = document.getElementById('compulsoryBudgetInput');
+            if (inp) inp.focus();
+        }
+    }
+
+    function setPresetBudget(val) {
+        const inp = document.getElementById('compulsoryBudgetInput');
+        if (inp) {
+            inp.value = val;
+            inp.focus();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const compModal = document.getElementById('compulsoryBudgetModal');
+        if (compModal) {
+            compModal.style.display = 'flex';
+            // Prevent dismissal on backdrop click
+            compModal.addEventListener('click', function(e) {
+                if (e.target === compModal) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const content = compModal.querySelector('.modal-content');
+                    if (content) {
+                        content.style.transform = 'scale(1.02)';
+                        setTimeout(() => content.style.transform = 'scale(1)', 150);
+                    }
+                }
+            });
+
+            // Prevent dismissal on Esc key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && compModal.style.display === 'flex') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true);
+        }
+    });
 </script>
 {% endblock %}

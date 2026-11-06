@@ -68,6 +68,45 @@ def get_current_user():
         conn.close()
     return user
 
+@app.context_processor
+def inject_user_context():
+    user = get_current_user()
+    budget_set = False
+    if user and user['monthly_budget'] is not None and float(user['monthly_budget']) > 0:
+        budget_set = True
+    return {
+        'current_user': user,
+        'budget_is_set': budget_set
+    }
+
+@app.before_request
+def enforce_compulsory_budget():
+    # Allow static assets without check
+    if request.path.startswith('/static'):
+        return None
+
+    # Endpoints always permitted even when monthly budget is not configured
+    exempt_endpoints = {
+        'static',
+        'login',
+        'register',
+        'logout',
+        'expenses',
+        'set_initial_budget',
+        'toggle_theme',
+        'toggle_audio',
+        'first_transaction',
+        'onboarding'
+    }
+
+    if 'user_id' in session:
+        endpoint = request.endpoint or ''
+        if endpoint not in exempt_endpoints:
+            user = get_current_user()
+            if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
+                flash("⚠️ Setting your monthly budget is compulsory before moving forward in SpendWise. Please set your budget below.", "warning")
+                return redirect(url_for('expenses'))
+
 # ==========================================
 # MODULE 1: AUTHENTICATION & PROFILE
 # ==========================================
@@ -84,7 +123,13 @@ def login():
             session['user_id'] = user['id']
             session['user_name'] = user['name']
             session['user_email'] = user['email']
+            user_budget = user['monthly_budget']
             conn.close()
+
+            # For new users who haven't set their budget, land on the Expense page as front page
+            if user_budget is None or float(user_budget) <= 0:
+                flash(f"Welcome, {user['name']}! Please set your monthly budget to get started.", "info")
+                return redirect(url_for('expenses'))
 
             flash("Welcome back!", "success")
             return redirect(url_for('dashboard'))
@@ -94,6 +139,9 @@ def login():
             return render_template('auth.html', active_tab='login', email=email)
 
     if 'user_id' in session:
+        user = get_current_user()
+        if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
+            return redirect(url_for('expenses'))
         return redirect(url_for('dashboard'))
     return render_template('auth.html', active_tab='login')
 
@@ -169,8 +217,8 @@ def register():
         session['user_id'] = new_user_id
         session['user_name'] = name
         session['user_email'] = email
-        flash(f"Account created successfully! Welcome, {name}.", "success")
-        return redirect(url_for('dashboard'))
+        flash(f"Account created successfully! Welcome, {name}. Please configure your monthly budget to get started.", "info")
+        return redirect(url_for('expenses'))
 
     return render_template('auth.html', active_tab='register')
 
@@ -291,6 +339,9 @@ def profile():
 @login_required
 def dashboard():
     user = get_current_user()
+    if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
+        flash("⚠️ Setting your monthly budget is compulsory before moving forward. Please set your budget below.", "warning")
+        return redirect(url_for('expenses'))
     conn = get_db()
     uid = user['id']
 
@@ -476,6 +527,60 @@ def dashboard():
 # ==========================================
 # MODULE 3: EXPENSE MANAGEMENT
 # ==========================================
+
+@app.route('/set-initial-budget', methods=['POST'])
+@login_required
+def set_initial_budget():
+    user = get_current_user()
+    uid = user['id']
+    budget_raw = request.form.get('monthly_budget', '').strip()
+    next_action = request.form.get('next_action', 'stay_expenses').strip()
+
+    try:
+        budget_val = float(budget_raw)
+    except (ValueError, TypeError):
+        budget_val = 0.0
+
+    if budget_val <= 0:
+        flash("⚠️ Please enter a valid monthly budget greater than ₹0 to continue.", "danger")
+        return redirect(url_for('expenses'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (budget_val, uid))
+
+    # Proportional default category budget limits so pacing gauges activate
+    cat_weights = {
+        "Food & Dining": 0.25,
+        "Shopping": 0.20,
+        "Transport": 0.15,
+        "Bills & Utilities": 0.15,
+        "Entertainment": 0.10,
+        "Education": 0.05,
+        "Health": 0.05,
+        "Others": 0.05
+    }
+    for cat_name, weight in cat_weights.items():
+        cat_limit = round(budget_val * weight, 2)
+        cursor.execute("""
+            UPDATE categories 
+            SET budget_limit = ? 
+            WHERE user_id = ? AND name = ? AND (budget_limit IS NULL OR budget_limit = 0.0)
+        """, (cat_limit, uid, cat_name))
+
+    # Congratulatory notification
+    cursor.execute("""
+        INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
+        VALUES (?, '🎯 Monthly Budget Established!', ?, 'success', 0, 'Just now')
+    """, (uid, f"Monthly spending target established at ₹{budget_val:,.0f}. All dashboard pacing gauges, runway projections, and features are now unlocked!"))
+
+    conn.commit()
+    conn.close()
+
+    flash(f"🎉 Monthly budget of ₹{budget_val:,.0f} has been established! All sections are now unlocked.", "success")
+    if next_action == 'go_dashboard':
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('expenses'))
 
 @app.route('/expenses', methods=['GET'])
 @login_required
