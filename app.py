@@ -2065,7 +2065,7 @@ def import_csv():
     except Exception as e:
         flash(f"Error processing CSV statement: {str(e)}", "danger")
 
-    return redirect(url_for('expenses'))
+    return redirect(request.referrer or url_for('dashboard'))
 
 @app.route('/import/template')
 @login_required

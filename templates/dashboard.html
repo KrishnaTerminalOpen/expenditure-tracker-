@@ -3,26 +3,6 @@
 {% block title %}Dashboard - SpendWise{% endblock %}
 
 {% block content %}
-<!-- Welcome & Empty State Banner (If no transactions yet) -->
-{% if txn_count == 0 %}
-<div class="welcome-hero-banner">
-    <div>
-        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-orange); font-weight: 700; margin-bottom: 4px;">
-            <i class="fa-solid fa-sparkles"></i> Getting Started
-        </div>
-        <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 6px;">Welcome to Your Financial Command Center</h2>
-        <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 620px; line-height: 1.5;">
-            You are viewing an empty workspace. Log your first transaction to activate live spending intelligence, budget pacing gauges, and automated trend analysis.
-        </p>
-    </div>
-    <div style="display: flex; gap: 10px; flex-shrink: 0;">
-        <a href="{{ url_for('first_transaction') }}" class="btn-primary" style="padding: 12px 22px; font-size: 0.9rem; white-space: nowrap; box-shadow: 0 4px 20px var(--accent-orange-glow);" onclick="playClickSound()">
-            <i class="fa-solid fa-bolt" style="margin-right: 6px;"></i> Log First Expense
-        </a>
-    </div>
-</div>
-{% endif %}
-
 <!-- Module 2: Dashboard Header with Executive Status Bar -->
 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
     <div>
@@ -44,14 +24,25 @@
         </p>
     </div>
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        {% if txn_count > 0 %}
         <a href="{{ url_for('export_pdf') }}" class="btn-outline" style="font-size: 0.82rem; padding: 9px 15px;" title="Export Comprehensive PDF Audit Report">
             <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Export PDF
         </a>
         <button class="btn-primary" onclick="openModal('quickAddExpenseModal')">
             <i class="fa-solid fa-plus"></i> Add Expense (N)
         </button>
+        {% else %}
+        <button class="btn-primary" onclick="openModal('importCsvModal')">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Import Statement CSV
+        </button>
+        <button class="btn-outline" onclick="openModal('quickAddExpenseModal')">
+            <i class="fa-solid fa-plus"></i> Add Expense
+        </button>
+        {% endif %}
     </div>
 </div>
+
+{% if txn_count > 0 %}
 
 <!-- AI Financial Health Score & Intelligence Banner -->
 <div class="health-score-card">
@@ -403,6 +394,101 @@
         </div>
     </div>
 </div>
+{% else %}
+<!-- Zero-Data / Onboarding & Import Command Center -->
+<div class="card" style="padding: 40px 36px; background: linear-gradient(145deg, rgba(22, 30, 48, 0.85) 0%, rgba(13, 17, 26, 0.95) 100%); border-top: 3.5px solid var(--accent-orange); margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+    <div style="position: absolute; top: -60px; right: -40px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(249, 115, 22, 0.15) 0%, transparent 70%); pointer-events: none;"></div>
+
+    <div style="max-width: 680px; position: relative; z-index: 1;">
+        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 20px; font-size: 0.72rem; font-weight: 700; color: #fb923c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">
+            <i class="fa-solid fa-sparkles"></i> Getting Started
+        </div>
+        <h2 style="font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; color: #ffffff; margin-bottom: 8px;">
+            Import your financial data to activate your dashboard
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 28px;">
+            You are currently viewing an empty workspace. To ensure accuracy and protect your data, SpendWise displays monthly budget pacing, category distributions, burn velocity, and AI financial runway once you import bank statements or record your expenses.
+        </p>
+    </div>
+
+    <!-- 3 Primary Action Steps -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; position: relative; z-index: 1;">
+        <!-- Step 1: Import Statement CSV -->
+        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 1.25rem; margin-bottom: 14px;">
+                    <i class="fa-solid fa-file-csv"></i>
+                </div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Import Bank Statement</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+                    Upload CSV statement from SBI, HDFC, ICICI, Axis, Paytm, or generic bank export with automatic AI auto-categorization.
+                </p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); justify-content: center; padding: 10px 14px; font-weight: 700;" onclick="openModal('importCsvModal')">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload Statement CSV
+                </button>
+                <a href="{{ url_for('import_template') }}" style="font-size: 0.72rem; color: #38bdf8; text-align: center; text-decoration: none; font-weight: 600;">
+                    <i class="fa-solid fa-download"></i> Download Sample CSV Template
+                </a>
+            </div>
+        </div>
+
+        <!-- Step 2: Log Expense Manually -->
+        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(249, 115, 22, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.35); display: flex; align-items: center; justify-content: center; color: var(--accent-orange); font-size: 1.25rem; margin-bottom: 14px;">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Record Single Expense</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+                    Quickly log coffee, commute, shopping, or dining expenses with category tags and payment methods.
+                </p>
+            </div>
+            <button type="button" class="btn-primary" style="justify-content: center; padding: 10px 14px; font-weight: 700;" onclick="openModal('quickAddExpenseModal')">
+                <i class="fa-solid fa-plus"></i> Add First Expense
+            </button>
+        </div>
+
+        <!-- Step 3: Configure Monthly Budget Target -->
+        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(16, 185, 129, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; color: #34d399; font-size: 1.25rem; margin-bottom: 14px;">
+                    <i class="fa-solid fa-bullseye"></i>
+                </div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Set Monthly Budget</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+                    Establish your personal monthly spending threshold and configure category envelope limits.
+                </p>
+            </div>
+            <a href="{{ url_for('budget') }}" class="btn-outline" style="justify-content: center; padding: 10px 14px; font-weight: 700; color: #34d399; border-color: rgba(16, 185, 129, 0.4); text-decoration: none;">
+                <i class="fa-solid fa-sliders"></i> Configure Targets
+            </a>
+        </div>
+    </div>
+
+    <!-- Preview Pill Strip of What Unlocks -->
+    <div style="margin-top: 26px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.07); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+        <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600;">
+            <i class="fa-solid fa-bolt" style="color: var(--accent-orange); margin-right: 5px;"></i> Features that activate once data is imported:
+        </span>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 4px 10px; border-radius: 8px;">
+                <i class="fa-solid fa-chart-line" style="color: #60a5fa; margin-right: 4px;"></i> Spending Run-rate
+            </span>
+            <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 4px 10px; border-radius: 8px;">
+                <i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 4px;"></i> Month-End Runway
+            </span>
+            <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 4px 10px; border-radius: 8px;">
+                <i class="fa-solid fa-chart-pie" style="color: #f472b6; margin-right: 4px;"></i> Category Envelopes
+            </span>
+            <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); padding: 4px 10px; border-radius: 8px;">
+                <i class="fa-solid fa-file-pdf" style="color: #ef4444; margin-right: 4px;"></i> 1-Click PDF Audit
+            </span>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

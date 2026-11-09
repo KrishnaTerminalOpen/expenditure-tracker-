@@ -268,49 +268,7 @@
     </div>
 </div>
 
-<!-- Modal: Smart CSV Bank Statement Import -->
-<div class="modal-overlay" id="importCsvModal">
-    <div class="modal-content" style="max-width: 520px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-file-import" style="color: #38bdf8;"></i> Import Bank Statement CSV
-            </h3>
-            <button onclick="closeModal('importCsvModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        
-        <div style="padding: 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; margin-bottom: 20px;">
-            <div style="font-size: 0.82rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Intelligent Categorization Active
-            </div>
-            <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px; line-height: 1.45;">
-                Our parser automatically detects Dates, Merchants, and Amounts, and uses keyword intelligence to classify entries into Food, Shopping, Utilities, and Transport.
-            </p>
-        </div>
-
-        <form action="{{ url_for('import_csv') }}" method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label>Choose CSV Statement File</label>
-                <input type="file" name="statement_file" accept=".csv" required class="form-input" style="padding: 10px;">
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 0.78rem;">
-                <a href="{{ url_for('import_template') }}" style="color: var(--accent-orange); font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-download"></i> Download Sample CSV Template
-                </a>
-                <span style="color: var(--text-dim);">UTF-8 Encoded</span>
-            </div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
-                <button type="button" class="btn-outline" onclick="closeModal('importCsvModal')">Cancel</button>
-                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> Start Import
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
+<!-- Note: Smart CSV Bank Statement Import modal is now globally available via base.html -->
 {% if not budget_is_set %}
 <!-- ======================================================== -->
 <!-- COMPULSORY ONBOARDING BUDGET SETUP MODAL (UNCLOSABLE)    -->
