@@ -212,14 +212,6 @@ def init_db():
     # Migrate any legacy shared avatar to unique gender-appropriate avatars
     migrate_user_avatars(cursor, conn)
 
-    # Seed demo user if none exists
-    cursor.execute("SELECT id FROM users WHERE email = 'krishna@example.com'")
-    user_row = cursor.fetchone()
-    if not user_row:
-        seed_demo_data(cursor, conn)
-    else:
-        seed_advanced_demo_features(cursor, conn, user_row['id'])
-
     conn.close()
 
 def migrate_user_avatars(cursor, conn):

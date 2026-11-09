@@ -568,6 +568,44 @@ def profile():
         user_gender=user_gender
     )
 
+@app.route('/account/delete', methods=['POST'])
+@login_required
+def delete_account():
+    user = get_current_user()
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
+
+    uid = user['id']
+    user_name = user['name']
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        # Cascade delete all user records
+        cursor.execute("DELETE FROM savings_contributions WHERE user_id = ?", (uid,))
+        cursor.execute("DELETE FROM savings_goals WHERE user_id = ?", (uid,))
+        cursor.execute("DELETE FROM subscriptions WHERE user_id = ?", (uid,))
+        cursor.execute("DELETE FROM expenses WHERE user_id = ?", (uid,))
+        cursor.execute("DELETE FROM notifications WHERE user_id = ?", (uid,))
+        cursor.execute("DELETE FROM categories WHERE user_id = ?", (uid,))
+        cursor.execute("DELETE FROM payment_methods WHERE user_id = ?", (uid,))
+        cursor.execute("DELETE FROM users WHERE id = ?", (uid,))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        flash(f"Error deleting account: {str(e)}", "danger")
+        return redirect(url_for('profile'))
+    finally:
+        conn.close()
+
+    # Clear user session
+    session.clear()
+    flash(f"Your account ({user_name}) and all associated financial records have been permanently deleted.", "info")
+    return redirect(url_for('login'))
+
 # ==========================================
 # MODULE 2: DASHBOARD
 # ==========================================

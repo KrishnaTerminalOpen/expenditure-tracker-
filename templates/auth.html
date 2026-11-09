@@ -221,39 +221,7 @@
             color: var(--text-muted);
         }
 
-        /* Demo Card Quick Access */
-        .demo-credentials-box {
-            background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
-            border: 1px dashed rgba(249, 115, 22, 0.4);
-            border-radius: 12px;
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
 
-        .demo-btn-instant {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            color: #ffffff;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 9px;
-            font-size: 0.76rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .demo-btn-instant:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(249, 115, 22, 0.5);
-        }
 
         /* Right Form Panel */
         .auth-right-form {
@@ -631,15 +599,15 @@
                     </div>
                 </div>
 
-                <!-- Instant Demo Login Box -->
-                <div class="demo-credentials-box">
-                    <div>
-                        <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Demo Sandbox</div>
-                        <div style="font-size: 0.8rem; font-weight: 600; color: #ffffff; margin-top: 1px;">krishna@example.com</div>
+                <!-- Enterprise Grade Security Callout -->
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 9px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1rem; flex-shrink: 0;">
+                        <i class="fa-solid fa-shield-halved"></i>
                     </div>
-                    <button type="button" class="demo-btn-instant" onclick="instantDemoLogin()" id="btnInstantDemo">
-                        <i class="fa-solid fa-bolt"></i> 1-Click Demo Login
-                    </button>
+                    <div>
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #ffffff;">Bank-Grade Data Privacy</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px;">100% private user data isolation & encrypted authentication</div>
+                    </div>
                 </div>
             </div>
 
@@ -687,7 +655,7 @@
                     <div class="form-input-container">
                         <label for="login-email">Email Address</label>
                         <div class="input-icon-box">
-                            <input type="email" id="login-email" name="email" value="{{ email or 'krishna@example.com' }}" placeholder="name@company.com" required>
+                            <input type="email" id="login-email" name="email" value="{{ email or '' }}" placeholder="name@company.com" required>
                             <i class="fa-regular fa-envelope prefix-icon"></i>
                         </div>
                     </div>
@@ -695,10 +663,10 @@
                     <div class="form-input-container">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                             <label for="login-password" style="margin: 0;">Password</label>
-                            <a href="javascript:void(0)" onclick="alert('Demo account credentials: email: krishna@example.com, password: password123')" style="font-size: 0.74rem; color: var(--accent-orange); font-weight: 600;">Forgot?</a>
+                            <a href="javascript:void(0)" onclick="showGoogleFeedback('To access or reset your account, sign in with your Google account or create an account.', 'loading')" style="font-size: 0.74rem; color: var(--accent-orange); font-weight: 600;">Forgot?</a>
                         </div>
                         <div class="input-icon-box">
-                            <input type="password" id="login-password" name="password" value="password123" placeholder="••••••••" required>
+                            <input type="password" id="login-password" name="password" value="" placeholder="••••••••" required>
                             <i class="fa-solid fa-lock prefix-icon"></i>
                             <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Show/Hide password">
                                 <i class="fa-regular fa-eye"></i>
@@ -762,7 +730,7 @@
                         <div class="form-input-container">
                             <label for="reg-name">Full Name</label>
                             <div class="input-icon-box">
-                                <input type="text" id="reg-name" name="name" value="{{ name or '' }}" placeholder="Krishna Sahu" required>
+                                <input type="text" id="reg-name" name="name" value="{{ name or '' }}" placeholder="Your Full Name" required>
                                 <i class="fa-regular fa-user prefix-icon"></i>
                             </div>
                         </div>
@@ -770,7 +738,7 @@
                         <div class="form-input-container">
                             <label for="reg-email">Email Address</label>
                             <div class="input-icon-box">
-                                <input type="email" id="reg-email" name="email" value="{{ email or '' }}" placeholder="krishna@example.com" required>
+                                <input type="email" id="reg-email" name="email" value="{{ email or '' }}" placeholder="name@company.com" required>
                                 <i class="fa-regular fa-envelope prefix-icon"></i>
                             </div>
                         </div>
@@ -882,12 +850,9 @@
                 </ol>
             </div>
 
-            <div style="display: flex; gap: 10px;">
-                <button type="button" onclick="closeGoogleModal()" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); color: #ffffff; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
+            <div>
+                <button type="button" onclick="closeGoogleModal()" style="width: 100%; padding: 11px; border-radius: 9px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14); color: #ffffff; font-size: 0.84rem; font-weight: 600; cursor: pointer;">
                     Close
-                </button>
-                <button type="button" onclick="closeGoogleModal(); instantDemoLogin();" style="flex: 1.2; padding: 10px; border-radius: 8px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; color: #ffffff; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <i class="fa-solid fa-bolt"></i> 1-Click Demo Login
                 </button>
             </div>
         </div>
@@ -926,24 +891,6 @@
                 input.type = 'password';
                 icon.className = 'fa-regular fa-eye';
             }
-        }
-
-        function instantDemoLogin() {
-            switchTab('login');
-            const emailInp = document.getElementById('login-email');
-            const pwInp = document.getElementById('login-password');
-            const btn = document.getElementById('btnInstantDemo');
-            const submitBtn = document.getElementById('loginSubmitBtn');
-
-            emailInp.value = 'krishna@example.com';
-            pwInp.value = 'password123';
-
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Signing In...';
-            submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Authenticating...';
-
-            setTimeout(() => {
-                document.getElementById('loginForm').submit();
-            }, 300);
         }
 
         /* ========================================================
