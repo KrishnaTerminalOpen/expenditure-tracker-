@@ -460,39 +460,90 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            margin-bottom: 4px;
+            margin-top: 2px;
+            margin-bottom: 6px;
+        }
+
+        .fancy-google-box {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5px;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, rgba(66, 133, 244, 0.7) 0%, rgba(234, 67, 53, 0.65) 30%, rgba(251, 188, 5, 0.65) 70%, rgba(52, 168, 83, 0.7) 100%);
+            box-shadow: 0 4px 16px -2px rgba(66, 133, 244, 0.3), 0 2px 10px rgba(0, 0, 0, 0.4);
+            transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 340px;
+            width: 100%;
+        }
+
+        .fancy-google-box:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 8px 25px -2px rgba(66, 133, 244, 0.55), 0 0 20px rgba(52, 168, 83, 0.35);
+            background: linear-gradient(135deg, #4285F4 0%, #EA4335 30%, #FBBC05 70%, #34A853 100%);
+        }
+
+        .fancy-google-aura {
+            position: absolute;
+            inset: -2px;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, rgba(66, 133, 244, 0.4), rgba(234, 67, 53, 0.35), rgba(251, 188, 5, 0.35), rgba(52, 168, 83, 0.4));
+            filter: blur(10px);
+            opacity: 0.55;
+            z-index: 0;
+            transition: all 0.28s ease;
+            pointer-events: none;
+        }
+
+        .fancy-google-box:hover .fancy-google-aura {
+            opacity: 1;
+            filter: blur(14px);
         }
 
         .google-btn-container {
+            position: relative;
+            z-index: 1;
             width: 100%;
             display: flex;
             justify-content: center;
-            min-height: 44px;
+            align-items: center;
+            border-radius: 9999px;
+            overflow: hidden;
+            background: #101626;
+            min-height: 42px;
         }
 
-        .google-btn-fallback {
+        .fancy-google-fallback-btn {
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            background: #141b2b;
+            background: #101626;
             color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 10px;
-            padding: 10px 16px;
-            font-size: 0.85rem;
+            border: none;
+            border-radius: 9999px;
+            padding: 9px 18px;
+            font-size: 0.84rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            text-decoration: none;
+            transition: background 0.2s ease;
         }
 
-        .google-btn-fallback:hover {
-            background: #1c263c;
-            border-color: rgba(255, 255, 255, 0.28);
-            transform: translateY(-1px);
+        .fancy-google-fallback-btn:hover {
+            background: #172036;
+        }
+
+        .google-icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         }
 
         .google-auth-feedback {
@@ -629,24 +680,7 @@
             <div id="login-panel" class="{{ 'panel-active' if active_tab != 'register' else 'panel-hidden' }}">
                 <div style="margin-bottom: 14px;">
                     <h2 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 3px;">Welcome Back 👋</h2>
-                    <p style="font-size: 0.8rem; color: var(--text-muted);">Enter your credentials or sign in with Google instantly.</p>
-                </div>
-
-                <!-- Google One-Tap / Popup Sign-in Button -->
-                <div class="google-auth-wrapper">
-                    <div id="googleSignInBtnLogin" class="google-btn-container">
-                        {% if not google_client_id %}
-                        <button type="button" class="google-btn-fallback" onclick="handleGoogleNotConfigured()">
-                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                            <span>Sign in with Google</span>
-                        </button>
-                        {% endif %}
-                    </div>
-                    <div class="google-auth-feedback" id="googleFeedbackLogin"></div>
-                </div>
-
-                <div class="auth-divider">
-                    <span>or continue with email</span>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Enter your credentials to access your financial OS.</p>
                 </div>
 
                 <form id="loginForm" action="{{ url_for('login') }}" method="POST">
@@ -672,7 +706,7 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
                         <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-muted); cursor: pointer;">
                             <input type="checkbox" id="remember-me" checked style="accent-color: var(--accent-orange); width: 14px; height: 14px; border-radius: 3px;">
                             Remember device
@@ -688,7 +722,29 @@
                     </button>
                 </form>
 
-                <div style="text-align: center; margin-top: 14px; font-size: 0.78rem; color: var(--text-dim);">
+                <div class="auth-divider">
+                    <span>or continue with</span>
+                </div>
+
+                <!-- Google Fancy Sign-In Button at Bottom -->
+                <div class="google-auth-wrapper">
+                    <div class="fancy-google-box">
+                        <div class="fancy-google-aura"></div>
+                        <div id="googleSignInBtnLogin" class="google-btn-container">
+                            {% if not google_client_id %}
+                            <button type="button" class="fancy-google-fallback-btn" onclick="handleGoogleNotConfigured()">
+                                <div class="google-icon-wrapper">
+                                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                </div>
+                                <span>Continue with Google</span>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="google-auth-feedback" id="googleFeedbackLogin"></div>
+                </div>
+
+                <div style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
                     Don't have an account yet? 
                     <a href="javascript:void(0)" onclick="switchTab('register')" style="color: var(--accent-orange); font-weight: 700; margin-left: 3px;">Create account</a>
                 </div>
@@ -698,24 +754,7 @@
             <div id="register-panel" class="{{ 'panel-active' if active_tab == 'register' else 'panel-hidden' }}">
                 <div style="margin-bottom: 12px;">
                     <h2 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 2px;">Create Account 🚀</h2>
-                    <p style="font-size: 0.78rem; color: var(--text-muted);">Sign up instantly with Google or register an account.</p>
-                </div>
-
-                <!-- Google One-Tap / Popup Sign-up Button -->
-                <div class="google-auth-wrapper">
-                    <div id="googleSignInBtnRegister" class="google-btn-container">
-                        {% if not google_client_id %}
-                        <button type="button" class="google-btn-fallback" onclick="handleGoogleNotConfigured()">
-                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                            <span>Sign up with Google</span>
-                        </button>
-                        {% endif %}
-                    </div>
-                    <div class="google-auth-feedback" id="googleFeedbackRegister"></div>
-                </div>
-
-                <div class="auth-divider">
-                    <span>or register with email</span>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Start tracking and optimizing your net capital today.</p>
                 </div>
 
                 <form id="registerForm" action="{{ url_for('register') }}" method="POST">
@@ -754,7 +793,7 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
                         <input type="checkbox" id="terms-agree" required checked style="accent-color: var(--accent-orange); width: 14px; height: 14px;">
                         <label for="terms-agree" style="font-size: 0.76rem; color: var(--text-muted); cursor: pointer;">
                             I accept the <a href="javascript:void(0)" style="color: var(--accent-orange);">Terms</a> & <a href="javascript:void(0)" style="color: var(--accent-orange);">Privacy Policy</a>
@@ -766,6 +805,28 @@
                         <i class="fa-solid fa-user-check"></i>
                     </button>
                 </form>
+
+                <div class="auth-divider">
+                    <span>or sign up with</span>
+                </div>
+
+                <!-- Google Fancy Sign-Up Button at Bottom -->
+                <div class="google-auth-wrapper">
+                    <div class="fancy-google-box">
+                        <div class="fancy-google-aura"></div>
+                        <div id="googleSignInBtnRegister" class="google-btn-container">
+                            {% if not google_client_id %}
+                            <button type="button" class="fancy-google-fallback-btn" onclick="handleGoogleNotConfigured()">
+                                <div class="google-icon-wrapper">
+                                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                </div>
+                                <span>Sign up with Google</span>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="google-auth-feedback" id="googleFeedbackRegister"></div>
+                </div>
 
                 <div style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
                     Already have an account? 
@@ -977,10 +1038,10 @@
                             theme: 'filled_black',
                             size: 'large',
                             type: 'standard',
-                            text: 'signin_with',
-                            shape: 'rectangular',
+                            text: 'continue_with',
+                            shape: 'pill',
                             logo_alignment: 'left',
-                            width: '320'
+                            width: 320
                         });
                     }
 
@@ -992,9 +1053,9 @@
                             size: 'large',
                             type: 'standard',
                             text: 'signup_with',
-                            shape: 'rectangular',
+                            shape: 'pill',
                             logo_alignment: 'left',
-                            width: '320'
+                            width: 320
                         });
                     }
                 } catch (e) {
