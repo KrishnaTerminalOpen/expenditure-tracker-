@@ -166,6 +166,7 @@ def enforce_compulsory_budget():
         'static',
         'login',
         'register',
+        'reset_password',
         'google_auth',
         'logout',
         'expenses',
@@ -373,8 +374,12 @@ def login():
             return redirect(url_for('dashboard'))
         else:
             conn.close()
-            flash("Invalid email or password. Please try again.", "danger")
-            return render_template('auth.html', active_tab='login', email=email)
+            incorrect_pw = bool(user)
+            if incorrect_pw:
+                flash("Incorrect password entered for this account.", "danger")
+            else:
+                flash("Invalid email or password. Please try again.", "danger")
+            return render_template('auth.html', active_tab='login', email=email, incorrect_pw=incorrect_pw)
 
     if 'user_id' in session:
         user = get_current_user()
@@ -382,6 +387,50 @@ def login():
             return redirect(url_for('expenses'))
         return redirect(url_for('dashboard'))
     return render_template('auth.html', active_tab='login')
+
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    email = request.form.get('email', '').strip()
+    new_password = request.form.get('new_password', '').strip()
+    confirm_password = request.form.get('confirm_password', '').strip()
+
+    if not email or not new_password or not confirm_password:
+        flash("All fields are required to reset your password.", "danger")
+        return redirect(url_for('login'))
+
+    if len(new_password) < 6:
+        flash("Password must be at least 6 characters long.", "danger")
+        return redirect(url_for('login'))
+
+    if new_password != confirm_password:
+        flash("Passwords do not match. Please try again.", "danger")
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+    if not user:
+        conn.close()
+        flash("No account registered with that email address. Please check your email or register.", "danger")
+        return redirect(url_for('login'))
+
+    pw_hash = hash_pw(new_password)
+    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (pw_hash, user['id']))
+    conn.commit()
+    conn.close()
+
+    # Automatically sign in the user with updated credentials
+    session['user_id'] = user['id']
+    session['user_name'] = user['name']
+    session['user_email'] = user['email']
+    session['google_id'] = user['google_id']
+    session['user_avatar'] = user['avatar']
+    session['monthly_budget'] = float(user['monthly_budget'] or 0.0)
+
+    flash("🎉 Password has been reset successfully! Welcome back.", "success")
+    if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
+        return redirect(url_for('expenses'))
+    return redirect(url_for('dashboard'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
