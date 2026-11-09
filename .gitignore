@@ -11,6 +11,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.env
 
 # SQLite databases (let the app seed fresh on startup if needed)
 *.sqlite3

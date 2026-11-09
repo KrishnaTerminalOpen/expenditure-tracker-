@@ -10,6 +10,7 @@ Full Python Flask Backend powering the 8 modules shown in the design:
 7. Notifications & Spending Insights
 8. Expense History, Search & Export (CSV & PDF)
 """
+import os
 import io
 import csv
 from datetime import datetime, date, timedelta
@@ -18,12 +19,17 @@ from flask import (
     Flask, render_template, request, redirect, url_for,
     session, flash, jsonify, Response
 )
+from dotenv import load_dotenv
 from database import get_db, init_db, hash_pw, check_pw
 from pdf_generator import generate_expense_pdf
 from avatars import get_avatar_for_user, get_all_avatars, detect_gender
 
+# Load environment variables from .env file
+load_dotenv()
+
 app = Flask(__name__)
-app.secret_key = "spendwise-super-secret-production-key-2026"
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "spendwise-super-secret-production-key-2026")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 
 @app.template_filter('cat_class')
 def cat_class(cat_name):
@@ -76,7 +82,8 @@ def inject_user_context():
         budget_set = True
     return {
         'current_user': user,
-        'budget_is_set': budget_set
+        'budget_is_set': budget_set,
+        'google_client_id': GOOGLE_CLIENT_ID
     }
 
 @app.before_request
@@ -90,6 +97,7 @@ def enforce_compulsory_budget():
         'static',
         'login',
         'register',
+        'google_auth',
         'logout',
         'expenses',
         'set_initial_budget',
@@ -110,6 +118,158 @@ def enforce_compulsory_budget():
 # ==========================================
 # MODULE 1: AUTHENTICATION & PROFILE
 # ==========================================
+
+@app.route('/auth/google', methods=['POST'])
+def google_auth():
+    """
+    Real-time Google Identity Services token verification and login/signup endpoint.
+    Receives JSON with Google ID token credential, validates it via google-auth,
+    authenticates or registers the user, and returns destination redirect URL.
+    """
+    if not request.is_json:
+        return jsonify({"success": False, "message": "Invalid request format. JSON expected."}), 400
+
+    data = request.get_json() or {}
+    token = data.get('credential', '').strip()
+
+    if not token:
+        return jsonify({"success": False, "message": "Missing Google ID token credential."}), 400
+
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    if not client_id:
+        return jsonify({
+            "success": False, 
+            "message": "Google Client ID is not configured on the server. Please set GOOGLE_CLIENT_ID in .env."
+        }), 500
+
+    try:
+        from google.oauth2 import id_token as google_id_token
+        from google.auth.transport import requests as google_requests
+
+        # Verify Google ID token cryptographically with official google-auth library
+        idinfo = google_id_token.verify_oauth2_token(
+            token,
+            google_requests.Request(),
+            client_id
+        )
+
+        # Confirm issuer is genuine Google Identity Service
+        if idinfo.get('iss') not in ['accounts.google.com', 'https://accounts.google.com']:
+            return jsonify({"success": False, "message": "Invalid Google token issuer."}), 400
+
+        # Enforce that email is verified by Google
+        if not idinfo.get('email_verified', False):
+            return jsonify({"success": False, "message": "Your Google email address is unverified."}), 400
+
+        sub = str(idinfo.get('sub', '')).strip()
+        email = idinfo.get('email', '').strip().lower()
+        name = idinfo.get('name', '').strip() or email.split('@')[0]
+        picture = idinfo.get('picture', '').strip()
+
+        if not email or not sub:
+            return jsonify({"success": False, "message": "Incomplete Google profile returned."}), 400
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # Step 1: Check if user exists by google_id
+        user = cursor.execute("SELECT * FROM users WHERE google_id = ?", (sub,)).fetchone()
+
+        # Step 2: If not found by google_id, check by email to link existing traditional account
+        if not user:
+            user = cursor.execute("SELECT * FROM users WHERE LOWER(email) = ?", (email,)).fetchone()
+            if user:
+                # Link Google ID and update avatar with picture if provided
+                new_avatar = picture if picture else user['avatar']
+                cursor.execute("""
+                    UPDATE users 
+                    SET google_id = ?, avatar = COALESCE(NULLIF(?, ''), avatar)
+                    WHERE id = ?
+                """, (sub, new_avatar, user['id']))
+                conn.commit()
+                user = cursor.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
+
+        # Step 3: If still no user, create a new user automatically with no extra form
+        if not user:
+            avatar_url = picture if picture else get_avatar_for_user(name, email)
+            cursor.execute("""
+                INSERT INTO users (name, email, password_hash, google_id, monthly_budget, avatar)
+                VALUES (?, ?, NULL, ?, 0.0, ?)
+            """, (name, email, sub, avatar_url))
+            new_user_id = cursor.lastrowid
+
+            # Seed default categories for new user
+            cats = [
+                ("Food & Dining", "utensils", "#f97316", 0.0),
+                ("Shopping", "shopping-bag", "#ec4899", 0.0),
+                ("Transport", "car", "#3b82f6", 0.0),
+                ("Bills & Utilities", "receipt", "#10b981", 0.0),
+                ("Entertainment", "film", "#8b5cf6", 0.0),
+                ("Education", "graduation-cap", "#6366f1", 0.0),
+                ("Health", "heart-pulse", "#ef4444", 0.0),
+                ("Others", "grid", "#64748b", 0.0)
+            ]
+            for cname, icon, color, limit in cats:
+                cursor.execute(
+                    "INSERT INTO categories (user_id, name, icon, color, budget_limit) VALUES (?, ?, ?, ?, ?)",
+                    (new_user_id, cname, icon, color, limit)
+                )
+
+            # Seed default payment methods
+            pmethods = [
+                ("UPI", "smartphone", 1),
+                ("Cash", "banknote", 0),
+                ("Debit Card", "credit-card", 0),
+                ("Credit Card", "wallet-cards", 0),
+                ("Bank Transfer", "landmark", 0),
+                ("Others", "circle-ellipsis", 0)
+            ]
+            for pname, picon, is_def in pmethods:
+                cursor.execute(
+                    "INSERT INTO payment_methods (user_id, name, icon, is_default) VALUES (?, ?, ?, ?)",
+                    (new_user_id, pname, picon, is_def)
+                )
+
+            # Welcome notification
+            cursor.execute("""
+                INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
+                VALUES (?, 'Welcome to SpendWise!', 'Logged in with Google. Configure your monthly budget to unlock all features.', 'success', 0, 'Just now')
+            """, (new_user_id,))
+            conn.commit()
+
+            user = cursor.execute("SELECT * FROM users WHERE id = ?", (new_user_id,)).fetchone()
+        else:
+            # Existing user: update picture if provided and avatar is missing or generic
+            if picture and (not user['avatar'] or 'unsplash' in user['avatar']):
+                cursor.execute("UPDATE users SET avatar = ? WHERE id = ?", (picture, user['id']))
+                conn.commit()
+                user = cursor.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
+
+        conn.close()
+
+        # Start secure user session (same auth system used across the entire app)
+        session['user_id'] = user['id']
+        session['user_name'] = user['name']
+        session['user_email'] = user['email']
+
+        # Check onboarding rule: new users without budget land on /expenses with compulsory budget setup
+        if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
+            flash(f"Welcome, {user['name']}! Please set your monthly budget to get started.", "info")
+            redirect_url = url_for('expenses')
+        else:
+            flash(f"Welcome back, {user['name']}!", "success")
+            redirect_url = url_for('dashboard')
+
+        return jsonify({
+            "success": True,
+            "message": "Signed in successfully with Google.",
+            "redirect_url": redirect_url
+        })
+
+    except ValueError as e:
+        return jsonify({"success": False, "message": f"Google authentication failed: {str(e)}"}), 401
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Server authentication error: {str(e)}"}), 500
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

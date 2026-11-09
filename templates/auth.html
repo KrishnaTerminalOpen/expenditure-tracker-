@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <!-- Google Identity Services (Sign in with Google) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
             --auth-bg-gradient: radial-gradient(circle at 15% 15%, rgba(249, 115, 22, 0.15) 0%, transparent 45%),
@@ -427,6 +429,105 @@
                 padding: 24px 20px;
             }
         }
+
+        /* Google Identity Services & Divider */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 14px 0 16px 0;
+            color: var(--text-dim);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-divider span {
+            padding: 0 10px;
+        }
+
+        .google-auth-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 4px;
+        }
+
+        .google-btn-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            min-height: 44px;
+        }
+
+        .google-btn-fallback {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #141b2b;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            text-decoration: none;
+        }
+
+        .google-btn-fallback:hover {
+            background: #1c263c;
+            border-color: rgba(255, 255, 255, 0.28);
+            transform: translateY(-1px);
+        }
+
+        .google-auth-feedback {
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.76rem;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .google-auth-feedback.error {
+            display: flex;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #f87171;
+        }
+
+        .google-auth-feedback.loading {
+            display: flex;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            color: #60a5fa;
+        }
+
+        .google-auth-feedback.success {
+            display: flex;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #34d399;
+        }
     </style>
 </head>
 <body>
@@ -526,9 +627,26 @@
 
             <!-- LOGIN PANEL -->
             <div id="login-panel" class="{{ 'panel-active' if active_tab != 'register' else 'panel-hidden' }}">
-                <div style="margin-bottom: 16px;">
+                <div style="margin-bottom: 14px;">
                     <h2 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 3px;">Welcome Back 👋</h2>
-                    <p style="font-size: 0.8rem; color: var(--text-muted);">Enter your credentials to access your financial dashboard.</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Enter your credentials or sign in with Google instantly.</p>
+                </div>
+
+                <!-- Google One-Tap / Popup Sign-in Button -->
+                <div class="google-auth-wrapper">
+                    <div id="googleSignInBtnLogin" class="google-btn-container">
+                        {% if not google_client_id %}
+                        <button type="button" class="google-btn-fallback" onclick="handleGoogleNotConfigured()">
+                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                            <span>Sign in with Google</span>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="google-auth-feedback" id="googleFeedbackLogin"></div>
+                </div>
+
+                <div class="auth-divider">
+                    <span>or continue with email</span>
                 </div>
 
                 <form id="loginForm" action="{{ url_for('login') }}" method="POST">
@@ -578,9 +696,26 @@
 
             <!-- REGISTER PANEL -->
             <div id="register-panel" class="{{ 'panel-active' if active_tab == 'register' else 'panel-hidden' }}">
-                <div style="margin-bottom: 14px;">
+                <div style="margin-bottom: 12px;">
                     <h2 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 2px;">Create Account 🚀</h2>
-                    <p style="font-size: 0.78rem; color: var(--text-muted);">Start taking control of your financial freedom.</p>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Sign up instantly with Google or register an account.</p>
+                </div>
+
+                <!-- Google One-Tap / Popup Sign-up Button -->
+                <div class="google-auth-wrapper">
+                    <div id="googleSignInBtnRegister" class="google-btn-container">
+                        {% if not google_client_id %}
+                        <button type="button" class="google-btn-fallback" onclick="handleGoogleNotConfigured()">
+                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                            <span>Sign up with Google</span>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="google-auth-feedback" id="googleFeedbackRegister"></div>
+                </div>
+
+                <div class="auth-divider">
+                    <span>or register with email</span>
                 </div>
 
                 <form id="registerForm" action="{{ url_for('register') }}" method="POST">
@@ -692,6 +827,102 @@
                 document.getElementById('loginForm').submit();
             }, 300);
         }
+
+        /* ========================================================
+           GOOGLE IDENTITY SERVICES CLIENT INTEGRATION
+           ======================================================== */
+        const GOOGLE_CLIENT_ID = "{{ google_client_id or '' }}";
+
+        function handleGoogleCredentialResponse(response) {
+            if (!response || !response.credential) {
+                showGoogleFeedback('Google sign-in was cancelled or encountered an error.', 'error');
+                return;
+            }
+
+            showGoogleFeedback('Verifying Google credentials...', 'loading');
+
+            fetch("{{ url_for('google_auth') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ credential: response.credential })
+            })
+            .then(async (res) => {
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Google authentication failed.');
+                }
+                showGoogleFeedback('Login successful! Redirecting to SpendWise...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url || "{{ url_for('dashboard') }}";
+                }, 350);
+            })
+            .catch((err) => {
+                console.error('Google Auth Error:', err);
+                showGoogleFeedback(err.message || 'Unable to authenticate with Google. Please try again.', 'error');
+            });
+        }
+
+        function showGoogleFeedback(msg, type) {
+            const feedbackEls = document.querySelectorAll('.google-auth-feedback');
+            feedbackEls.forEach(el => {
+                el.className = 'google-auth-feedback ' + type;
+                let icon = '<i class="fa-solid fa-circle-exclamation"></i>';
+                if (type === 'loading') icon = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+                if (type === 'success') icon = '<i class="fa-solid fa-circle-check"></i>';
+                el.innerHTML = icon + ' <span>' + msg + '</span>';
+                el.style.display = 'flex';
+            });
+        }
+
+        function handleGoogleNotConfigured() {
+            alert('Google Sign-In Configuration Required:\n\n1. Obtain an OAuth 2.0 Web Client ID from Google Cloud Console.\n2. Add GOOGLE_CLIENT_ID=your_id to your .env file.\n3. Restart the Flask application.\n\nSee .env.example for step-by-step instructions.');
+        }
+
+        // Initialize Google Identity Services buttons on page load
+        window.addEventListener('load', function() {
+            if (GOOGLE_CLIENT_ID && window.google && window.google.accounts && window.google.accounts.id) {
+                try {
+                    google.accounts.id.initialize({
+                        client_id: GOOGLE_CLIENT_ID,
+                        callback: handleGoogleCredentialResponse,
+                        auto_select: false,
+                        cancel_on_tap_outside: true
+                    });
+
+                    const loginBtn = document.getElementById('googleSignInBtnLogin');
+                    if (loginBtn) {
+                        loginBtn.innerHTML = '';
+                        google.accounts.id.renderButton(loginBtn, {
+                            theme: 'filled_black',
+                            size: 'large',
+                            type: 'standard',
+                            text: 'signin_with',
+                            shape: 'rectangular',
+                            logo_alignment: 'left',
+                            width: '320'
+                        });
+                    }
+
+                    const regBtn = document.getElementById('googleSignInBtnRegister');
+                    if (regBtn) {
+                        regBtn.innerHTML = '';
+                        google.accounts.id.renderButton(regBtn, {
+                            theme: 'filled_black',
+                            size: 'large',
+                            type: 'standard',
+                            text: 'signup_with',
+                            shape: 'rectangular',
+                            logo_alignment: 'left',
+                            width: '320'
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Google Identity Services init notice:', e);
+                }
+            }
+        });
     </script>
 </body>
 </html>

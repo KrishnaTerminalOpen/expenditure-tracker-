@@ -48,7 +48,8 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
+        password_hash TEXT,
+        google_id TEXT UNIQUE,
         monthly_budget REAL DEFAULT 0.0,
         currency TEXT DEFAULT '₹',
         theme TEXT DEFAULT 'dark',
@@ -56,6 +57,48 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
+    # Automatic migration: Ensure google_id column exists on existing installations
+    cursor.execute("PRAGMA table_info(users)")
+    user_columns = [col[1] for col in cursor.fetchall()]
+    if 'google_id' not in user_columns:
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN google_id TEXT")
+            cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)")
+        except Exception as e:
+            print(f"Migration note (google_id): {e}")
+
+    # Automatic migration: Ensure password_hash is nullable for Google-only users
+    cursor.execute("PRAGMA table_info(users)")
+    pw_col = next((r for r in cursor.fetchall() if r[1] == 'password_hash'), None)
+    if pw_col and pw_col[3] == 1:  # notnull is index 3
+        try:
+            cursor.execute("PRAGMA foreign_keys=OFF")
+            cursor.execute("""
+                CREATE TABLE users_temp (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT,
+                    google_id TEXT UNIQUE,
+                    monthly_budget REAL DEFAULT 0.0,
+                    currency TEXT DEFAULT '₹',
+                    theme TEXT DEFAULT 'dark',
+                    avatar TEXT DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute("""
+                INSERT INTO users_temp (id, name, email, password_hash, google_id, monthly_budget, currency, theme, avatar, created_at)
+                SELECT id, name, email, password_hash, google_id, monthly_budget, currency, theme, avatar, created_at FROM users
+            """)
+            cursor.execute("DROP TABLE users")
+            cursor.execute("ALTER TABLE users_temp RENAME TO users")
+            cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)")
+            cursor.execute("PRAGMA foreign_keys=ON")
+            conn.commit()
+        except Exception as e:
+            print(f"Migration note (password_hash nullable): {e}")
 
     # Categories table
     cursor.execute("""
@@ -204,6 +247,8 @@ def hash_pw(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def check_pw(password: str, hashed: str) -> bool:
+    if not hashed or not password:
+        return False
     try:
         return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
     except Exception:
