@@ -775,6 +775,63 @@
         </div>
     </div>
 
+    <!-- Google OAuth Setup Modal (Shown if Client ID is not yet configured) -->
+    <div id="googleSetupModal" style="display: none; position: fixed; inset: 0; background: rgba(5, 8, 15, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: rgba(18, 24, 38, 0.96); border: 1px solid rgba(255, 255, 255, 0.14); border-top: 2px solid #f97316; border-radius: 18px; max-width: 490px; width: 100%; padding: 24px 28px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); position: relative;">
+            
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(66, 133, 244, 0.15); border: 1px solid rgba(66, 133, 244, 0.3); display: flex; align-items: center; justify-content: center;">
+                        <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #ffffff;">Google Sign-In Activation</h3>
+                        <p style="margin: 2px 0 0; font-size: 0.74rem; color: var(--text-muted);">How real-world Google OAuth works</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeGoogleModal()" style="background: transparent; border: none; color: var(--text-dim); font-size: 1.4rem; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+            </div>
+
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
+                In every production app, Google requires a registered <strong>OAuth Client ID</strong> before opening the Gmail account picker. Once added, Google's popup will open instantly with your logged-in Google account!
+            </p>
+
+            <div style="background: rgba(13, 17, 26, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent-orange); text-transform: uppercase; margin-bottom: 8px;">
+                    <i class="fa-solid fa-bolt"></i> 2-Minute Quick Setup
+                </div>
+                <ol style="margin: 0; padding-left: 18px; font-size: 0.76rem; color: #cbd5e1; line-height: 1.6;">
+                    <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener" style="color: #60a5fa; text-decoration: underline; font-weight: 600;">Google Cloud Console &rarr; Credentials</a></li>
+                    <li>Create an <strong>OAuth client ID</strong> (Web application)</li>
+                    <li>Add to <em>Authorized JavaScript origins</em>:
+                        <div style="margin: 6px 0; display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.72rem;">
+                                <span>https://myspendwise-app.vercel.app</span>
+                                <button type="button" onclick="copyOrigin('https://myspendwise-app.vercel.app', this)" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 0.72rem;"><i class="fa-regular fa-copy"></i> Copy</button>
+                            </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.72rem;">
+                                <span>http://localhost:5000</span>
+                                <button type="button" onclick="copyOrigin('http://localhost:5000', this)" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 0.72rem;"><i class="fa-regular fa-copy"></i> Copy</button>
+                            </div>
+                        </div>
+                    </li>
+                    <li>In <strong>Vercel &rarr; Settings &rarr; Environment Variables</strong>, add:
+                        <div style="font-family: var(--font-mono); color: #f97316; font-size: 0.74rem; margin-top: 2px;">GOOGLE_CLIENT_ID = your-id.apps.googleusercontent.com</div>
+                    </li>
+                </ol>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="closeGoogleModal()" style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); color: #ffffff; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
+                    Close
+                </button>
+                <button type="button" onclick="closeGoogleModal(); instantDemoLogin();" style="flex: 1.2; padding: 10px; border-radius: 8px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border: none; color: #ffffff; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fa-solid fa-bolt"></i> 1-Click Demo Login
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function switchTab(tab) {
             const loginPanel = document.getElementById('login-panel');
@@ -877,7 +934,29 @@
         }
 
         function handleGoogleNotConfigured() {
-            alert('Google Sign-In Configuration Required:\n\n1. Obtain an OAuth 2.0 Web Client ID from Google Cloud Console.\n2. Add GOOGLE_CLIENT_ID=your_id to your .env file.\n3. Restart the Flask application.\n\nSee .env.example for step-by-step instructions.');
+            const modal = document.getElementById('googleSetupModal');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeGoogleModal() {
+            const modal = document.getElementById('googleSetupModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function copyOrigin(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                btn.style.color = '#10b981';
+                setTimeout(() => {
+                    btn.innerHTML = orig;
+                    btn.style.color = '';
+                }, 1800);
+            });
         }
 
         // Initialize Google Identity Services buttons on page load
