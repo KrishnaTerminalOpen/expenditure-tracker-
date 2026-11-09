@@ -53,26 +53,92 @@ init_db()
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
+        if 'user_id' not in session and 'user_email' not in session:
+            return redirect(url_for('login'))
+        user = get_current_user()
+        if not user:
+            session.clear()
+            flash("Please sign in to access your account.", "info")
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
 def get_current_user():
-    if 'user_id' not in session:
+    if 'user_id' not in session and 'user_email' not in session:
         return None
     conn = get_db()
     user = None
     try:
-        user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+        # 1. Lookup by user_id
+        if 'user_id' in session:
+            user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+
+        # 2. In serverless environments (e.g. Vercel), if instance changed or id not found, look up by email
+        if not user and session.get('user_email'):
+            user = conn.execute("SELECT * FROM users WHERE LOWER(email) = ?", (session['user_email'].lower(),)).fetchone()
+            if user:
+                session['user_id'] = user['id']
+
+        # 3. If user was created in an earlier ephemeral container, auto-sync/recreate in this container
+        if not user and session.get('user_email'):
+            email = session.get('user_email').strip().lower()
+            name = session.get('user_name') or email.split('@')[0]
+            google_id = session.get('google_id')
+            avatar = session.get('user_avatar') or get_avatar_for_user(name, email)
+            monthly_budget = float(session.get('monthly_budget', 0.0) or 0.0)
+
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO users (name, email, password_hash, google_id, monthly_budget, avatar)
+                VALUES (?, ?, NULL, ?, ?, ?)
+            """, (name, email, google_id, monthly_budget, avatar))
+            new_id = cursor.lastrowid
+
+            # Seed default categories for this user in this container
+            cats = [
+                ("Food & Dining", "utensils", "#f97316", 5000.0),
+                ("Shopping", "shopping-bag", "#ec4899", 4000.0),
+                ("Transport", "car", "#3b82f6", 2500.0),
+                ("Bills & Utilities", "receipt", "#10b981", 2000.0),
+                ("Entertainment", "film", "#8b5cf6", 2000.0),
+                ("Education", "graduation-cap", "#6366f1", 1500.0),
+                ("Health", "heart-pulse", "#ef4444", 2000.0),
+                ("Others", "grid", "#64748b", 3000.0)
+            ]
+            for cname, icon, color, limit in cats:
+                cursor.execute(
+                    "INSERT INTO categories (user_id, name, icon, color, budget_limit) VALUES (?, ?, ?, ?, ?)",
+                    (new_id, cname, icon, color, limit)
+                )
+
+            # Seed default payment methods
+            pmethods = [
+                ("UPI", "smartphone", 1),
+                ("Cash", "banknote", 0),
+                ("Debit Card", "credit-card", 0),
+                ("Credit Card", "wallet-cards", 0),
+                ("Bank Transfer", "landmark", 0),
+                ("Others", "circle-ellipsis", 0)
+            ]
+            for pname, picon, is_def in pmethods:
+                cursor.execute(
+                    "INSERT INTO payment_methods (user_id, name, icon, is_default) VALUES (?, ?, ?, ?)",
+                    (new_id, pname, picon, is_def)
+                )
+            conn.commit()
+            session['user_id'] = new_id
+            user = conn.execute("SELECT * FROM users WHERE id = ?", (new_id,)).fetchone()
+
         if user and (not user['avatar'] or 'photo-1534528741775' in (user['avatar'] or '')):
             try:
                 auto_avatar = get_avatar_for_user(user['name'], user['email'])
                 conn.execute("UPDATE users SET avatar = ? WHERE id = ?", (auto_avatar, user['id']))
                 conn.commit()
-                user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
+                user = conn.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
             except Exception:
                 pass
+    except Exception as e:
+        print(f"Error in get_current_user: {e}")
     finally:
         conn.close()
     return user
@@ -110,11 +176,14 @@ def enforce_compulsory_budget():
         'onboarding'
     }
 
-    if 'user_id' in session:
+    if 'user_id' in session or 'user_email' in session:
         endpoint = request.endpoint or ''
         if endpoint not in exempt_endpoints:
             user = get_current_user()
-            if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
+            if not user:
+                session.clear()
+                return redirect(url_for('login'))
+            if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
                 flash("⚠️ Setting your monthly budget is compulsory before moving forward in SpendWise. Please set your budget below.", "warning")
                 return redirect(url_for('expenses'))
 
@@ -254,6 +323,9 @@ def google_auth():
         session['user_id'] = user['id']
         session['user_name'] = user['name']
         session['user_email'] = user['email']
+        session['google_id'] = user['google_id']
+        session['user_avatar'] = user['avatar']
+        session['monthly_budget'] = float(user['monthly_budget'] or 0.0)
 
         # Check onboarding rule: new users without budget land on /expenses with compulsory budget setup
         if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
@@ -286,6 +358,9 @@ def login():
             session['user_id'] = user['id']
             session['user_name'] = user['name']
             session['user_email'] = user['email']
+            session['google_id'] = user['google_id']
+            session['user_avatar'] = user['avatar']
+            session['monthly_budget'] = float(user['monthly_budget'] or 0.0)
             user_budget = user['monthly_budget']
             conn.close()
 
@@ -502,7 +577,10 @@ def profile():
 @login_required
 def dashboard():
     user = get_current_user()
-    if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
+    if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
         flash("⚠️ Setting your monthly budget is compulsory before moving forward. Please set your budget below.", "warning")
         return redirect(url_for('expenses'))
     conn = get_db()
@@ -695,6 +773,9 @@ def dashboard():
 @login_required
 def set_initial_budget():
     user = get_current_user()
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
     uid = user['id']
     budget_raw = request.form.get('monthly_budget', '').strip()
     next_action = request.form.get('next_action', 'stay_expenses').strip()
@@ -711,6 +792,7 @@ def set_initial_budget():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (budget_val, uid))
+    session['monthly_budget'] = budget_val
 
     # Proportional default category budget limits so pacing gauges activate
     cat_weights = {
@@ -749,6 +831,9 @@ def set_initial_budget():
 @login_required
 def expenses():
     user = get_current_user()
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
     conn = get_db()
     uid = user['id']
 
@@ -1962,6 +2047,17 @@ def import_template():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=spendwise_sample_statement.csv"}
     )
+
+@app.errorhandler(500)
+def handle_500_error(e):
+    # Recover gracefully from stale or orphaned serverless session states
+    session.clear()
+    flash("Session synchronized. Please sign in to continue.", "info")
+    return redirect(url_for('login'))
+
+@app.errorhandler(404)
+def handle_404_error(e):
+    return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     print("SpendWise server running at http://127.0.0.1:5000")
