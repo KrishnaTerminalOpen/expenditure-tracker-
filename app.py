@@ -29,7 +29,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "spendwise-super-secret-production-key-2026")
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_ID = os.getenv(
+    "GOOGLE_CLIENT_ID", 
+    "783317210882-p01hrecg6m83ihgj9i5lo97f2fhpirri.apps.googleusercontent.com"
+).strip() or "783317210882-p01hrecg6m83ihgj9i5lo97f2fhpirri.apps.googleusercontent.com"
 
 @app.template_filter('cat_class')
 def cat_class(cat_name):
@@ -135,7 +138,7 @@ def google_auth():
     if not token:
         return jsonify({"success": False, "message": "Missing Google ID token credential."}), 400
 
-    client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip() or GOOGLE_CLIENT_ID
     if not client_id:
         return jsonify({
             "success": False, 
