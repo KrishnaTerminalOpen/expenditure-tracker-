@@ -388,31 +388,35 @@ def login():
         return redirect(url_for('dashboard'))
     return render_template('auth.html', active_tab='login')
 
-@app.route('/reset-password', methods=['POST'])
+@app.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
+    if request.method == 'GET':
+        email = request.args.get('email', '').strip()
+        return render_template('reset_password.html', email=email)
+
     email = request.form.get('email', '').strip()
     new_password = request.form.get('new_password', '').strip()
     confirm_password = request.form.get('confirm_password', '').strip()
 
     if not email or not new_password or not confirm_password:
         flash("All fields are required to reset your password.", "danger")
-        return redirect(url_for('login'))
+        return render_template('reset_password.html', email=email)
 
     if len(new_password) < 6:
         flash("Password must be at least 6 characters long.", "danger")
-        return redirect(url_for('login'))
+        return render_template('reset_password.html', email=email)
 
     if new_password != confirm_password:
         flash("Passwords do not match. Please try again.", "danger")
-        return redirect(url_for('login'))
+        return render_template('reset_password.html', email=email)
 
     conn = get_db()
     user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
 
     if not user:
         conn.close()
-        flash("No account registered with that email address. Please check your email or register.", "danger")
-        return redirect(url_for('login'))
+        flash("No account registered with that email address. Please check your email or create an account.", "danger")
+        return render_template('reset_password.html', email=email)
 
     pw_hash = hash_pw(new_password)
     conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (pw_hash, user['id']))
@@ -427,7 +431,7 @@ def reset_password():
     session['user_avatar'] = user['avatar']
     session['monthly_budget'] = float(user['monthly_budget'] or 0.0)
 
-    flash("🎉 Password has been reset successfully! Welcome back.", "success")
+    flash(f"🎉 Password has been reset successfully! Welcome back, {user['name']}.", "success")
     if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
         return redirect(url_for('expenses'))
     return redirect(url_for('dashboard'))
