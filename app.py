@@ -386,7 +386,8 @@ def login():
         if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
             return redirect(url_for('expenses'))
         return redirect(url_for('dashboard'))
-    return render_template('auth.html', active_tab='login')
+    email = request.args.get('email', '').strip()
+    return render_template('auth.html', active_tab='login', email=email)
 
 @app.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
@@ -510,11 +511,10 @@ def register():
         conn.commit()
         conn.close()
 
-        session['user_id'] = new_user_id
-        session['user_name'] = name
-        session['user_email'] = email
-        flash(f"Account created successfully! Welcome, {name}. Please configure your monthly budget to get started.", "info")
-        return redirect(url_for('expenses'))
+        # Clear any session so the user signs in fresh from the login page
+        session.clear()
+        flash(f"🎉 Account created successfully! Please sign in with your email and password.", "success")
+        return redirect(url_for('login', email=email))
 
     return render_template('auth.html', active_tab='register')
 
