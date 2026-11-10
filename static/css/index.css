@@ -1347,6 +1347,15 @@ h1, .page-title {
   display: block;
 }
 
+/* Desktop / Mobile view toggle for Budget category presentation */
+.budget-table-desktop {
+  display: block;
+}
+
+.budget-cards-mobile {
+  display: none !important;
+}
+
 /* Tablet & Mobile Breakpoints */
 @media screen and (max-width: 1024px) {
   .kpi-grid {
@@ -1374,7 +1383,7 @@ h1, .page-title {
   .main-wrapper {
     margin-left: 0 !important;
     width: 100%;
-    padding-bottom: 74px; /* Space for bottom nav */
+    padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .mobile-menu-btn {
@@ -1385,14 +1394,33 @@ h1, .page-title {
     display: flex;
   }
 
-  /* Top Navbar */
+  /* Top Navbar on Mobile: streamline right icons, hide redundant buttons */
   .top-navbar {
-    padding: 0 16px;
-    height: 62px;
+    padding: 0 12px !important;
+    height: 58px !important;
+  }
+
+  .top-navbar .top-nav-right {
+    gap: 8px !important;
+  }
+
+  /* Hide redundant quick-add button in header (FAB button exists at bottom center) */
+  .top-navbar .top-nav-right > button.btn-primary {
+    display: none !important;
+  }
+
+  /* Hide keyboard terminal shortcut on touch phones */
+  .top-navbar .top-nav-right > button[onclick*="openCommandPalette"] {
+    display: none !important;
   }
 
   .search-bar-global {
-    width: 180px;
+    display: none !important;
+  }
+
+  .live-sync-pill {
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
   }
 
   .user-profile-info,
@@ -1401,7 +1429,189 @@ h1, .page-title {
   }
 
   .page-container {
-    padding: 16px 14px 40px 14px;
+    padding: 14px 12px calc(95px + env(safe-area-inset-bottom, 0px)) 12px !important;
+  }
+
+  /* ========================================================
+     BUDGET PAGE - MOBILE OPTIMIZED LAYOUT (<= 768px)
+     ======================================================== */
+  .budget-header-wrapper {
+    margin-bottom: 16px !important;
+  }
+
+  .budget-main-title {
+    font-size: 1.3rem !important;
+  }
+
+  .budget-main-subtitle {
+    font-size: 0.78rem !important;
+  }
+
+  .budget-header-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 10px 16px !important;
+    font-size: 0.84rem !important;
+    margin-top: 4px;
+  }
+
+  .budget-overview-card {
+    padding: 18px 16px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .budget-overview-content {
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .budget-overview-amount {
+    font-size: 1.85rem !important;
+  }
+
+  .budget-overview-right {
+    width: 100% !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    margin-top: 6px !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+  }
+
+  .budget-cat-card-header {
+    padding: 14px 16px !important;
+  }
+
+  /* Toggle between table and mobile cards */
+  .budget-table-desktop {
+    display: none !important;
+  }
+
+  .budget-cards-mobile {
+    display: flex !important;
+    flex-direction: column;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .mbi-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .mbi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mbi-name-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mbi-name-text {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .mbi-actions-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mbi-uncapped-pill {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mbi-set-btn {
+    padding: 4px 10px !important;
+    font-size: 0.74rem !important;
+    border-radius: 6px !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .mbi-stats-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .mbi-stat-block {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mbi-stat-lbl {
+    font-size: 0.66rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .mbi-stat-val {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+
+  .mbi-prog-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+  }
+
+  .mbi-prog-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .mbi-prog-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+
+  .mbi-prog-pct {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    min-width: 32px;
+    text-align: right;
   }
 
   /* KPI Grid */
@@ -1474,7 +1684,19 @@ h1, .page-title {
   }
 
   .search-bar-global {
-    display: none; /* Hide top search bar on tiny screens */
+    display: none !important;
+  }
+
+  .live-sync-pill span:last-child {
+    display: none !important;
+  }
+
+  .live-sync-pill {
+    padding: 6px 8px !important;
+  }
+
+  .sound-toggle-btn {
+    display: none !important;
   }
 
   .brand-name {
