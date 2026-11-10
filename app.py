@@ -890,24 +890,7 @@ def set_initial_budget():
     cursor.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (budget_val, uid))
     session['monthly_budget'] = budget_val
 
-    # Proportional default category budget limits so pacing gauges activate
-    cat_weights = {
-        "Food & Dining": 0.25,
-        "Shopping": 0.20,
-        "Transport": 0.15,
-        "Bills & Utilities": 0.15,
-        "Entertainment": 0.10,
-        "Education": 0.05,
-        "Health": 0.05,
-        "Others": 0.05
-    }
-    for cat_name, weight in cat_weights.items():
-        cat_limit = round(budget_val * weight, 2)
-        cursor.execute("""
-            UPDATE categories 
-            SET budget_limit = ? 
-            WHERE user_id = ? AND name = ? AND (budget_limit IS NULL OR budget_limit = 0.0)
-        """, (cat_limit, uid, cat_name))
+    # Category budget limits remain empty (0.0 / Not Set) until explicitly configured by the user
 
     # Congratulatory notification
     cursor.execute("""
