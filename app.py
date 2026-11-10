@@ -418,6 +418,11 @@ def reset_password():
         flash("No account registered with that email address. Please check your email or create an account.", "danger")
         return render_template('reset_password.html', email=email)
 
+    if user['password_hash'] and check_pw(new_password, user['password_hash']):
+        conn.close()
+        flash("New password cannot be the same as your old password. Please choose a different password.", "warning")
+        return render_template('reset_password.html', email=email)
+
     pw_hash = hash_pw(new_password)
     conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (pw_hash, user['id']))
     conn.commit()
