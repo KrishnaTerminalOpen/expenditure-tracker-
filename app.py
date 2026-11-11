@@ -353,25 +353,27 @@ def login():
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
         conn = get_db()
-        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        user = conn.execute("SELECT * FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
 
         if user and check_pw(password, user['password_hash']):
+            session.clear()  # Clear any stale session data before logging in
             session['user_id'] = user['id']
             session['user_name'] = user['name']
             session['user_email'] = user['email']
             session['google_id'] = user['google_id']
             session['user_avatar'] = user['avatar']
             session['monthly_budget'] = float(user['monthly_budget'] or 0.0)
-            user_budget = user['monthly_budget']
+            user_budget = float(user['monthly_budget'] or 0.0)
             conn.close()
 
-            # For new users who haven't set their budget, land on the Expense page as front page
-            if user_budget is None or float(user_budget) <= 0:
-                flash(f"Welcome, {user['name']}! Please set your monthly budget to get started.", "info")
-                return redirect(url_for('expenses'))
+            # If user has ALREADY set the budget, land directly inside on the Dashboard!
+            if user_budget > 0:
+                flash(f"Welcome back, {user['name']}!", "success")
+                return redirect(url_for('dashboard'))
 
-            flash("Welcome back!", "success")
-            return redirect(url_for('dashboard'))
+            # Only for new users without a budget, land on the Expense page to set it
+            flash(f"Welcome, {user['name']}! Please set your monthly budget to get started.", "info")
+            return redirect(url_for('expenses'))
         else:
             conn.close()
             incorrect_pw = bool(user)
@@ -381,11 +383,15 @@ def login():
                 flash("Invalid email or password. Please try again.", "danger")
             return render_template('auth.html', active_tab='login', email=email, incorrect_pw=incorrect_pw)
 
-    if 'user_id' in session:
+    # GET request:
+    # If user already has an active session and has their budget set, direct to dashboard
+    if 'user_id' in session or 'user_email' in session:
         user = get_current_user()
-        if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
-            return redirect(url_for('expenses'))
-        return redirect(url_for('dashboard'))
+        if user and user['monthly_budget'] is not None and float(user['monthly_budget']) > 0:
+            return redirect(url_for('dashboard'))
+        # If user visits /login and their budget was not established, clear stale session so they can sign in fresh
+        session.clear()
+
     email = request.args.get('email', '').strip()
     return render_template('auth.html', active_tab='login', email=email)
 
@@ -593,7 +599,11 @@ def profile():
     conn = get_db()
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        monthly_budget = float(request.form.get('monthly_budget', 0.0) or 0.0)
+        mb_raw = request.form.get('monthly_budget', '').strip()
+        try:
+            monthly_budget = float(mb_raw) if mb_raw else float(user['monthly_budget'] or 0.0)
+        except ValueError:
+            monthly_budget = float(user['monthly_budget'] or 0.0)
         currency = request.form.get('currency', '₹')
         theme = request.form.get('theme', 'dark')
         avatar = request.form.get('avatar', '').strip()
@@ -607,6 +617,7 @@ def profile():
         """, (name, monthly_budget, currency, theme, avatar, user['id']))
         conn.commit()
         session['user_name'] = name
+        session['monthly_budget'] = monthly_budget
         flash("Profile updated successfully!", "success")
         return redirect(url_for('profile'))
 
@@ -669,6 +680,20 @@ def delete_account():
 # ==========================================
 
 @app.route('/')
+def index():
+    """
+    Website root entry point.
+    Always opens the Login page so users can sign in, or takes them directly to Dashboard
+    if they are already signed in and have their budget established.
+    """
+    if 'user_id' in session or 'user_email' in session:
+        user = get_current_user()
+        if user and user['monthly_budget'] is not None and float(user['monthly_budget']) > 0:
+            return redirect(url_for('dashboard'))
+        # If session exists but budget was not configured, clear stale session so login page loads cleanly
+        session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -902,9 +927,7 @@ def set_initial_budget():
     conn.close()
 
     flash(f"🎉 Monthly budget of ₹{budget_val:,.0f} has been established! All sections are now unlocked.", "success")
-    if next_action == 'go_dashboard':
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('expenses'))
+    return redirect(url_for('dashboard'))
 
 @app.route('/expenses', methods=['GET'])
 @login_required
