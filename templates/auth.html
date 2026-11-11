@@ -211,10 +211,12 @@
 
         .form-input-container label {
             display: block;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 5px;
+            font-size: 0.85rem;
+            font-weight: 750;
+            color: #ffffff;
+            letter-spacing: 0.015em;
+            margin-bottom: 6px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
         }
 
         .input-icon-box {
@@ -442,28 +444,28 @@
 
         .fancy-google-aura {
             position: absolute;
-            inset: -4px;
+            inset: -2px;
             border-radius: 9999px;
             background: linear-gradient(
                 90deg,
-                rgba(66, 133, 244, 0.55) 0%,
-                rgba(234, 67, 53, 0.5) 25%,
-                rgba(251, 188, 5, 0.5) 50%,
-                rgba(52, 168, 83, 0.55) 75%,
-                rgba(66, 133, 244, 0.55) 100%
+                rgba(66, 133, 244, 0.5) 0%,
+                rgba(234, 67, 53, 0.45) 25%,
+                rgba(251, 188, 5, 0.45) 50%,
+                rgba(52, 168, 83, 0.5) 75%,
+                rgba(66, 133, 244, 0.5) 100%
             );
             background-size: 300% 300%;
             animation: googleGradientFlow 5s ease infinite, googleAuraPulse 3.5s ease-in-out infinite;
-            filter: blur(14px);
-            opacity: 0.7;
+            filter: blur(10px);
+            opacity: 0.55;
             z-index: 0;
             pointer-events: none;
             transition: opacity 0.3s ease, filter 0.3s ease;
         }
 
         .fancy-google-box:hover .fancy-google-aura {
-            opacity: 1;
-            filter: blur(20px);
+            opacity: 0.85;
+            filter: blur(14px);
         }
 
         .google-btn-container {
@@ -758,9 +760,9 @@
                     </div>
 
                     <div class="form-input-container">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <label for="login-password" style="margin: 0;">Password</label>
-                            <a href="{{ url_for('reset_password') }}" onclick="goToResetPassword(); return false;" style="font-size: 0.74rem; color: var(--accent-orange); font-weight: 600;">Forgot?</a>
+                            <a href="{{ url_for('reset_password') }}" onclick="goToResetPassword(); return false;" style="font-size: 0.76rem; color: #fb923c; font-weight: 700;">Forgot?</a>
                         </div>
                         <div class="input-icon-box">
                             <input type="password" id="login-password" name="password" value="" placeholder="••••••••" required>
@@ -788,7 +790,7 @@
                     {% endif %}
 
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-                        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-muted); cursor: pointer;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #cbd5e1; font-weight: 600; cursor: pointer;">
                             <input type="checkbox" id="remember-me" checked style="accent-color: var(--accent-orange); width: 14px; height: 14px; border-radius: 3px;">
                             Remember device
                         </label>
