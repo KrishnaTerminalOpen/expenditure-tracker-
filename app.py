@@ -164,6 +164,7 @@ def enforce_compulsory_budget():
     # Endpoints always permitted even when monthly budget is not configured
     exempt_endpoints = {
         'static',
+        'index',
         'login',
         'register',
         'reset_password',
@@ -384,14 +385,7 @@ def login():
             return render_template('auth.html', active_tab='login', email=email, incorrect_pw=incorrect_pw)
 
     # GET request:
-    # If user already has an active session and has their budget set, direct to dashboard
-    if 'user_id' in session or 'user_email' in session:
-        user = get_current_user()
-        if user and user['monthly_budget'] is not None and float(user['monthly_budget']) > 0:
-            return redirect(url_for('dashboard'))
-        # If user visits /login and their budget was not established, clear stale session so they can sign in fresh
-        session.clear()
-
+    # Always render the login page when visiting /login
     email = request.args.get('email', '').strip()
     return render_template('auth.html', active_tab='login', email=email)
 
@@ -683,15 +677,8 @@ def delete_account():
 def index():
     """
     Website root entry point.
-    Always opens the Login page so users can sign in, or takes them directly to Dashboard
-    if they are already signed in and have their budget established.
+    Opening the website always redirects directly to the Login page.
     """
-    if 'user_id' in session or 'user_email' in session:
-        user = get_current_user()
-        if user and user['monthly_budget'] is not None and float(user['monthly_budget']) > 0:
-            return redirect(url_for('dashboard'))
-        # If session exists but budget was not configured, clear stale session so login page loads cleanly
-        session.clear()
     return redirect(url_for('login'))
 
 @app.route('/dashboard')
