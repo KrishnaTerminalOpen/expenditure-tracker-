@@ -275,11 +275,11 @@
 </div>
 
 <!-- Note: Smart CSV Bank Statement Import modal is now globally available via base.html -->
-{% if not budget_is_set %}
+{% if not budget_is_set and not current_user %}
 <!-- ======================================================== -->
-<!-- COMPULSORY ONBOARDING BUDGET SETUP MODAL (UNCLOSABLE)    -->
+<!-- COMPULSORY ONBOARDING BUDGET SETUP MODAL                 -->
 <!-- ======================================================== -->
-<div class="modal-overlay compulsory-modal-overlay" id="compulsoryBudgetModal" style="display: flex; z-index: 999999; background: rgba(4, 7, 13, 0.88); backdrop-filter: blur(20px);">
+<div class="modal-overlay compulsory-modal-overlay" id="compulsoryBudgetModal" style="display: none; z-index: 999999; background: rgba(4, 7, 13, 0.88); backdrop-filter: blur(20px);">
     <div class="modal-content" style="max-width: 520px; padding: 34px 28px; border-top: 3.5px solid var(--accent-orange); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(249, 115, 22, 0.35); text-align: center; position: relative;">
         <!-- Glowing Top Icon -->
         <div style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(234, 88, 12, 0.1) 100%); border: 2px solid rgba(249, 115, 22, 0.5); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px auto; box-shadow: 0 0 25px rgba(249, 115, 22, 0.4);">

@@ -85,7 +85,7 @@ def get_current_user():
             name = session.get('user_name') or email.split('@')[0]
             google_id = session.get('google_id')
             avatar = session.get('user_avatar') or get_avatar_for_user(name, email)
-            monthly_budget = float(session.get('monthly_budget', 0.0) or 0.0)
+            monthly_budget = float(session.get('monthly_budget', 25000.0) or 25000.0)
 
             cursor = conn.cursor()
             cursor.execute("""
@@ -129,9 +129,9 @@ def get_current_user():
             session['user_id'] = new_id
             user = conn.execute("SELECT * FROM users WHERE id = ?", (new_id,)).fetchone()
 
-        # 4. Auto-heal monthly_budget if user already set it previously in session, cookie, or has expenses
+        # 4. Auto-heal monthly_budget: Any logged-in user always has an active established budget (> 0)
         if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
-            restored_b = 0.0
+            restored_b = 25000.0
             sess_b = float(session.get('monthly_budget', 0.0) or 0.0)
             if sess_b > 0:
                 restored_b = sess_b
@@ -144,16 +144,10 @@ def get_current_user():
                 except Exception:
                     pass
 
-            if restored_b <= 0:
-                has_txns = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user['id'],)).fetchone()[0]
-                if has_txns > 0:
-                    restored_b = 25000.0
-
-            if restored_b > 0:
-                conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (restored_b, user['id']))
-                conn.commit()
-                session['monthly_budget'] = restored_b
-                user = conn.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
+            conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (restored_b, user['id']))
+            conn.commit()
+            session['monthly_budget'] = restored_b
+            user = conn.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
 
         if user and (not user['avatar'] or 'photo-1534528741775' in (user['avatar'] or '')):
             try:
@@ -172,19 +166,7 @@ def get_current_user():
 @app.context_processor
 def inject_user_context():
     user = get_current_user()
-    budget_set = False
-    if user and user['monthly_budget'] is not None and float(user['monthly_budget']) > 0:
-        budget_set = True
-    elif request.cookies.get('spendwise_budget_set') == 'true':
-        budget_set = True
-    else:
-        cookie_b = request.cookies.get('spendwise_saved_budget')
-        if cookie_b:
-            try:
-                if float(cookie_b) > 0:
-                    budget_set = True
-            except Exception:
-                pass
+    budget_set = True if user else False
     return {
         'current_user': user,
         'budget_is_set': budget_set,
@@ -215,15 +197,16 @@ def enforce_compulsory_budget():
     }
 
     if 'user_id' in session or 'user_email' in session:
-        endpoint = request.endpoint or ''
-        if endpoint not in exempt_endpoints:
-            user = get_current_user()
-            if not user:
-                session.clear()
-                return redirect(url_for('login'))
-            if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
-                flash("⚠️ Setting your monthly budget is compulsory before moving forward in SpendWise. Please set your budget below.", "warning")
-                return redirect(url_for('expenses'))
+        user = get_current_user()
+        if not user:
+            session.clear()
+            return redirect(url_for('login'))
+        if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
+            conn = get_db()
+            conn.execute("UPDATE users SET monthly_budget = 25000.0 WHERE id = ?", (user['id'],))
+            conn.commit()
+            conn.close()
+            session['monthly_budget'] = 25000.0
 
 # ==========================================
 # MODULE 1: AUTHENTICATION & PROFILE
@@ -304,7 +287,7 @@ def google_auth():
             avatar_url = picture if picture else get_avatar_for_user(name, email)
             cursor.execute("""
                 INSERT INTO users (name, email, password_hash, google_id, monthly_budget, avatar)
-                VALUES (?, ?, NULL, ?, 0.0, ?)
+                VALUES (?, ?, NULL, ?, 25000.0, ?)
             """, (name, email, sub, avatar_url))
             new_user_id = cursor.lastrowid
 
@@ -395,13 +378,19 @@ def google_auth():
         session['user_avatar'] = user['avatar']
         session['monthly_budget'] = float(user['monthly_budget'] or 0.0)
 
-        # Check onboarding rule: new users without budget land on /expenses with compulsory budget setup
+        # All users signing in with Google always land directly on the Dashboard!
         if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
-            flash(f"Welcome, {user['name']}! Please set your monthly budget to get started.", "info")
-            redirect_url = url_for('expenses')
+            user_b = 25000.0
+            conn = get_db()
+            conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (user_b, user['id']))
+            conn.commit()
+            conn.close()
+            session['monthly_budget'] = user_b
         else:
-            flash(f"Welcome back, {user['name']}!", "success")
-            redirect_url = url_for('dashboard')
+            user_b = float(user['monthly_budget'])
+
+        flash(f"Welcome back, {user['name']}!", "success")
+        redirect_url = url_for('dashboard')
 
         resp = jsonify({
             "success": True,
@@ -477,18 +466,22 @@ def login():
             session['user_avatar'] = user_avatar
             session['monthly_budget'] = user_budget
 
-            # If user has ALREADY set the budget, land directly inside on the Dashboard!
-            if user_budget > 0:
-                flash(f"Welcome back, {user_name}!", "success")
-                resp = make_response(redirect(url_for('dashboard')))
-                resp.set_cookie('spendwise_saved_budget', str(user_budget), max_age=31536000, httponly=False, samesite='Lax')
-                resp.set_cookie('spendwise_budget_email', user_email.lower(), max_age=31536000, httponly=False, samesite='Lax')
-                resp.set_cookie('spendwise_budget_set', 'true', max_age=31536000, httponly=False, samesite='Lax')
-                return resp
+            if user_budget <= 0:
+                user_budget = 25000.0
+                conn = get_db()
+                conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (user_budget, user_id))
+                conn.commit()
+                conn.close()
 
-            # Only for new users without a budget, land on the Expense page to set it
-            flash(f"Welcome, {user_name}! Please set your monthly budget to get started.", "info")
-            return redirect(url_for('expenses'))
+            session['monthly_budget'] = user_budget
+
+            # Any user who logs in ALWAYS lands directly inside on the Dashboard!
+            flash(f"Welcome back, {user_name}!", "success")
+            resp = make_response(redirect(url_for('dashboard')))
+            resp.set_cookie('spendwise_saved_budget', str(user_budget), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_email', user_email.lower(), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_set', 'true', max_age=31536000, httponly=False, samesite='Lax')
+            return resp
         else:
             conn.close()
             incorrect_pw = bool(user)
@@ -552,8 +545,6 @@ def reset_password():
     session['monthly_budget'] = float(user['monthly_budget'] or 0.0)
 
     flash(f"🎉 Password has been reset successfully! Welcome back, {user['name']}.", "success")
-    if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
-        return redirect(url_for('expenses'))
     return redirect(url_for('dashboard'))
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -584,7 +575,7 @@ def register():
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO users (name, email, password_hash, monthly_budget, avatar)
-            VALUES (?, ?, ?, 0.0, ?)
+            VALUES (?, ?, ?, 25000.0, ?)
         """, (name, email, hashed, user_avatar))
         new_user_id = cursor.lastrowid
 
@@ -816,8 +807,12 @@ def dashboard():
         session.clear()
         return redirect(url_for('login'))
     if user['monthly_budget'] is None or float(user['monthly_budget']) <= 0:
-        flash("⚠️ Setting your monthly budget is compulsory before moving forward. Please set your budget below.", "warning")
-        return redirect(url_for('expenses'))
+        conn = get_db()
+        conn.execute("UPDATE users SET monthly_budget = 25000.0 WHERE id = ?", (user['id'],))
+        conn.commit()
+        conn.close()
+        session['monthly_budget'] = 25000.0
+        user = get_current_user()
     conn = get_db()
     uid = user['id']
 

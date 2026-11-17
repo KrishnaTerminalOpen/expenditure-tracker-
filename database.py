@@ -50,13 +50,20 @@ def init_db():
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT,
         google_id TEXT UNIQUE,
-        monthly_budget REAL DEFAULT 0.0,
+        monthly_budget REAL DEFAULT 25000.0,
         currency TEXT DEFAULT '₹',
         theme TEXT DEFAULT 'dark',
         avatar TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
+    # Ensure all users have an active established budget (> 0) so returning users are never trapped in set-budget
+    try:
+        cursor.execute("UPDATE users SET monthly_budget = 25000.0 WHERE monthly_budget IS NULL OR monthly_budget <= 0")
+        conn.commit()
+    except Exception as e:
+        print(f"Migration note (monthly_budget): {e}")
 
     # Automatic migration: Ensure google_id column exists on existing installations
     cursor.execute("PRAGMA table_info(users)")
