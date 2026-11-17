@@ -435,5 +435,24 @@
         }
     }
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const profForm = document.querySelector('form[action="{{ url_for("profile") }}"]');
+        if (profForm) {
+            profForm.addEventListener('submit', function() {
+                const mbInput = profForm.querySelector('input[name="monthly_budget"]');
+                const userEmail = "{{ user.email if user else '' }}".toLowerCase();
+                if (mbInput && mbInput.value && parseFloat(mbInput.value) > 0) {
+                    const val = mbInput.value.trim();
+                    localStorage.setItem('spendwise_budget', val);
+                    localStorage.setItem('spendwise_budget_set', 'true');
+                    if (userEmail) {
+                        localStorage.setItem('spendwise_budget_' + userEmail, val);
+                        localStorage.setItem('spendwise_budget_set_' + userEmail, 'true');
+                    }
+                }
+            });
+        }
+    });
+
 </script>
 {% endblock %}

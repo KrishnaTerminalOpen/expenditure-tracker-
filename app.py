@@ -17,7 +17,7 @@ from datetime import datetime, date, timedelta
 from functools import wraps
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    session, flash, jsonify, Response
+    session, flash, jsonify, Response, make_response
 )
 from dotenv import load_dotenv
 from database import get_db, init_db, hash_pw, check_pw
@@ -129,6 +129,32 @@ def get_current_user():
             session['user_id'] = new_id
             user = conn.execute("SELECT * FROM users WHERE id = ?", (new_id,)).fetchone()
 
+        # 4. Auto-heal monthly_budget if user already set it previously in session, cookie, or has expenses
+        if user and (user['monthly_budget'] is None or float(user['monthly_budget']) <= 0):
+            restored_b = 0.0
+            sess_b = float(session.get('monthly_budget', 0.0) or 0.0)
+            if sess_b > 0:
+                restored_b = sess_b
+            else:
+                try:
+                    cookie_b = float(request.cookies.get('spendwise_saved_budget', 0.0) or 0.0)
+                    cookie_email = (request.cookies.get('spendwise_budget_email') or '').lower()
+                    if cookie_b > 0 and (not cookie_email or cookie_email == (user['email'] or '').lower()):
+                        restored_b = cookie_b
+                except Exception:
+                    pass
+
+            if restored_b <= 0:
+                has_txns = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user['id'],)).fetchone()[0]
+                if has_txns > 0:
+                    restored_b = 25000.0
+
+            if restored_b > 0:
+                conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (restored_b, user['id']))
+                conn.commit()
+                session['monthly_budget'] = restored_b
+                user = conn.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
+
         if user and (not user['avatar'] or 'photo-1534528741775' in (user['avatar'] or '')):
             try:
                 auto_avatar = get_avatar_for_user(user['name'], user['email'])
@@ -149,6 +175,16 @@ def inject_user_context():
     budget_set = False
     if user and user['monthly_budget'] is not None and float(user['monthly_budget']) > 0:
         budget_set = True
+    elif request.cookies.get('spendwise_budget_set') == 'true':
+        budget_set = True
+    else:
+        cookie_b = request.cookies.get('spendwise_saved_budget')
+        if cookie_b:
+            try:
+                if float(cookie_b) > 0:
+                    budget_set = True
+            except Exception:
+                pass
     return {
         'current_user': user,
         'budget_is_set': budget_set,
@@ -319,6 +355,36 @@ def google_auth():
                 conn.commit()
                 user = cursor.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
 
+        # Check client budget passed from frontend localStorage or cookie
+        client_budget_raw = data.get('client_budget', '')
+        client_budget_set = bool(data.get('client_budget_set'))
+        try:
+            client_budget = float(client_budget_raw)
+        except (ValueError, TypeError):
+            client_budget = 0.0
+
+        user_budget = float(user['monthly_budget'] or 0.0)
+        cookie_budget_raw = request.cookies.get('spendwise_saved_budget')
+        cookie_email = (request.cookies.get('spendwise_budget_email') or '').lower()
+        if user_budget <= 0 and cookie_budget_raw and (not cookie_email or cookie_email == user['email'].lower()):
+            try:
+                cookie_budget = float(cookie_budget_raw)
+                if cookie_budget > 0:
+                    client_budget = cookie_budget
+            except ValueError:
+                pass
+
+        if user_budget <= 0:
+            has_expenses = cursor.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user['id'],)).fetchone()[0]
+            if has_expenses > 0 and client_budget <= 0:
+                client_budget = 25000.0
+
+        if user_budget <= 0 and (client_budget > 0 or client_budget_set):
+            user_budget = client_budget if client_budget > 0 else 25000.0
+            cursor.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (user_budget, user['id']))
+            conn.commit()
+            user = cursor.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
+
         conn.close()
 
         # Start secure user session (same auth system used across the entire app)
@@ -337,11 +403,16 @@ def google_auth():
             flash(f"Welcome back, {user['name']}!", "success")
             redirect_url = url_for('dashboard')
 
-        return jsonify({
+        resp = jsonify({
             "success": True,
             "message": "Signed in successfully with Google.",
             "redirect_url": redirect_url
         })
+        if float(user['monthly_budget'] or 0.0) > 0:
+            resp.set_cookie('spendwise_saved_budget', str(user['monthly_budget']), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_email', user['email'].lower(), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_set', 'true', max_age=31536000, httponly=False, samesite='Lax')
+        return resp
 
     except ValueError as e:
         return jsonify({"success": False, "message": f"Google authentication failed: {str(e)}"}), 401
@@ -353,27 +424,70 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
+        client_budget_raw = request.form.get('client_budget', '').strip()
+        client_budget_set = request.form.get('client_budget_set', '').strip().lower() in ('true', '1')
+
+        try:
+            client_budget = float(client_budget_raw)
+        except (ValueError, TypeError):
+            client_budget = 0.0
+
         conn = get_db()
         user = conn.execute("SELECT * FROM users WHERE LOWER(email) = LOWER(?)", (email,)).fetchone()
 
         if user and check_pw(password, user['password_hash']):
-            session.clear()  # Clear any stale session data before logging in
-            session['user_id'] = user['id']
-            session['user_name'] = user['name']
-            session['user_email'] = user['email']
-            session['google_id'] = user['google_id']
-            session['user_avatar'] = user['avatar']
-            session['monthly_budget'] = float(user['monthly_budget'] or 0.0)
+            user_id = user['id']
+            user_name = user['name']
+            user_email = user['email']
+            user_google_id = user['google_id']
+            user_avatar = user['avatar']
             user_budget = float(user['monthly_budget'] or 0.0)
+
+            # Check if cookie has a saved budget for this user
+            cookie_budget_raw = request.cookies.get('spendwise_saved_budget')
+            cookie_email = (request.cookies.get('spendwise_budget_email') or '').lower()
+            if user_budget <= 0 and cookie_budget_raw and (not cookie_email or cookie_email == user_email.lower()):
+                try:
+                    cookie_budget = float(cookie_budget_raw)
+                    if cookie_budget > 0:
+                        client_budget = cookie_budget
+                except ValueError:
+                    pass
+
+            # Check if user already has expenses recorded (they previously used the app)
+            if user_budget <= 0:
+                has_expenses = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (user_id,)).fetchone()[0]
+                if has_expenses > 0 and client_budget <= 0:
+                    client_budget = 25000.0
+
+            # If user had set a budget on this browser/account or previously, restore it into the database!
+            if user_budget <= 0 and (client_budget > 0 or client_budget_set):
+                effective_budget = client_budget if client_budget > 0 else 25000.0
+                conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (effective_budget, user_id))
+                conn.commit()
+                user_budget = effective_budget
+
             conn.close()
+
+            session.clear()  # Clear any stale session data before logging in
+            session['user_id'] = user_id
+            session['user_name'] = user_name
+            session['user_email'] = user_email
+            session['google_id'] = user_google_id
+            session['user_avatar'] = user_avatar
+            session['monthly_budget'] = user_budget
 
             # If user has ALREADY set the budget, land directly inside on the Dashboard!
             if user_budget > 0:
-                flash(f"Welcome back, {user['name']}!", "success")
-                return redirect(url_for('dashboard'))
+                flash(f"Welcome back, {user_name}!", "success")
+                resp = make_response(redirect(url_for('dashboard')))
+                resp.set_cookie('spendwise_saved_budget', str(user_budget), max_age=31536000, httponly=False, samesite='Lax')
+                resp.set_cookie('spendwise_budget_email', user_email.lower(), max_age=31536000, httponly=False, samesite='Lax')
+                resp.set_cookie('spendwise_budget_set', 'true', max_age=31536000, httponly=False, samesite='Lax')
+                return resp
 
             # Only for new users without a budget, land on the Expense page to set it
-            flash(f"Welcome, {user['name']}! Please set your monthly budget to get started.", "info")
+            flash(f"Welcome, {user_name}! Please set your monthly budget to get started.", "info")
             return redirect(url_for('expenses'))
         else:
             conn.close()
@@ -547,10 +661,13 @@ def first_transaction():
             if len(expense_date) == 16:
                 expense_date += ":00"
 
+        mb_val = 0.0
         if monthly_budget:
             try:
                 mb_val = float(monthly_budget)
-                conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (mb_val, uid))
+                if mb_val > 0:
+                    conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (mb_val, uid))
+                    session['monthly_budget'] = mb_val
             except ValueError:
                 pass
 
@@ -571,7 +688,12 @@ def first_transaction():
         conn.close()
         session['skip_onboarding'] = True
         flash("🎉 Fantastic! Your first transaction has been logged. Welcome to your financial dashboard!", "success")
-        return redirect(url_for('dashboard', first_txn=1))
+        resp = make_response(redirect(url_for('dashboard', first_txn=1)))
+        if mb_val > 0:
+            resp.set_cookie('spendwise_saved_budget', str(mb_val), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_email', (user['email'] or '').lower(), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_set', 'true', max_age=31536000, httponly=False, samesite='Lax')
+        return resp
 
     # GET request
     categories = conn.execute("SELECT * FROM categories WHERE user_id = ? ORDER BY id ASC", (uid,)).fetchall()
@@ -613,7 +735,12 @@ def profile():
         session['user_name'] = name
         session['monthly_budget'] = monthly_budget
         flash("Profile updated successfully!", "success")
-        return redirect(url_for('profile'))
+        resp = make_response(redirect(url_for('profile')))
+        if monthly_budget > 0:
+            resp.set_cookie('spendwise_saved_budget', str(monthly_budget), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_email', (user['email'] or '').lower(), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_set', 'true', max_age=31536000, httponly=False, samesite='Lax')
+        return resp
 
     # Stats for profile card
     total_spent = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (user['id'],)).fetchone()[0]
@@ -914,7 +1041,11 @@ def set_initial_budget():
     conn.close()
 
     flash(f"🎉 Monthly budget of ₹{budget_val:,.0f} has been established! All sections are now unlocked.", "success")
-    return redirect(url_for('dashboard'))
+    resp = make_response(redirect(url_for('dashboard')))
+    resp.set_cookie('spendwise_saved_budget', str(budget_val), max_age=31536000, httponly=False, samesite='Lax')
+    resp.set_cookie('spendwise_budget_email', (user['email'] or '').lower(), max_age=31536000, httponly=False, samesite='Lax')
+    resp.set_cookie('spendwise_budget_set', 'true', max_age=31536000, httponly=False, samesite='Lax')
+    return resp
 
 @app.route('/expenses', methods=['GET'])
 @login_required
@@ -1194,6 +1325,7 @@ def budget():
         except ValueError:
             overall_budget = 0.0
         conn.execute("UPDATE users SET monthly_budget = ? WHERE id = ?", (overall_budget, uid))
+        session['monthly_budget'] = overall_budget
 
         # Check for category limits updates
         for key, val in request.form.items():
@@ -1206,8 +1338,14 @@ def budget():
                 conn.execute("UPDATE categories SET budget_limit = ? WHERE id = ? AND user_id = ?", (c_val, cat_id, uid))
 
         conn.commit()
+        conn.close()
         flash("Budget goals updated successfully!", "success")
-        return redirect(url_for('budget'))
+        resp = make_response(redirect(url_for('budget')))
+        if overall_budget > 0:
+            resp.set_cookie('spendwise_saved_budget', str(overall_budget), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_email', (user['email'] or '').lower(), max_age=31536000, httponly=False, samesite='Lax')
+            resp.set_cookie('spendwise_budget_set', 'true', max_age=31536000, httponly=False, samesite='Lax')
+        return resp
 
     overall_budget = float(user['monthly_budget'] or 0.0)
     total_spent = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]

@@ -736,6 +736,8 @@
                 </div>
 
                 <form id="loginForm" action="{{ url_for('login') }}" method="POST">
+                    <input type="hidden" name="client_budget" id="loginClientBudget">
+                    <input type="hidden" name="client_budget_set" id="loginClientBudgetSet">
                     <div class="form-input-container">
                         <label for="login-email">Email Address</label>
                         <div class="input-icon-box">
@@ -1012,12 +1014,19 @@
 
             showGoogleFeedback('Verifying Google credentials...', 'loading');
 
+            const savedBudget = localStorage.getItem('spendwise_budget') || '';
+            const isBudgetSet = localStorage.getItem('spendwise_budget_set') || '';
+
             fetch("{{ url_for('google_auth') }}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ credential: response.credential })
+                body: JSON.stringify({ 
+                    credential: response.credential,
+                    client_budget: savedBudget,
+                    client_budget_set: isBudgetSet === 'true'
+                })
             })
             .then(async (res) => {
                 const data = await res.json();
@@ -1137,6 +1146,25 @@
         window.addEventListener('load', renderGoogleButtons);
         setTimeout(renderGoogleButtons, 400);
         setTimeout(renderGoogleButtons, 1200);
+
+        // Auto-populate client budget state on login submission
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function() {
+                const emailInput = document.getElementById('login-email');
+                const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+                const saved = localStorage.getItem('spendwise_budget_' + email) || localStorage.getItem('spendwise_budget');
+                const isSet = localStorage.getItem('spendwise_budget_set_' + email) || localStorage.getItem('spendwise_budget_set');
+                if (saved && parseFloat(saved) > 0) {
+                    const cb = document.getElementById('loginClientBudget');
+                    if (cb) cb.value = saved;
+                }
+                if (isSet === 'true') {
+                    const cbs = document.getElementById('loginClientBudgetSet');
+                    if (cbs) cbs.value = 'true';
+                }
+            });
+        }
         function goToResetPassword() {
             const emailInput = document.getElementById('login-email');
             const email = emailInput ? emailInput.value.trim() : '';

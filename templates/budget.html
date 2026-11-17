@@ -310,5 +310,24 @@ function openQuickBudgetModal(catId, catName, currentLimit) {
     document.getElementById('quickCatLimit').value = (currentLimit > 0) ? currentLimit : '';
     openModal('quickBudgetModal');
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const budgetForms = document.querySelectorAll('form[action="{{ url_for("budget") }}"]');
+    const userEmail = "{{ current_user.email if current_user else '' }}".toLowerCase();
+    budgetForms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const ovInput = form.querySelector('input[name="overall_budget"]');
+            if (ovInput && ovInput.value && parseFloat(ovInput.value) > 0) {
+                const val = ovInput.value.trim();
+                localStorage.setItem('spendwise_budget', val);
+                localStorage.setItem('spendwise_budget_set', 'true');
+                if (userEmail) {
+                    localStorage.setItem('spendwise_budget_' + userEmail, val);
+                    localStorage.setItem('spendwise_budget_set_' + userEmail, 'true');
+                }
+            }
+        });
+    });
+});
 </script>
 {% endblock %}

@@ -364,7 +364,44 @@
     document.addEventListener('DOMContentLoaded', function() {
         const compModal = document.getElementById('compulsoryBudgetModal');
         if (compModal) {
+            const userEmail = "{{ current_user.email if current_user else '' }}".toLowerCase();
+            const saved = localStorage.getItem('spendwise_budget_' + userEmail) || localStorage.getItem('spendwise_budget');
+            const isSet = localStorage.getItem('spendwise_budget_set_' + userEmail) || localStorage.getItem('spendwise_budget_set');
+
+            if ((saved && parseFloat(saved) > 0) || isSet === 'true') {
+                // User has already configured their budget previously! Never show the modal.
+                compModal.style.display = 'none';
+                const effective = (saved && parseFloat(saved) > 0) ? saved : '25000';
+                fetch("{{ url_for('set_initial_budget') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'monthly_budget=' + encodeURIComponent(effective)
+                }).then(() => {
+                    window.location.replace("{{ url_for('dashboard') }}");
+                }).catch(() => {
+                    window.location.replace("{{ url_for('dashboard') }}");
+                });
+                return;
+            }
+
             compModal.style.display = 'flex';
+
+            const compForm = document.getElementById('compulsoryBudgetForm');
+            if (compForm) {
+                compForm.addEventListener('submit', function() {
+                    const inp = document.getElementById('compulsoryBudgetInput');
+                    const val = inp ? inp.value.trim() : '';
+                    if (val && parseFloat(val) > 0) {
+                        localStorage.setItem('spendwise_budget', val);
+                        localStorage.setItem('spendwise_budget_set', 'true');
+                        if (userEmail) {
+                            localStorage.setItem('spendwise_budget_' + userEmail, val);
+                            localStorage.setItem('spendwise_budget_set_' + userEmail, 'true');
+                        }
+                    }
+                });
+            }
+
             // Prevent dismissal on backdrop click
             compModal.addEventListener('click', function(e) {
                 if (e.target === compModal) {
