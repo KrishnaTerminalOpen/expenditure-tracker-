@@ -414,9 +414,9 @@
     <!-- 3 Primary Action Steps -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; position: relative; z-index: 1;">
         <!-- Step 1: Import Statement CSV -->
-        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: none;">
             <div>
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 1.25rem; margin-bottom: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 1.25rem; margin-bottom: 14px; box-shadow: none;">
                     <i class="fa-solid fa-file-csv"></i>
                 </div>
                 <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Import Bank Statement</h3>
@@ -425,7 +425,7 @@
                 </p>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); justify-content: center; padding: 10px 14px; font-weight: 700;" onclick="openModal('importCsvModal')">
+                <button type="button" class="btn-blue-upload" style="width: 100%;" onclick="openModal('importCsvModal')">
                     <i class="fa-solid fa-cloud-arrow-up"></i> Upload Statement CSV
                 </button>
             </div>
