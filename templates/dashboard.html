@@ -69,7 +69,7 @@
         <div style="display: flex; gap: 16px; padding: 8px 16px; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
             <div style="text-align: right;">
                 <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Today's Run-rate</div>
-                <div style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">₹ {{ "{:,.0f}".format(todays_expenses) }}</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-main);">₹ {{ "{:,.0f}".format(todays_expenses) }}</div>
             </div>
             <div style="width: 1px; background: rgba(255,255,255,0.08);"></div>
             <div style="text-align: right;">
@@ -168,7 +168,7 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
             <div>
                 <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">AI Month-End Forecast</span>
-                <div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-top: 3px;">
+                <div style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-top: 3px;">
                     ₹ {{ "{:,.0f}".format(projected_month_end) }} <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Projected</span>
                 </div>
             </div>
@@ -178,10 +178,10 @@
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 8px 12px; background: rgba(0,0,0,0.22); border-radius: 8px; margin-top: 10px;">
             <span style="color: var(--text-dim);">
-                Velocity: <strong style="color: #ffffff;">₹{{ "{:,.0f}".format(daily_velocity) }}</strong>/day
+                Velocity: <strong style="color: var(--text-main);">₹{{ "{:,.0f}".format(daily_velocity) }}</strong>/day
             </span>
             <span style="color: var(--text-dim);">
-                Days Left: <strong style="color: #ffffff;">{{ days_remaining }}</strong>
+                Days Left: <strong style="color: var(--text-main);">{{ days_remaining }}</strong>
             </span>
             <span style="color: {{ '#34d399' if projected_surplus >= 0 else '#f87171' }}; font-weight: 700;">
                 {{ '+' if projected_surplus >= 0 else '' }}₹{{ "{:,.0f}".format(projected_surplus) }} Buffer
@@ -194,7 +194,7 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
                 <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Recurring Fixed Outflow</span>
-                <div style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-top: 3px;">
+                <div style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-top: 3px;">
                     ₹ {{ "{:,.0f}".format(mrc_total) }} <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">/ mo</span>
                 </div>
             </div>
@@ -396,14 +396,14 @@
 </div>
 {% else %}
 <!-- Zero-Data / Onboarding & Import Command Center -->
-<div class="card" style="padding: 40px 36px; background: linear-gradient(145deg, rgba(22, 30, 48, 0.85) 0%, rgba(13, 17, 26, 0.95) 100%); border-top: 3.5px solid var(--accent-orange); margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+<div class="card empty-dashboard-hero" style="padding: 40px 36px; border-top: 3.5px solid var(--accent-orange); margin-bottom: 24px; position: relative; overflow: hidden;">
     <div style="position: absolute; top: -60px; right: -40px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(249, 115, 22, 0.15) 0%, transparent 70%); pointer-events: none;"></div>
 
     <div style="max-width: 680px; position: relative; z-index: 1;">
         <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(249, 115, 22, 0.12); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 20px; font-size: 0.72rem; font-weight: 700; color: #fb923c; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;">
             <i class="fa-solid fa-sparkles"></i> Getting Started
         </div>
-        <h2 style="font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; color: #ffffff; margin-bottom: 8px;">
+        <h2 style="font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-main); margin-bottom: 8px;">
             Import your financial data to activate your dashboard
         </h2>
         <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 28px;">
@@ -414,12 +414,12 @@
     <!-- 3 Primary Action Steps -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; position: relative; z-index: 1;">
         <!-- Step 1: Import Statement CSV -->
-        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: none;">
+        <div class="empty-action-card empty-action-sky" style="border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 1.25rem; margin-bottom: 14px; box-shadow: none;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 1.25rem; margin-bottom: 14px;">
                     <i class="fa-solid fa-file-csv"></i>
                 </div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Import Bank Statement</h3>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Import Bank Statement</h3>
                 <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
                     Upload CSV statement from SBI, HDFC, ICICI, Axis, Paytm, or generic bank export with automatic AI auto-categorization.
                 </p>
@@ -432,12 +432,12 @@
         </div>
 
         <!-- Step 2: Log Expense Manually -->
-        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(249, 115, 22, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="empty-action-card empty-action-orange" style="border: 1px solid rgba(249, 115, 22, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.35); display: flex; align-items: center; justify-content: center; color: var(--accent-orange); font-size: 1.25rem; margin-bottom: 14px;">
                     <i class="fa-solid fa-receipt"></i>
                 </div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Record Single Expense</h3>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Record Single Expense</h3>
                 <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
                     Quickly log coffee, commute, shopping, or dining expenses with category tags and payment methods.
                 </p>
@@ -448,12 +448,12 @@
         </div>
 
         <!-- Step 3: Configure Monthly Budget Target -->
-        <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(16, 185, 129, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="empty-action-card empty-action-emerald" style="border: 1px solid rgba(16, 185, 129, 0.28); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; color: #34d399; font-size: 1.25rem; margin-bottom: 14px;">
                     <i class="fa-solid fa-bullseye"></i>
                 </div>
-                <h3 style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Set Monthly Budget</h3>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Set Monthly Budget</h3>
                 <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
                     Establish your personal monthly spending threshold and configure category envelope limits.
                 </p>

@@ -14,6 +14,16 @@
     <!-- Chart.js CDN for interactive fin-tech visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('spendwise_theme');
+                if (savedTheme === 'light' || savedTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                }
+            } catch (e) {}
+        })();
+    </script>
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -671,14 +681,37 @@
 
         function toggleAppTheme() {
             playClickSound();
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            try { localStorage.setItem('spendwise_theme', nextTheme); } catch (e) {}
+            const chk = document.getElementById('theme-toggle-chk');
+            if (chk) chk.checked = (nextTheme === 'dark');
+
             fetch('{{ url_for("toggle_theme") }}', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
-                document.documentElement.setAttribute('data-theme', data.theme);
-                const chk = document.getElementById('theme-toggle-chk');
-                if (chk) chk.checked = (data.theme === 'dark');
-            });
+                if (data && data.theme) {
+                    document.documentElement.setAttribute('data-theme', data.theme);
+                    try { localStorage.setItem('spendwise_theme', data.theme); } catch (e) {}
+                    if (chk) chk.checked = (data.theme === 'dark');
+                }
+            })
+            .catch(err => console.error("Theme toggle error:", err));
         }
+
+        // Initialize theme checkbox based on active theme
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const savedTheme = localStorage.getItem('spendwise_theme');
+                if (savedTheme === 'light' || savedTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                }
+            } catch (e) {}
+            const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const chk = document.getElementById('theme-toggle-chk');
+            if (chk) chk.checked = (activeTheme === 'dark');
+        });
 
         // Pro Command Palette Controller
         function openCommandPalette() {

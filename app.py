@@ -157,6 +157,19 @@ def get_current_user():
                 user = conn.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
             except Exception:
                 pass
+
+        # 5. Sync active theme from session or cookie
+        if user:
+            cookie_theme = request.cookies.get('spendwise_theme')
+            sess_theme = session.get('theme')
+            active_theme = sess_theme or cookie_theme
+            if active_theme in ['light', 'dark'] and user['theme'] != active_theme:
+                try:
+                    conn.execute("UPDATE users SET theme = ? WHERE id = ?", (active_theme, user['id']))
+                    conn.commit()
+                    user = conn.execute("SELECT * FROM users WHERE id = ?", (user['id'],)).fetchone()
+                except Exception:
+                    pass
     except Exception as e:
         print(f"Error in get_current_user: {e}")
     finally:
@@ -725,8 +738,10 @@ def profile():
         conn.commit()
         session['user_name'] = name
         session['monthly_budget'] = monthly_budget
+        session['theme'] = theme
         flash("Profile updated successfully!", "success")
         resp = make_response(redirect(url_for('profile')))
+        resp.set_cookie('spendwise_theme', theme, max_age=31536000, httponly=False, samesite='Lax')
         if monthly_budget > 0:
             resp.set_cookie('spendwise_saved_budget', str(monthly_budget), max_age=31536000, httponly=False, samesite='Lax')
             resp.set_cookie('spendwise_budget_email', (user['email'] or '').lower(), max_age=31536000, httponly=False, samesite='Lax')
@@ -1660,12 +1675,17 @@ def export_pdf():
 @login_required
 def toggle_theme():
     user = get_current_user()
-    new_theme = 'light' if user['theme'] == 'dark' else 'dark'
-    conn = get_db()
-    conn.execute("UPDATE users SET theme = ? WHERE id = ?", (new_theme, user['id']))
-    conn.commit()
-    conn.close()
-    return jsonify({"theme": new_theme})
+    current_theme = session.get('theme') or (user['theme'] if user and user['theme'] else 'dark')
+    new_theme = 'light' if current_theme == 'dark' else 'dark'
+    if user:
+        conn = get_db()
+        conn.execute("UPDATE users SET theme = ? WHERE id = ?", (new_theme, user['id']))
+        conn.commit()
+        conn.close()
+    session['theme'] = new_theme
+    resp = jsonify({"theme": new_theme})
+    resp.set_cookie('spendwise_theme', new_theme, max_age=31536000, httponly=False, samesite='Lax')
+    return resp
 
 # ==========================================
 # MODULE 9: RECURRING SUBSCRIPTIONS & BILLS

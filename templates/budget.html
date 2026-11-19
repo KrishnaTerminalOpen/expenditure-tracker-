@@ -24,7 +24,7 @@
 </div>
 
 <!-- Overall Monthly Budget Card with Deep Ambient Glass Glow -->
-<div class="card budget-overview-card" style="margin-bottom: 28px; padding: 28px; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(26, 34, 52, 0.85) 0%, rgba(16, 22, 34, 0.95) 100%); border: 1px solid rgba(255, 255, 255, 0.09); border-top: 1px solid rgba(255, 255, 255, 0.24); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 24px 50px -10px rgba(0, 0, 0, 0.7), 0 0 35px -8px rgba(249, 115, 22, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.18);">
+<div class="card budget-overview-card" style="margin-bottom: 28px; padding: 28px; position: relative; overflow: hidden; border-top: 3px solid var(--accent-orange);">
     
     <!-- Ambient Floating Light Orbs -->
     <div style="position: absolute; top: -50px; right: -50px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(249, 115, 22, 0.25) 0%, transparent 70%); filter: blur(30px); pointer-events: none;"></div>
@@ -42,7 +42,7 @@
             </div>
 
             {% if overall_budget > 0 %}
-            <div class="budget-overview-amount" style="font-size: 2.35rem; font-weight: 800; color: #ffffff; margin-top: 6px; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(249, 115, 22, 0.35), 0 0 30px rgba(249, 115, 22, 0.15);">
+            <div class="budget-overview-amount" style="font-size: 2.35rem; font-weight: 800; color: var(--text-main); margin-top: 6px; letter-spacing: -0.02em;">
                 ₹ {{ "{:,.0f}".format(overall_budget) }}
             </div>
             <div style="font-size: 0.82rem; color: var(--accent-orange); font-weight: 600; margin-top: 5px; display: flex; align-items: center; gap: 8px;">
@@ -89,8 +89,8 @@
 </div>
 
 <!-- Category Budgets Table Card with Layered Shadow & Lighting -->
-<div class="card budget-cat-card" style="padding: 0; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08); border-top: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 20px 48px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
-    <div class="budget-cat-card-header" style="padding: 20px 26px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(19, 25, 37, 0.65);">
+<div class="card budget-cat-card" style="padding: 0; overflow: hidden;">
+    <div class="budget-cat-card-header" style="padding: 20px 26px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div>
             <h3 style="font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em;">Category Budgets</h3>
             <span style="font-size: 0.78rem; color: var(--text-dim);">Custom thresholds per category. Set limits individually or in bulk.</span>
