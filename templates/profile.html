@@ -284,22 +284,22 @@
                 <i class="fa-solid fa-skull-crossbones"></i>
             </div>
             <div>
-                <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin: 0;">Delete Account</h3>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0;">Delete Account</h3>
                 <span style="font-size: 0.74rem; color: #f87171; font-weight: 600;">Irreversible Permanent Deletion</span>
             </div>
         </div>
 
         <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
-            Are you sure you want to delete your SpendWise account, <strong style="color: #ffffff;">{{ user.name }}</strong>?
+            Are you sure you want to delete your SpendWise account, <strong style="color: var(--text-main);">{{ user.name }}</strong>?
             All your expenses, custom categories, subscriptions, and savings milestones will be wiped immediately from our servers.
         </p>
 
         <form action="{{ url_for('delete_account') }}" method="POST">
             <div style="margin-bottom: 20px;">
                 <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">
-                    Type <strong style="color: #ef4444; letter-spacing: 0.05em;">DELETE</strong> below to confirm:
+                    Type your account name <strong style="color: #ef4444; letter-spacing: 0.02em;">{{ user.name }}</strong> below to confirm:
                 </label>
-                <input type="text" id="confirmDeleteInput" class="form-input" placeholder="Type DELETE" oninput="checkDeleteConfirmation()" autocomplete="off" required style="border-color: rgba(239, 68, 68, 0.4);">
+                <input type="text" id="confirmDeleteInput" name="confirm_name" class="form-input" placeholder="Type {{ user.name }}" oninput="checkDeleteConfirmation()" autocomplete="off" required style="border-color: rgba(239, 68, 68, 0.4);" data-target-name="{{ user.name }}">
             </div>
 
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
@@ -423,7 +423,9 @@
         const input = document.getElementById('confirmDeleteInput');
         const btn = document.getElementById('confirmDeleteBtn');
         if (input && btn) {
-            if (input.value.trim() === 'DELETE') {
+            const targetName = (input.getAttribute('data-target-name') || '').trim();
+            const val = input.value.trim();
+            if (val && targetName && val.toLowerCase() === targetName.toLowerCase()) {
                 btn.disabled = false;
                 btn.style.opacity = '1';
                 btn.style.cursor = 'pointer';

@@ -55,7 +55,7 @@ A full-stack, enterprise-grade personal expense intelligence platform and financ
 ### 8. 👤 User Profile, Custom Avatars & Danger Zone
 - **Smart Avatar Generation**: Automatic gender and name-based SVG avatar assignments.
 - **Interactive Avatar Gallery**: Select from curated boy & girl avatars or provide custom image links.
-- **⚠️ Danger Zone (Account Deletion)**: Secure option to permanently wipe all account records (expenses, categories, subscriptions, goals) with an intentional confirmation check (requires typing `DELETE`).
+- **⚠️ Danger Zone (Account Deletion)**: Secure option to permanently wipe all account records (expenses, categories, subscriptions, goals) with an intentional confirmation check (requires typing your account name).
 
 ---
 

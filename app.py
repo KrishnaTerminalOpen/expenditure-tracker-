@@ -743,6 +743,12 @@ def delete_account():
     uid = user['id']
     user_name = user['name']
 
+    # Confirmation verification: user must type their account name
+    confirm_name = request.form.get('confirm_name', '').strip()
+    if not confirm_name or confirm_name.lower() != (user_name or '').strip().lower():
+        flash(f"Confirmation failed. Please type your account name '{user_name}' to confirm deletion.", "danger")
+        return redirect(url_for('profile'))
+
     conn = get_db()
     cursor = conn.cursor()
 
