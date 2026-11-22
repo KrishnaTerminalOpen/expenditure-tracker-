@@ -424,7 +424,7 @@
             animation: googleGradientFlow 5s ease infinite;
             box-shadow: 0 4px 20px -2px rgba(66, 133, 244, 0.4), 0 2px 10px rgba(0, 0, 0, 0.45);
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            max-width: 360px;
+            max-width: 400px;
             width: 100%;
             box-sizing: border-box;
             cursor: pointer;
@@ -477,8 +477,9 @@
             justify-content: center;
             align-items: center;
             border-radius: 9999px;
-            overflow: hidden;
+            overflow: visible;
             background: #0d1322;
+            box-sizing: border-box;
         }
 
         .fancy-google-fallback-btn {
@@ -582,7 +583,6 @@
 
         .google-btn-container iframe {
             max-width: 100% !important;
-            border-radius: 9999px !important;
             cursor: pointer !important;
         }
 
@@ -987,6 +987,7 @@
                 btns[0].classList.remove('active');
                 btns[1].classList.add('active');
             }
+            setTimeout(renderGoogleButtons, 50);
         }
 
         function togglePasswordVisibility(inputId, btn) {
@@ -1099,6 +1100,21 @@
             });
         }
 
+        function getOptimalGoogleWidth() {
+            try {
+                const activeBox = document.querySelector('.panel-active .fancy-google-box') || 
+                                  document.querySelector('.fancy-google-box');
+                if (activeBox && activeBox.clientWidth > 0) {
+                    return Math.min(390, Math.max(280, Math.floor(activeBox.clientWidth) - 8));
+                }
+                const formPanel = document.querySelector('.auth-right-form');
+                if (formPanel && formPanel.clientWidth > 0) {
+                    return Math.min(390, Math.max(280, Math.floor(formPanel.clientWidth) - 76));
+                }
+            } catch (e) {}
+            return 385;
+        }
+
         // Initialize Google Identity Services buttons on page load with deferred retries
         function renderGoogleButtons() {
             if (GOOGLE_CLIENT_ID && window.google && window.google.accounts && window.google.accounts.id) {
@@ -1110,6 +1126,8 @@
                         cancel_on_tap_outside: true
                     });
 
+                    const targetWidth = getOptimalGoogleWidth();
+
                     const loginBtn = document.getElementById('googleSignInBtnLogin');
                     if (loginBtn) {
                         loginBtn.innerHTML = '';
@@ -1120,7 +1138,7 @@
                             text: 'continue_with',
                             shape: 'pill',
                             logo_alignment: 'left',
-                            width: 340
+                            width: targetWidth
                         });
                     }
 
@@ -1134,7 +1152,7 @@
                             text: 'signup_with',
                             shape: 'pill',
                             logo_alignment: 'left',
-                            width: 340
+                            width: targetWidth
                         });
                     }
                 } catch (e) {
@@ -1146,6 +1164,12 @@
         window.addEventListener('load', renderGoogleButtons);
         setTimeout(renderGoogleButtons, 400);
         setTimeout(renderGoogleButtons, 1200);
+
+        let googleResizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(googleResizeTimer);
+            googleResizeTimer = setTimeout(renderGoogleButtons, 250);
+        });
 
         // Auto-populate client budget state on login submission
         const loginForm = document.getElementById('loginForm');
