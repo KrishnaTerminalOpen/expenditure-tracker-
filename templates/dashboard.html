@@ -66,15 +66,15 @@
         </div>
     </div>
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <div style="display: flex; gap: 16px; padding: 8px 16px; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+        <div class="dash-stat-capsule">
             <div style="text-align: right;">
-                <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Today's Run-rate</div>
-                <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-main);">₹ {{ "{:,.0f}".format(todays_expenses) }}</div>
+                <div class="dash-stat-label">Today's Run-rate</div>
+                <div class="dash-stat-value">₹ {{ "{:,.0f}".format(todays_expenses) }}</div>
             </div>
-            <div style="width: 1px; background: rgba(255,255,255,0.08);"></div>
+            <div class="dash-stat-divider"></div>
             <div style="text-align: right;">
-                <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Top Driver</div>
-                <div style="font-size: 0.95rem; font-weight: 800; color: #fb923c;">{{ highest_category.split(' ')[0] }}</div>
+                <div class="dash-stat-label">Top Driver</div>
+                <div class="dash-stat-driver">{{ highest_category.split(' ')[0] }}</div>
             </div>
         </div>
         <button class="btn-outline" style="font-size: 0.78rem; padding: 8px 12px;" onclick="openCommandPalette()" title="Command Palette">
@@ -176,7 +176,7 @@
                 {{ 'On Pace' if projected_surplus >= 0 else 'Budget Overrun Risk' }}
             </span>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 8px 12px; background: rgba(0,0,0,0.22); border-radius: 8px; margin-top: 10px;">
+        <div class="dash-forecast-strip">
             <span style="color: var(--text-dim);">
                 Velocity: <strong style="color: var(--text-main);">₹{{ "{:,.0f}".format(daily_velocity) }}</strong>/day
             </span>
@@ -222,7 +222,7 @@
             </a>
         </div>
         <div>
-            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.3); border-radius: 10px; overflow: hidden; margin-top: 10px;">
+            <div class="dash-progress-track" style="width: 100%; height: 6px; border-radius: 10px; overflow: hidden; margin-top: 10px;">
                 <div style="height: 100%; width: {{ [goals_progress_pct, 100]|min }}%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%);"></div>
             </div>
             <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; display: flex; justify-content: space-between;">

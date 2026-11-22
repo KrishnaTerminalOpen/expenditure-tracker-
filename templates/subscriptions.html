@@ -137,7 +137,7 @@
             </div>
 
             <!-- Price & Cycle -->
-            <div style="margin: 16px 0; padding: 12px 14px; background: rgba(0,0,0,0.22); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: baseline;">
+            <div class="sub-price-strip" style="margin: 16px 0; padding: 12px 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: baseline;">
                 <div>
                     <span style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;">₹ {{ "{:,.0f}".format(sub.amount) }}</span>
                     <span style="font-size: 0.75rem; color: var(--text-dim); margin-left: 4px;">/ {{ sub.billing_cycle }}</span>
