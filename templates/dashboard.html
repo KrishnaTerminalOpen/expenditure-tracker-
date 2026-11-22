@@ -6,15 +6,33 @@
 <!-- Module 2: Dashboard Header with Executive Status Bar -->
 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
     <div>
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
             <span class="live-sync-pill" style="padding: 3px 10px; font-size: 0.7rem;">
                 <span class="pulse-dot-green" style="width: 6px; height: 6px;"></span>
                 <span id="greetingTime">Live Dashboard</span>
             </span>
-            <span style="font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px;">
-                <i class="fa-regular fa-calendar-days"></i>
-                <span id="dashLiveDate"></span>
-            </span>
+            <div style="font-size: 0.78rem; color: var(--text-dim); display: inline-flex; align-items: center; gap: 8px;">
+                <span style="display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="fa-regular fa-calendar-days"></i>
+                    <span id="dashLiveDate"></span>
+                </span>
+                <span style="opacity: 0.35; font-size: 0.7rem;">•</span>
+                <span style="display: inline-flex; align-items: center; gap: 5px; color: var(--text-main); font-weight: 600;">
+                    <i class="fa-regular fa-clock" style="color: var(--accent-orange); font-size: 0.78rem;"></i>
+                    <span id="dashLiveTime" style="font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0.02em;"></span>
+                </span>
+            </div>
+            <script>
+                (function() {
+                    try {
+                        var n = new Date();
+                        var d = document.getElementById('dashLiveDate');
+                        if (d) d.textContent = n.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+                        var t = document.getElementById('dashLiveTime');
+                        if (t) t.textContent = n.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                    } catch(e) {}
+                })();
+            </script>
         </div>
         <h1 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.2;">
             Welcome back, <span style="background: linear-gradient(135deg, #ffffff 30%, #f97316 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ (user.name.split(' ')[0] if (user and user.name) else 'Krishna') }}</span> 👋
@@ -594,19 +612,45 @@
         });
     }
 
-    // Set Live Formatted Date & Greeting
-    const now = new Date();
-    const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
-    const dateEl = document.getElementById('dashLiveDate');
-    if (dateEl) {
-        dateEl.textContent = now.toLocaleDateString('en-US', dateOptions);
+    // Live Real-Time Clock, Date & Dynamic Greeting
+    function updateLiveDateTime() {
+        const now = new Date();
+        const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+        const dateEl = document.getElementById('dashLiveDate');
+        if (dateEl) {
+            dateEl.textContent = now.toLocaleDateString('en-US', dateOptions);
+        }
+
+        const timeEl = document.getElementById('dashLiveTime');
+        if (timeEl) {
+            try {
+                timeEl.textContent = now.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                });
+            } catch (e) {
+                let h = now.getHours();
+                const m = String(now.getMinutes()).padStart(2, '0');
+                const s = String(now.getSeconds()).padStart(2, '0');
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                h = h % 12 || 12;
+                timeEl.textContent = `${String(h).padStart(2, '0')}:${m}:${s} ${ampm}`;
+            }
+        }
+
+        const hr = now.getHours();
+        const greetingEl = document.getElementById('greetingTime');
+        if (greetingEl) {
+            if (hr < 12) greetingEl.textContent = 'Morning Overview';
+            else if (hr < 17) greetingEl.textContent = 'Afternoon Overview';
+            else greetingEl.textContent = 'Evening Overview';
+        }
     }
-    const hr = now.getHours();
-    const greetingEl = document.getElementById('greetingTime');
-    if (greetingEl) {
-        if (hr < 12) greetingEl.textContent = 'Morning Overview';
-        else if (hr < 17) greetingEl.textContent = 'Afternoon Overview';
-        else greetingEl.textContent = 'Evening Overview';
-    }
+
+    // Run immediately when page opens and tick continuously every second
+    updateLiveDateTime();
+    setInterval(updateLiveDateTime, 1000);
 </script>
 {% endblock %}
