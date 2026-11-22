@@ -60,13 +60,15 @@
             {% endif %}
         </div>
 
-        <div class="budget-overview-right" style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-            <div style="font-size: 0.92rem; color: var(--text-dim);">
-                Spent: <strong style="color: #ffffff; font-weight: 700; text-shadow: 0 1px 8px rgba(0,0,0,0.5);">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
+        <div class="budget-overview-right">
+            <div class="budget-spent-line">
+                <span class="budget-spent-label">Spent:</span>
+                <strong class="budget-spent-val">₹ {{ "{:,.0f}".format(total_spent) }}</strong>
             </div>
             {% if overall_budget > 0 %}
-            <div style="font-size: 0.92rem; color: var(--accent-emerald); margin-top: 5px; font-weight: 700; text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);">
-                ₹ {{ "{:,.0f}".format(remaining) }} remaining
+            <div class="budget-remaining-line">
+                <span class="budget-remaining-val">₹ {{ "{:,.0f}".format(remaining) }}</span>
+                <span class="budget-remaining-label">remaining</span>
             </div>
             {% else %}
             <button class="btn-primary" style="margin-top: 10px; padding: 7px 16px; font-size: 0.8rem; box-shadow: 0 4px 16px var(--accent-orange-glow);" onclick="openModal('setBudgetModal')">
