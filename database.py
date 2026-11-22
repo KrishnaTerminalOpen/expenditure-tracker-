@@ -33,7 +33,79 @@ def get_db_path() -> str:
         return tmp_db
     return source_db
 
+class DictRow(dict):
+    """Row wrapper that supports both dict key access (row['col']) and integer index access (row[0])."""
+    def __init__(self, cols, values):
+        super().__init__(zip(cols, values))
+        self._values = values
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return super().__getitem__(key)
+
+class LibsqlCursorWrapper:
+    def __init__(self, cur):
+        self._cur = cur
+    def execute(self, sql, params=()):
+        self._cur.execute(sql, params)
+        return self
+    def executemany(self, sql, params=()):
+        self._cur.executemany(sql, params)
+        return self
+    def fetchone(self):
+        r = self._cur.fetchone()
+        if r is None:
+            return None
+        cols = [c[0] for c in self._cur.description]
+        return DictRow(cols, r)
+    def fetchall(self):
+        if not self._cur.description:
+            return []
+        cols = [c[0] for c in self._cur.description]
+        return [DictRow(cols, r) for r in self._cur.fetchall()]
+    @property
+    def lastrowid(self):
+        return self._cur.lastrowid
+    @property
+    def rowcount(self):
+        return self._cur.rowcount
+    @property
+    def description(self):
+        return self._cur.description
+    def close(self):
+        try:
+            self._cur.close()
+        except Exception:
+            pass
+
+class LibsqlConnectionWrapper:
+    def __init__(self, conn):
+        self._conn = conn
+    def cursor(self):
+        return LibsqlCursorWrapper(self._conn.cursor())
+    def execute(self, sql, params=()):
+        cur = self.cursor()
+        cur.execute(sql, params)
+        return cur
+    def commit(self):
+        self._conn.commit()
+    def rollback(self):
+        self._conn.rollback()
+    def close(self):
+        self._conn.close()
+
 def get_db():
+    turso_url = os.environ.get('TURSO_DATABASE_URL') or os.environ.get('LIBSQL_URL')
+    turso_token = os.environ.get('TURSO_AUTH_TOKEN') or os.environ.get('LIBSQL_AUTH_TOKEN', '')
+
+    if turso_url:
+        try:
+            import libsql
+            raw_conn = libsql.connect(database=turso_url, auth_token=turso_token)
+            return LibsqlConnectionWrapper(raw_conn)
+        except Exception as e:
+            print(f"Warning: Turso cloud connection failed ({e}), falling back to local SQLite.")
+
     conn = sqlite3.connect(get_db_path(), timeout=15)
     conn.row_factory = sqlite3.Row
     return conn
