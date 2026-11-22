@@ -234,9 +234,10 @@ def google_auth():
 
     data = request.get_json() or {}
     token = data.get('credential', '').strip()
+    access_token = data.get('access_token', '').strip()
 
-    if not token:
-        return jsonify({"success": False, "message": "Missing Google ID token credential."}), 400
+    if not token and not access_token:
+        return jsonify({"success": False, "message": "Missing Google authentication credential."}), 400
 
     client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip() or GOOGLE_CLIENT_ID
     if not client_id:
@@ -246,28 +247,51 @@ def google_auth():
         }), 500
 
     try:
-        from google.oauth2 import id_token as google_id_token
-        from google.auth.transport import requests as google_requests
+        sub = ""
+        email = ""
+        name = ""
+        picture = ""
 
-        # Verify Google ID token cryptographically with official google-auth library
-        idinfo = google_id_token.verify_oauth2_token(
-            token,
-            google_requests.Request(),
-            client_id
-        )
+        if token:
+            from google.oauth2 import id_token as google_id_token
+            from google.auth.transport import requests as google_requests
 
-        # Confirm issuer is genuine Google Identity Service
-        if idinfo.get('iss') not in ['accounts.google.com', 'https://accounts.google.com']:
-            return jsonify({"success": False, "message": "Invalid Google token issuer."}), 400
+            # Verify Google ID token cryptographically with official google-auth library
+            idinfo = google_id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                client_id
+            )
 
-        # Enforce that email is verified by Google
-        if not idinfo.get('email_verified', False):
-            return jsonify({"success": False, "message": "Your Google email address is unverified."}), 400
+            # Confirm issuer is genuine Google Identity Service
+            if idinfo.get('iss') not in ['accounts.google.com', 'https://accounts.google.com']:
+                return jsonify({"success": False, "message": "Invalid Google token issuer."}), 400
 
-        sub = str(idinfo.get('sub', '')).strip()
-        email = idinfo.get('email', '').strip().lower()
-        name = idinfo.get('name', '').strip() or email.split('@')[0]
-        picture = idinfo.get('picture', '').strip()
+            # Enforce that email is verified by Google
+            if not idinfo.get('email_verified', False):
+                return jsonify({"success": False, "message": "Your Google email address is unverified."}), 400
+
+            sub = str(idinfo.get('sub', '')).strip()
+            email = idinfo.get('email', '').strip().lower()
+            name = idinfo.get('name', '').strip() or email.split('@')[0]
+            picture = idinfo.get('picture', '').strip()
+        elif access_token:
+            import urllib.request
+            import json as json_lib
+            req = urllib.request.Request(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                uinfo = json_lib.loads(resp.read().decode('utf-8'))
+
+            if not uinfo.get('email_verified', False):
+                return jsonify({"success": False, "message": "Your Google email address is unverified."}), 400
+
+            sub = str(uinfo.get('sub', '')).strip()
+            email = uinfo.get('email', '').strip().lower()
+            name = uinfo.get('name', '').strip() or email.split('@')[0]
+            picture = uinfo.get('picture', '').strip()
 
         if not email or not sub:
             return jsonify({"success": False, "message": "Incomplete Google profile returned."}), 400
