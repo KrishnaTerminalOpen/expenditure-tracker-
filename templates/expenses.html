@@ -368,14 +368,13 @@
             const saved = localStorage.getItem('spendwise_budget_' + userEmail) || localStorage.getItem('spendwise_budget');
             const isSet = localStorage.getItem('spendwise_budget_set_' + userEmail) || localStorage.getItem('spendwise_budget_set');
 
-            if ((saved && parseFloat(saved) > 0) || isSet === 'true') {
+            if (saved && parseFloat(saved) > 0) {
                 // User has already configured their budget previously! Never show the modal.
                 compModal.style.display = 'none';
-                const effective = (saved && parseFloat(saved) > 0) ? saved : '25000';
                 fetch("{{ url_for('set_initial_budget') }}", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'monthly_budget=' + encodeURIComponent(effective)
+                    body: 'monthly_budget=' + encodeURIComponent(saved)
                 }).then(() => {
                     window.location.replace("{{ url_for('dashboard') }}");
                 }).catch(() => {
