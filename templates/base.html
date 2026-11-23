@@ -229,7 +229,7 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <form action="{{ url_for('add_expense') }}" method="POST">
+            <form action="{{ url_for('add_expense') }}" method="POST" id="quickAddExpenseForm" onsubmit="return handleInstantExpenseSubmit(this, 'quickAddExpenseModal', event);">
                 <div class="form-group">
                     <label>Title / Description</label>
                     <input type="text" name="title" required class="form-input" placeholder="e.g. Lunch at Cafe, Grocery Shopping">
@@ -652,13 +652,213 @@
             const el = document.getElementById(id);
             if(el) {
                 el.style.display = 'flex';
-                const dateInp = el.querySelector('#quick-exp-date');
-                if (dateInp && !dateInp.value) {
-                    const now = new Date();
-                    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                    dateInp.value = now.toISOString().slice(0, 16);
+                const dateInputs = el.querySelectorAll('input[type="datetime-local"]');
+                dateInputs.forEach(dateInp => {
+                    if (!dateInp.value) {
+                        const now = new Date();
+                        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                        dateInp.value = now.toISOString().slice(0, 16);
+                    }
+                });
+                const firstInput = el.querySelector('input:not([type="hidden"]):not([readonly]), select');
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 60);
                 }
             }
+        }
+
+        // Modern Micro-Toast Notification Dispatcher
+        function showToast(message, type = 'success', duration = 3200) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast-item toast-${type}`;
+            let icon = 'fa-check-circle';
+            if (type === 'error') icon = 'fa-circle-xmark';
+            else if (type === 'info') icon = 'fa-circle-info';
+            else if (type === 'warning') icon = 'fa-triangle-exclamation';
+
+            toast.innerHTML = `
+                <i class="fa-solid ${icon}" style="font-size: 1.15rem; color: ${type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#f97316')}"></i>
+                <div style="flex: 1; font-size: 0.88rem; font-weight: 600;">${message}</div>
+                <button type="button" style="background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px;" onclick="this.parentElement.remove()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(50px)';
+                setTimeout(() => toast.remove(), 250);
+            }, duration);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function escapeJs(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n');
+        }
+
+        // Instant Zero-Latency Expense Submission Handler
+        function handleInstantExpenseSubmit(form, modalId, e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+
+            const formData = new FormData(form);
+            const title = (formData.get('title') || 'Expense').trim();
+            const amountVal = parseFloat(formData.get('amount') || 0);
+            const category = (formData.get('category') || 'Others').trim();
+            const paymentMethod = (formData.get('payment_method') || 'UPI').trim();
+            const notes = (formData.get('notes') || '').trim();
+            let rawDate = (formData.get('expense_date') || '').trim();
+            if (!rawDate) {
+                const now = new Date();
+                rawDate = now.toISOString().slice(0, 10);
+            }
+            const dateDisplay = rawDate.slice(0, 10);
+
+            // 1. Immediately close the modal in 0ms
+            closeModal(modalId);
+
+            // 2. Play celebratory audio chime
+            if (typeof playSuccessSound === 'function') {
+                playSuccessSound();
+            }
+
+            // 3. Show instant celebratory micro-toast
+            showToast(`✓ Expense saved: ₹${Math.round(amountVal).toLocaleString('en-IN')} (${title})`, 'success');
+
+            // 4. Reset form fields for next entry
+            form.reset();
+
+            // 5. Temporary ID for optimistic row insertion
+            const tempId = 'temp_' + Date.now();
+
+            // 6. If on Expenses table, optimistically inject the row instantly
+            const tableBody = document.querySelector('.data-table tbody');
+            let optimisticTr = null;
+            if (tableBody) {
+                const emptyCell = tableBody.querySelector('td[colspan]');
+                if (emptyCell) {
+                    const parentRow = emptyCell.closest('tr');
+                    if (parentRow) parentRow.remove();
+                }
+
+                const catClasses = {
+                    'Food & Dining': 'cat-dot-food',
+                    'Shopping': 'cat-dot-shopping',
+                    'Transport': 'cat-dot-transport',
+                    'Bills & Utilities': 'cat-dot-bills',
+                    'Entertainment': 'cat-dot-entertainment',
+                    'Education': 'cat-dot-education',
+                    'Health': 'cat-dot-health'
+                };
+                const dotClass = catClasses[category] || 'cat-dot-others';
+
+                optimisticTr = document.createElement('tr');
+                optimisticTr.id = `row-exp-${tempId}`;
+                optimisticTr.style.background = 'rgba(249, 115, 22, 0.22)';
+                optimisticTr.style.transition = 'background 1.5s ease';
+
+                optimisticTr.innerHTML = `
+                    <td style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">
+                        ${escapeHtml(dateDisplay)}
+                    </td>
+                    <td>
+                        <strong style="font-weight: 600;">${escapeHtml(title)}</strong>
+                        ${notes ? `<div style="font-size: 0.72rem; color: var(--text-dim);">${escapeHtml(notes)}</div>` : ''}
+                    </td>
+                    <td>
+                        <div class="badge-cat">
+                            <span class="badge-dot-cat ${dotClass}"></span>
+                            <span>${escapeHtml(category)}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="background: rgba(255,255,255,0.04); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; color: var(--text-muted);">
+                            ${escapeHtml(paymentMethod)}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <span class="amount-text">₹ ${Math.round(amountVal).toLocaleString('en-IN')}</span>
+                    </td>
+                    <td style="text-align: center; white-space: nowrap;">
+                        <button type="button" class="btn-edit-temp" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; font-size: 0.85rem;" title="Edit">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <form action="/expenses/delete/${tempId}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this expense?');">
+                            <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 6px; font-size: 0.85rem;" title="Delete">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </td>
+                `;
+
+                tableBody.insertBefore(optimisticTr, tableBody.firstChild);
+
+                setTimeout(() => {
+                    if (optimisticTr) optimisticTr.style.background = '';
+                }, 1600);
+            }
+
+            // 7. Background asynchronous submission to Turso DB
+            fetch('{{ url_for("add_expense") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.success && data.expense) {
+                    const realId = data.expense.id;
+                    if (optimisticTr && realId) {
+                        optimisticTr.id = `row-exp-${realId}`;
+                        const editBtn = optimisticTr.querySelector('.btn-edit-temp');
+                        if (editBtn) {
+                            editBtn.setAttribute('onclick', `openEditModal('${realId}', '${escapeJs(title)}', '${amountVal}', '${escapeJs(category)}', '${escapeJs(paymentMethod)}', '${escapeJs(notes)}')`);
+                        }
+                        const delForm = optimisticTr.querySelector('form');
+                        if (delForm) {
+                            delForm.action = `/expenses/delete/${realId}`;
+                        }
+                    }
+                }
+                if (window.location.pathname.includes('/dashboard')) {
+                    setTimeout(() => window.location.reload(), 600);
+                }
+            })
+            .catch(err => {
+                console.error("Expense sync note:", err);
+            });
+
+            return false;
         }
 
         function closeModal(id) {

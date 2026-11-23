@@ -1111,7 +1111,10 @@ def expenses():
 def add_expense():
     user = get_current_user()
     title = request.form.get('title', '').strip()
-    amount = float(request.form.get('amount', 0))
+    try:
+        amount = float(request.form.get('amount', 0))
+    except (ValueError, TypeError):
+        amount = 0.0
     category = request.form.get('category', 'Others').strip()
     payment_method = request.form.get('payment_method', 'UPI').strip()
     date_val = request.form.get('expense_date', datetime.now().strftime('%Y-%m-%d %H:%M:%S')).strip()
@@ -1121,23 +1124,47 @@ def add_expense():
         date_val += " " + datetime.now().strftime('%H:%M:%S')
 
     conn = get_db()
-    conn.execute("""
+    cur = conn.execute("""
         INSERT INTO expenses (user_id, title, amount, category, payment_method, expense_date, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (user['id'], title, amount, category, payment_method, date_val, notes))
+    conn.commit()
+    new_id = getattr(cur, 'lastrowid', None)
 
     # Check category budget alert
-    cat = conn.execute("SELECT * FROM categories WHERE user_id = ? AND name = ?", (user['id'], category)).fetchone()
-    if cat and cat['budget_limit'] > 0:
-        spent = conn.execute("SELECT SUM(amount) FROM expenses WHERE user_id = ? AND category = ?", (user['id'], category)).fetchone()[0] or 0.0
-        if spent >= 0.8 * cat['budget_limit']:
-            conn.execute("""
-                INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
-                VALUES (?, ?, ?, 'warning', 0, 'Just now')
-            """, (user['id'], f"Budget Alert: {category}", f"You have reached {int((spent/cat['budget_limit'])*100)}% of your {category} budget. Remaining: ₹{max(0, cat['budget_limit']-spent):.0f}."))
+    try:
+        cat = conn.execute("SELECT budget_limit FROM categories WHERE user_id = ? AND name = ?", (user['id'], category)).fetchone()
+        if cat and cat['budget_limit'] and float(cat['budget_limit']) > 0:
+            limit = float(cat['budget_limit'])
+            spent = conn.execute("SELECT SUM(amount) FROM expenses WHERE user_id = ? AND category = ?", (user['id'], category)).fetchone()[0] or 0.0
+            if spent >= 0.8 * limit:
+                conn.execute("""
+                    INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
+                    VALUES (?, ?, ?, 'warning', 0, 'Just now')
+                """, (user['id'], f"Budget Alert: {category}", f"You have reached {int((spent/limit)*100)}% of your {category} budget. Remaining: ₹{max(0, limit-spent):.0f}."))
+                conn.commit()
+    except Exception as e:
+        print(f"Alert check note: {e}")
 
-    conn.commit()
-    conn.close()
+    # Check if this request is AJAX / Fetch
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+              'application/json' in request.headers.get('Accept', '') or \
+              request.is_json
+
+    if is_ajax:
+        return jsonify({
+            "success": True,
+            "message": "Expense added successfully!",
+            "expense": {
+                "id": new_id,
+                "title": title,
+                "amount": amount,
+                "category": category,
+                "payment_method": payment_method,
+                "expense_date": date_val,
+                "notes": notes
+            }
+        })
 
     flash("Expense added successfully!", "success")
     return redirect(request.referrer or url_for('expenses'))

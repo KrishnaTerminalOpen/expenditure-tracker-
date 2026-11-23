@@ -43,15 +43,63 @@ class DictRow(dict):
             return self._values[key]
         return super().__getitem__(key)
 
+DEFAULT_TURSO_URL = "libsql://sendwise-krishna-sahu18.aws-ap-south-1.turso.io"
+DEFAULT_TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3OTU0MDk2MTQsImlkIjoiMDFhMjA2YmYtNzIwMS03NmZkLTg2OGUtMmE0ODBhYTQ2N2YyIiwia2lkIjoiY3NtM2tLV0lXak51VVdfR2diUlpNQklSVUNJTFhIbUdlNUFTOXhzd0ZGNCIsInJpZCI6IjFhYzM3N2ZlLTFmYzUtNDRiYi1iOWIzLWJlYzUwMzQyYmRhMyJ9.vaScbyH5Q3qKOroL6-41-J8Y9vq5tj7m3ET5Vox9I7gCg8odPsEY6hPSEMkIsawu-ImXHecjI2ZCxFqL-FS2CQ"
+
+_global_turso_raw = None
+
+def get_turso_raw():
+    global _global_turso_raw
+    if _global_turso_raw is not None:
+        return _global_turso_raw
+    turso_url = os.environ.get('TURSO_DATABASE_URL') or os.environ.get('LIBSQL_URL') or DEFAULT_TURSO_URL
+    turso_token = os.environ.get('TURSO_AUTH_TOKEN') or os.environ.get('LIBSQL_AUTH_TOKEN') or DEFAULT_TURSO_TOKEN
+    import libsql
+    _global_turso_raw = libsql.connect(database=turso_url, auth_token=turso_token)
+    return _global_turso_raw
+
+def reconnect_turso():
+    global _global_turso_raw
+    turso_url = os.environ.get('TURSO_DATABASE_URL') or os.environ.get('LIBSQL_URL') or DEFAULT_TURSO_URL
+    turso_token = os.environ.get('TURSO_AUTH_TOKEN') or os.environ.get('LIBSQL_AUTH_TOKEN') or DEFAULT_TURSO_TOKEN
+    try:
+        import libsql
+        _global_turso_raw = libsql.connect(database=turso_url, auth_token=turso_token)
+        return _global_turso_raw
+    except Exception as e:
+        print(f"Reconnect error: {e}")
+        return _global_turso_raw
+
 class LibsqlCursorWrapper:
-    def __init__(self, cur):
+    def __init__(self, cur, parent_conn=None):
         self._cur = cur
+        self._parent = parent_conn
     def execute(self, sql, params=()):
-        self._cur.execute(sql, params)
-        return self
+        try:
+            self._cur.execute(sql, params)
+            return self
+        except Exception as e:
+            err_msg = str(e).lower()
+            if ('connection' in err_msg or '10054' in err_msg or 'closed' in err_msg or 'stream' in err_msg or 'socket' in err_msg) and self._parent:
+                new_conn = reconnect_turso()
+                self._parent._conn = new_conn
+                self._cur = new_conn.cursor()
+                self._cur.execute(sql, params)
+                return self
+            raise
     def executemany(self, sql, params=()):
-        self._cur.executemany(sql, params)
-        return self
+        try:
+            self._cur.executemany(sql, params)
+            return self
+        except Exception as e:
+            err_msg = str(e).lower()
+            if ('connection' in err_msg or '10054' in err_msg or 'closed' in err_msg or 'stream' in err_msg or 'socket' in err_msg) and self._parent:
+                new_conn = reconnect_turso()
+                self._parent._conn = new_conn
+                self._cur = new_conn.cursor()
+                self._cur.executemany(sql, params)
+                return self
+            raise
     def fetchone(self):
         r = self._cur.fetchone()
         if r is None:
@@ -65,10 +113,10 @@ class LibsqlCursorWrapper:
         return [DictRow(cols, r) for r in self._cur.fetchall()]
     @property
     def lastrowid(self):
-        return self._cur.lastrowid
+        return getattr(self._cur, 'lastrowid', None)
     @property
     def rowcount(self):
-        return self._cur.rowcount
+        return getattr(self._cur, 'rowcount', -1)
     @property
     def description(self):
         return self._cur.description
@@ -82,35 +130,76 @@ class LibsqlConnectionWrapper:
     def __init__(self, conn):
         self._conn = conn
     def cursor(self):
-        return LibsqlCursorWrapper(self._conn.cursor())
+        try:
+            return LibsqlCursorWrapper(self._conn.cursor(), self)
+        except Exception:
+            self._conn = reconnect_turso()
+            return LibsqlCursorWrapper(self._conn.cursor(), self)
     def execute(self, sql, params=()):
-        cur = self.cursor()
-        cur.execute(sql, params)
-        return cur
+        try:
+            cur = self.cursor()
+            cur.execute(sql, params)
+            return cur
+        except Exception as e:
+            err_msg = str(e).lower()
+            if 'connection' in err_msg or '10054' in err_msg or 'closed' in err_msg or 'stream' in err_msg or 'socket' in err_msg:
+                self._conn = reconnect_turso()
+                cur = self.cursor()
+                cur.execute(sql, params)
+                return cur
+            raise
     def commit(self):
-        self._conn.commit()
+        try:
+            self._conn.commit()
+        except Exception:
+            pass
     def rollback(self):
-        self._conn.rollback()
+        try:
+            self._conn.rollback()
+        except Exception:
+            pass
     def close(self):
-        self._conn.close()
-
-DEFAULT_TURSO_URL = "libsql://sendwise-krishna-sahu18.aws-ap-south-1.turso.io"
-DEFAULT_TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3OTU0MDk2MTQsImlkIjoiMDFhMjA2YmYtNzIwMS03NmZkLTg2OGUtMmE0ODBhYTQ2N2YyIiwia2lkIjoiY3NtM2tLV0lXak51VVdfR2diUlpNQklSVUNJTFhIbUdlNUFTOXhzd0ZGNCIsInJpZCI6IjFhYzM3N2ZlLTFmYzUtNDRiYi1iOWIzLWJlYzUwMzQyYmRhMyJ9.vaScbyH5Q3qKOroL6-41-J8Y9vq5tj7m3ET5Vox9I7gCg8odPsEY6hPSEMkIsawu-ImXHecjI2ZCxFqL-FS2CQ"
+        # Do not close underlying client to keep persistent connection pool warm & fast
+        pass
 
 def get_db():
+    try:
+        from flask import g, has_app_context
+        if has_app_context() and hasattr(g, 'db') and g.db is not None:
+            return g.db
+    except Exception:
+        pass
+
     turso_url = os.environ.get('TURSO_DATABASE_URL') or os.environ.get('LIBSQL_URL') or DEFAULT_TURSO_URL
     turso_token = os.environ.get('TURSO_AUTH_TOKEN') or os.environ.get('LIBSQL_AUTH_TOKEN') or DEFAULT_TURSO_TOKEN
 
     if turso_url:
         try:
-            import libsql
-            raw_conn = libsql.connect(database=turso_url, auth_token=turso_token)
-            return LibsqlConnectionWrapper(raw_conn)
+            raw_conn = get_turso_raw()
+            wrapper = LibsqlConnectionWrapper(raw_conn)
+            try:
+                from flask import g, has_app_context
+                if has_app_context():
+                    g.db = wrapper
+            except Exception:
+                pass
+            return wrapper
         except Exception as e:
-            print(f"Warning: Turso cloud connection failed ({e}), falling back to local SQLite.")
+            print(f"Warning: Turso cloud connection issue ({e}), reconnecting...")
+            try:
+                raw_conn = reconnect_turso()
+                return LibsqlConnectionWrapper(raw_conn)
+            except Exception as e2:
+                print(f"Fallback to local SQLite: {e2}")
 
     conn = sqlite3.connect(get_db_path(), timeout=15)
     conn.row_factory = sqlite3.Row
+    try:
+        from flask import g, has_app_context
+        if has_app_context():
+            g.db = conn
+    except Exception:
+        pass
     return conn
 
 def init_db():
