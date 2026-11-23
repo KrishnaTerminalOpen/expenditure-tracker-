@@ -94,9 +94,12 @@ class LibsqlConnectionWrapper:
     def close(self):
         self._conn.close()
 
+DEFAULT_TURSO_URL = "libsql://sendwise-krishna-sahu18.aws-ap-south-1.turso.io"
+DEFAULT_TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3OTU0MDk2MTQsImlkIjoiMDFhMjA2YmYtNzIwMS03NmZkLTg2OGUtMmE0ODBhYTQ2N2YyIiwia2lkIjoiY3NtM2tLV0lXak51VVdfR2diUlpNQklSVUNJTFhIbUdlNUFTOXhzd0ZGNCIsInJpZCI6IjFhYzM3N2ZlLTFmYzUtNDRiYi1iOWIzLWJlYzUwMzQyYmRhMyJ9.vaScbyH5Q3qKOroL6-41-J8Y9vq5tj7m3ET5Vox9I7gCg8odPsEY6hPSEMkIsawu-ImXHecjI2ZCxFqL-FS2CQ"
+
 def get_db():
-    turso_url = os.environ.get('TURSO_DATABASE_URL') or os.environ.get('LIBSQL_URL')
-    turso_token = os.environ.get('TURSO_AUTH_TOKEN') or os.environ.get('LIBSQL_AUTH_TOKEN', '')
+    turso_url = os.environ.get('TURSO_DATABASE_URL') or os.environ.get('LIBSQL_URL') or DEFAULT_TURSO_URL
+    turso_token = os.environ.get('TURSO_AUTH_TOKEN') or os.environ.get('LIBSQL_AUTH_TOKEN') or DEFAULT_TURSO_TOKEN
 
     if turso_url:
         try:
