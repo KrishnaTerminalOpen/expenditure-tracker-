@@ -13,6 +13,7 @@ Full Python Flask Backend powering the 8 modules shown in the design:
 import os
 import io
 import csv
+import time
 from datetime import datetime, date, timedelta
 from functools import wraps
 from flask import (
@@ -63,9 +64,79 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+_USER_CACHE = {}
+_CAT_CACHE = {}
+_PM_CACHE = {}
+_DASHBOARD_CACHE = {}
+
+def invalidate_dashboard_cache(uid=None):
+    if uid:
+        _DASHBOARD_CACHE.pop(uid, None)
+    else:
+        _DASHBOARD_CACHE.clear()
+
+def invalidate_user_cache(uid=None):
+    if uid:
+        _USER_CACHE.pop(uid, None)
+    else:
+        _USER_CACHE.clear()
+
+def invalidate_user_categories(uid=None):
+    if uid:
+        _CAT_CACHE.pop(uid, None)
+    else:
+        _CAT_CACHE.clear()
+
+def invalidate_user_payment_methods(uid=None):
+    if uid:
+        _PM_CACHE.pop(uid, None)
+    else:
+        _PM_CACHE.clear()
+
+def get_user_categories(uid, conn=None):
+    now = time.time()
+    if uid in _CAT_CACHE and now < _CAT_CACHE[uid][1]:
+        return _CAT_CACHE[uid][0]
+    if conn is None:
+        conn = get_db()
+    cats = conn.execute("SELECT * FROM categories WHERE user_id = ?", (uid,)).fetchall()
+    _CAT_CACHE[uid] = (cats, now + 120)
+    return cats
+
+def get_user_payment_methods(uid, conn=None):
+    now = time.time()
+    if uid in _PM_CACHE and now < _PM_CACHE[uid][1]:
+        return _PM_CACHE[uid][0]
+    if conn is None:
+        conn = get_db()
+    pms = conn.execute("SELECT * FROM payment_methods WHERE user_id = ?", (uid,)).fetchall()
+    _PM_CACHE[uid] = (pms, now + 120)
+    return pms
+
 def get_current_user():
     if 'user_id' not in session and 'user_email' not in session:
         return None
+
+    try:
+        from flask import g, has_app_context
+        if has_app_context() and hasattr(g, 'current_user') and g.current_user is not None:
+            return g.current_user
+    except Exception:
+        pass
+
+    uid = session.get('user_id')
+    now = time.time()
+    if uid and uid in _USER_CACHE:
+        cached_user, expire_at = _USER_CACHE[uid]
+        if now < expire_at:
+            try:
+                from flask import g, has_app_context
+                if has_app_context():
+                    g.current_user = cached_user
+            except Exception:
+                pass
+            return cached_user
+
     conn = get_db()
     user = None
     try:
@@ -177,6 +248,16 @@ def get_current_user():
         print(f"Error in get_current_user: {e}")
     finally:
         conn.close()
+
+    if user:
+        _USER_CACHE[user['id']] = (user, time.time() + 60)
+        try:
+            from flask import g, has_app_context
+            if has_app_context():
+                g.current_user = user
+        except Exception:
+            pass
+
     return user
 
 @app.context_processor
@@ -540,6 +621,7 @@ def reset_password():
     conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (pw_hash, user['id']))
     conn.commit()
     conn.close()
+    invalidate_user_cache(uid)
 
     # Automatically sign in the user with updated credentials
     session['user_id'] = user['id']
@@ -620,6 +702,7 @@ def register():
 
         conn.commit()
         conn.close()
+        invalidate_dashboard_cache(user['id'])
 
         # Clear any session so the user signs in fresh from the login page
         session.clear()
@@ -819,62 +902,62 @@ def dashboard():
     if not user:
         session.clear()
         return redirect(url_for('login'))
-    conn = get_db()
     uid = user['id']
 
-    # Check total transaction count
-    txn_count = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
+    now = time.time()
+    if uid in _DASHBOARD_CACHE and now < _DASHBOARD_CACHE[uid][1]:
+        return render_template(
+            'dashboard.html',
+            user=user,
+            current_page='dashboard',
+            **_DASHBOARD_CACHE[uid][0]
+        )
 
-    # Total expenses (All time)
-    total_expenses = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
+    conn = get_db()
 
-    # Today's expenses
     today_str = date.today().strftime('%Y-%m-%d')
-    todays_expenses = conn.execute(
-        "SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ? AND expense_date LIKE ?",
-        (uid, f"{today_str}%")
-    ).fetchone()[0]
+    stats_row = conn.execute("""
+        SELECT 
+            COUNT(*),
+            COALESCE(SUM(amount), 0),
+            COALESCE(SUM(CASE WHEN expense_date LIKE ? THEN amount ELSE 0 END), 0)
+        FROM expenses 
+        WHERE user_id = ?
+    """, (f"{today_str}%", uid)).fetchone()
+
+    txn_count = stats_row[0] or 0
+    total_expenses = float(stats_row[1] or 0.0)
+    todays_expenses = float(stats_row[2] or 0.0)
 
     # Monthly budget and remaining
     monthly_budget = float(user['monthly_budget'] or 0.0)
     remaining_budget = max(0.0, monthly_budget - total_expenses) if monthly_budget > 0 else 0.0
 
-    # Highest Category
-    highest_cat_row = conn.execute("""
-        SELECT category, SUM(amount) as cat_sum
-        FROM expenses
-        WHERE user_id = ?
-        GROUP BY category
-        ORDER BY cat_sum DESC
-        LIMIT 1
-    """, (uid,)).fetchone()
-    if highest_cat_row:
-        highest_category = highest_cat_row['category']
-        highest_category_amount = highest_cat_row['cat_sum']
+    if txn_count > 0:
+        # Category breakdown for donut chart & highest category in one query
+        cat_breakdown = conn.execute("""
+            SELECT category, SUM(amount) as total
+            FROM expenses
+            WHERE user_id = ?
+            GROUP BY category
+            ORDER BY total DESC
+        """, (uid,)).fetchall()
+        highest_category = cat_breakdown[0]['category'] if cat_breakdown else "No Expenses Yet"
+        highest_category_amount = cat_breakdown[0]['total'] if cat_breakdown else 0.0
+
+        # Monthly Trend
+        trend_rows = conn.execute("""
+            SELECT SUBSTR(expense_date, 1, 10) as edate, SUM(amount) as day_total
+            FROM expenses
+            WHERE user_id = ?
+            GROUP BY edate
+            ORDER BY edate ASC
+        """, (uid,)).fetchall()
     else:
+        cat_breakdown = []
         highest_category = "No Expenses Yet"
         highest_category_amount = 0.0
-
-    # Monthly Trend (31-day points or distinct dates)
-    trend_rows = conn.execute("""
-        SELECT SUBSTR(expense_date, 1, 10) as edate, SUM(amount) as day_total
-        FROM expenses
-        WHERE user_id = ?
-        GROUP BY edate
-        ORDER BY edate ASC
-    """, (uid,)).fetchall()
-
-    trend_labels = [r['edate'][-5:] for r in trend_rows]
-    trend_values = [r['day_total'] for r in trend_rows]
-
-    # Category breakdown for donut chart
-    cat_breakdown = conn.execute("""
-        SELECT category, SUM(amount) as total
-        FROM expenses
-        WHERE user_id = ?
-        GROUP BY category
-        ORDER BY total DESC
-    """, (uid,)).fetchall()
+        trend_rows = []
 
     cat_labels = [r['category'] for r in cat_breakdown]
     cat_values = [r['total'] for r in cat_breakdown]
@@ -882,6 +965,9 @@ def dashboard():
     if total_expenses > 0:
         for r in cat_breakdown:
             cat_percentages.append(round((r['total'] / total_expenses) * 100))
+
+    trend_labels = [r['edate'][-5:] for r in trend_rows]
+    trend_values = [r['day_total'] for r in trend_rows]
 
     # Recent Transactions (last 5)
     recent_txns = conn.execute("""
@@ -965,40 +1051,45 @@ def dashboard():
 
     conn.close()
 
+    dash_context = {
+        'total_expenses': total_expenses,
+        'todays_expenses': todays_expenses,
+        'monthly_budget': monthly_budget,
+        'remaining_budget': remaining_budget,
+        'highest_category': highest_category,
+        'highest_category_amount': highest_category_amount,
+        'trend_labels': trend_labels,
+        'trend_values': trend_values,
+        'cat_labels': cat_labels,
+        'cat_values': cat_values,
+        'cat_breakdown': cat_breakdown,
+        'cat_percentages': cat_percentages,
+        'recent_txns': recent_txns,
+        'cat_budgets': cat_budgets,
+        'unread_insights': unread_insights,
+        'txn_count': txn_count,
+        'health_score': health_score,
+        'health_status': health_status,
+        'health_status_class': health_status_class,
+        'health_tip': health_tip,
+        'days_remaining': days_remaining,
+        'daily_velocity': daily_velocity,
+        'projected_month_end': projected_month_end,
+        'projected_surplus': projected_surplus,
+        'mrc_total': mrc_total,
+        'active_subs_count': len(subs_rows),
+        'total_goals_saved': total_goals_saved,
+        'total_goals_target': total_goals_target,
+        'goals_progress_pct': goals_progress_pct,
+        'goals_rows': goals_rows[:3]
+    }
+    _DASHBOARD_CACHE[uid] = (dash_context, now + 30)
+
     return render_template(
         'dashboard.html',
         user=user,
         current_page='dashboard',
-        total_expenses=total_expenses,
-        todays_expenses=todays_expenses,
-        monthly_budget=monthly_budget,
-        remaining_budget=remaining_budget,
-        highest_category=highest_category,
-        highest_category_amount=highest_category_amount,
-        trend_labels=trend_labels,
-        trend_values=trend_values,
-        cat_labels=cat_labels,
-        cat_values=cat_values,
-        cat_breakdown=cat_breakdown,
-        cat_percentages=cat_percentages,
-        recent_txns=recent_txns,
-        cat_budgets=cat_budgets,
-        unread_insights=unread_insights,
-        txn_count=txn_count,
-        health_score=health_score,
-        health_status=health_status,
-        health_status_class=health_status_class,
-        health_tip=health_tip,
-        days_remaining=days_remaining,
-        daily_velocity=daily_velocity,
-        projected_month_end=projected_month_end,
-        projected_surplus=projected_surplus,
-        mrc_total=mrc_total,
-        active_subs_count=len(subs_rows),
-        total_goals_saved=total_goals_saved,
-        total_goals_target=total_goals_target,
-        goals_progress_pct=goals_progress_pct,
-        goals_rows=goals_rows[:3]
+        **dash_context
     )
 
 # ==========================================
@@ -1040,6 +1131,7 @@ def set_initial_budget():
 
     conn.commit()
     conn.close()
+    invalidate_user_cache(uid)
 
     flash(f"🎉 Monthly budget of ₹{budget_val:,.0f} has been established! All sections are now unlocked.", "success")
     resp = make_response(redirect(url_for('dashboard')))
@@ -1085,9 +1177,9 @@ def expenses():
     offset = (page - 1) * per_page
     paged_expenses = all_rows[offset:offset + per_page]
 
-    # Categories and Payment methods for modals & filter
-    categories = conn.execute("SELECT * FROM categories WHERE user_id = ?", (uid,)).fetchall()
-    payment_methods = conn.execute("SELECT * FROM payment_methods WHERE user_id = ?", (uid,)).fetchall()
+    # Categories and Payment methods for modals & filter (in-memory cached)
+    categories = get_user_categories(uid, conn)
+    payment_methods = get_user_payment_methods(uid, conn)
 
     conn.close()
 
@@ -1146,6 +1238,9 @@ def add_expense():
     except Exception as e:
         print(f"Alert check note: {e}")
 
+    # Invalidate dashboard cache so updated totals are reflected
+    invalidate_dashboard_cache(user['id'])
+
     # Check if this request is AJAX / Fetch
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
               'application/json' in request.headers.get('Accept', '') or \
@@ -1187,6 +1282,8 @@ def edit_expense(exp_id):
     """, (title, amount, category, payment_method, notes, exp_id, user['id']))
     conn.commit()
     conn.close()
+    invalidate_dashboard_cache(user['id'])
+    invalidate_user_cache(user['id'])
 
     flash("Expense updated successfully!", "success")
     return redirect(request.referrer or url_for('expenses'))
@@ -1199,6 +1296,7 @@ def delete_expense(exp_id):
     try:
         conn.execute("DELETE FROM expenses WHERE id = ? AND user_id = ?", (exp_id, user['id']))
         conn.commit()
+        invalidate_dashboard_cache(user['id'])
         flash("Expense removed.", "info")
     except Exception as e:
         conn.rollback()
@@ -1265,6 +1363,8 @@ def add_category():
         """, (user['id'], name, icon, color, budget_limit))
         conn.commit()
         conn.close()
+        invalidate_dashboard_cache(user['id'])
+        invalidate_user_categories(user['id'])
         flash("Category created successfully!", "success")
 
     return redirect(url_for('categories_payments'))
@@ -1277,6 +1377,7 @@ def delete_category(cat_id):
     try:
         conn.execute("DELETE FROM categories WHERE id = ? AND user_id = ?", (cat_id, user['id']))
         conn.commit()
+        invalidate_user_categories(user['id'])
         flash("Category deleted.", "info")
     except Exception as e:
         conn.rollback()
@@ -1300,6 +1401,8 @@ def add_payment_method():
         """, (user['id'], name, icon))
         conn.commit()
         conn.close()
+        invalidate_dashboard_cache(user['id'])
+        invalidate_user_payment_methods(user['id'])
         flash("Payment method added!", "success")
 
     return redirect(url_for('categories_payments'))
@@ -1312,6 +1415,7 @@ def delete_payment_method(pm_id):
     try:
         conn.execute("DELETE FROM payment_methods WHERE id = ? AND user_id = ?", (pm_id, user['id']))
         conn.commit()
+        invalidate_user_payment_methods(user['id'])
         flash("Payment method removed.", "info")
     except Exception as e:
         conn.rollback()
@@ -1343,6 +1447,7 @@ def budget():
             conn.execute("UPDATE categories SET budget_limit = ? WHERE id = ? AND user_id = ?", (limit_val, cat_id, uid))
             conn.commit()
             conn.close()
+            invalidate_user_categories(uid)
             flash("Category budget limit updated successfully!", "success")
             return redirect(url_for('budget'))
 
@@ -1367,6 +1472,9 @@ def budget():
 
         conn.commit()
         conn.close()
+        invalidate_dashboard_cache(user['id'])
+        invalidate_user_cache(uid)
+        invalidate_user_categories(uid)
         flash("Budget goals updated successfully!", "success")
         resp = make_response(redirect(url_for('budget')))
         if overall_budget > 0:
@@ -1376,11 +1484,8 @@ def budget():
         return resp
 
     overall_budget = float(user['monthly_budget'] or 0.0)
-    total_spent = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
-    remaining = max(0.0, overall_budget - total_spent) if overall_budget > 0 else 0.0
-    overall_percent = min(100, round((total_spent / overall_budget) * 100)) if overall_budget > 0 else 0
 
-    # Category budgets list
+    # Category budgets list & total spent in a single query
     cat_budgets = conn.execute("""
         SELECT c.*, COALESCE(SUM(e.amount), 0) as spent
         FROM categories c
@@ -1389,6 +1494,10 @@ def budget():
         GROUP BY c.id
         ORDER BY c.budget_limit DESC, c.name ASC
     """, (uid,)).fetchall()
+
+    total_spent = sum(float(cb['spent'] or 0.0) for cb in cat_budgets)
+    remaining = max(0.0, overall_budget - total_spent) if overall_budget > 0 else 0.0
+    overall_percent = min(100, round((total_spent / overall_budget) * 100)) if overall_budget > 0 else 0
 
     budget_items = []
     for cb in cat_budgets:
@@ -1451,11 +1560,13 @@ def analytics():
 
     period = request.args.get('period', 'This Month')
 
-    total_expenses = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
-    total_txns = conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0]
-    
-    # Days with expenses
-    distinct_days = conn.execute("SELECT COUNT(DISTINCT SUBSTR(expense_date, 1, 10)) FROM expenses WHERE user_id = ?", (uid,)).fetchone()[0] or 1
+    summary_row = conn.execute("""
+        SELECT COALESCE(SUM(amount), 0), COUNT(*), COUNT(DISTINCT SUBSTR(expense_date, 1, 10))
+        FROM expenses WHERE user_id = ?
+    """, (uid,)).fetchone()
+    total_expenses = float(summary_row[0] or 0.0)
+    total_txns = summary_row[1] or 0
+    distinct_days = summary_row[2] or 1
     avg_daily = total_expenses / max(1, distinct_days)
 
     # Categories Breakdown
@@ -1700,6 +1811,7 @@ def toggle_theme():
         conn.execute("UPDATE users SET theme = ? WHERE id = ?", (new_theme, user['id']))
         conn.commit()
         conn.close()
+        invalidate_dashboard_cache(user['id'])
     session['theme'] = new_theme
     resp = jsonify({"theme": new_theme})
     resp.set_cookie('spendwise_theme', new_theme, max_age=31536000, httponly=False, samesite='Lax')
@@ -2278,6 +2390,7 @@ def import_csv():
 
         conn.commit()
         conn.close()
+        invalidate_dashboard_cache(user['id'])
 
         if imported_count > 0:
             flash(f"⚡ Successfully imported {imported_count} transactions! Auto-categorized {auto_cat_count} entries using intelligent heuristics.", "success")

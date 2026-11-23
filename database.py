@@ -202,8 +202,22 @@ def get_db():
         pass
     return conn
 
-def init_db():
+_db_initialized = False
+
+def init_db(force=False):
+    global _db_initialized
+    if _db_initialized and not force:
+        return
+
     conn = get_db()
+    if not force:
+        try:
+            conn.execute("SELECT 1 FROM users LIMIT 1").fetchone()
+            _db_initialized = True
+            return
+        except Exception:
+            pass
+
     cursor = conn.cursor()
 
     # Users table
@@ -383,6 +397,7 @@ def init_db():
     # Migrate any legacy shared avatar to unique gender-appropriate avatars
     migrate_user_avatars(cursor, conn)
 
+    _db_initialized = True
     conn.close()
 
 def migrate_user_avatars(cursor, conn):

@@ -323,6 +323,9 @@
         </div>
     </div>
 
+    <!-- Sleek Top Nano-Progress Bar for Instant Visual Feedback on Button/Link Click -->
+    <div id="topLoadingBar" style="position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: linear-gradient(90deg, #f97316, #fb923c, #38bdf8); z-index: 99999999; transition: width 0.25s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.25s ease; pointer-events: none; box-shadow: 0 0 10px rgba(249, 115, 22, 0.9);"></div>
+
     <!-- Canvas for celebratory confetti bursts -->
     <canvas id="confettiCanvas" style="position: fixed; inset: 0; pointer-events: none; z-index: 999999;"></canvas>
 
@@ -1043,10 +1046,65 @@
             }
         });
 
+        // Sleek Instant Top Progress Bar
+        function startLoadingBar() {
+            const bar = document.getElementById('topLoadingBar');
+            if (bar) {
+                bar.style.opacity = '1';
+                bar.style.width = '25%';
+                setTimeout(() => { if (bar.style.opacity === '1') bar.style.width = '75%'; }, 100);
+            }
+        }
+
+        function finishLoadingBar() {
+            const bar = document.getElementById('topLoadingBar');
+            if (bar) {
+                bar.style.width = '100%';
+                setTimeout(() => {
+                    bar.style.opacity = '0';
+                    setTimeout(() => { bar.style.width = '0%'; }, 250);
+                }, 180);
+            }
+        }
+
         // Initialize state on DOM ready
         window.addEventListener('DOMContentLoaded', () => {
             updateSoundBtnState();
             animateCounters();
+            finishLoadingBar();
+
+            // Instant click feedback: start progress bar on any link navigation
+            document.addEventListener('click', (e) => {
+                const link = e.target.closest('a[href]');
+                if (!link) return;
+                const href = link.getAttribute('href');
+                if (href && !href.startsWith('#') && !href.startsWith('javascript:') && !link.target && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    if (!href.includes('/delete') && !href.includes('/logout') && !href.includes('/export')) {
+                        startLoadingBar();
+                    }
+                }
+            });
+
+            // Predictive Link Pre-warming on hover/touch
+            const prefetched = new Set();
+            function prefetch(url) {
+                if (!url || prefetched.has(url) || url.startsWith('#') || url.includes('/delete') || url.includes('/logout') || url.includes('/export')) return;
+                prefetched.add(url);
+                const l = document.createElement('link');
+                l.rel = 'prefetch';
+                l.href = url;
+                document.head.appendChild(l);
+            }
+
+            document.addEventListener('mouseover', (e) => {
+                const link = e.target.closest('a[href^="/"]');
+                if (link) prefetch(link.getAttribute('href'));
+            });
+            document.addEventListener('touchstart', (e) => {
+                const link = e.target.closest('a[href^="/"]');
+                if (link) prefetch(link.getAttribute('href'));
+            }, { passive: true });
+
             // Check for celebration query param
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('first_txn') || urlParams.get('welcome')) {
