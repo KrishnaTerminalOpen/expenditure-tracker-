@@ -141,22 +141,7 @@
                 </div>
 
                 <div class="top-nav-right">
-                    <!-- Quick Add Action in Header -->
-                    <button type="button" class="btn-primary" style="padding: 7px 14px; font-size: 0.8rem; box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3);" onclick="openModal('quickAddExpenseModal')">
-                        <i class="fa-solid fa-plus"></i> <span class="hide-mobile-text">Expense</span>
-                    </button>
-                    <!-- Sound FX Toggle -->
-                    <button type="button" class="sound-toggle-btn sound-on" id="navSoundToggleBtn" onclick="toggleAppAudio()" title="Sound Effects: Toggle (Key: M)">
-                        <i class="fa-solid fa-volume-high"></i>
-                    </button>
-                    <!-- Command Palette Button -->
-                    <button type="button" class="btn-outline" style="padding: 6px 10px; font-size: 0.78rem;" onclick="openCommandPalette()" title="Command Palette (Ctrl+K)">
-                        <i class="fa-solid fa-terminal"></i>
-                    </button>
-                    <a href="{{ url_for('insights') }}" class="icon-btn-badge" title="Notifications & Insights" id="btn-top-notifs">
-                        <i class="fa-regular fa-bell"></i>
-                        <span class="badge-dot"></span>
-                    </a>
+                    <!-- User Profile Menu -->
                     <div class="user-profile-menu" onclick="window.location.href='{{ url_for('profile') }}'">
                         <div style="position: relative;">
                             <img src="{{ user.avatar if user and user.avatar else 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150' }}" alt="Avatar" class="user-avatar" id="globalUserAvatar">
@@ -168,6 +153,14 @@
                         </div>
                         <i class="fa-solid fa-chevron-down user-profile-chevron" style="font-size: 0.7rem; color: var(--text-dim); margin-left: 4px;"></i>
                     </div>
+
+                    <!-- Notification & Insights (positioned at right-hand side of krishna sahu) -->
+                    <a href="{{ url_for('insights') }}" class="icon-btn-badge" title="Notifications & Insights" id="btn-top-notifs">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="badge-dot"></span>
+                    </a>
+
+                    <!-- Sign Out Button -->
                     <a href="{{ url_for('logout') }}" class="btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" title="Sign out">
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     </a>
