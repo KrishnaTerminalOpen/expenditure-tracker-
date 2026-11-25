@@ -1950,6 +1950,46 @@ h1, .page-title {
   }
 }
 
+/* Tablet & Tab Breakpoint (768px to 1024px): show search bar cleanly sized for tablets */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .search-bar-global {
+    display: flex !important;
+    visibility: visible !important;
+    width: 230px !important;
+  }
+  .search-bar-global input {
+    font-size: 0.8rem !important;
+    padding: 0 54px 0 34px !important;
+  }
+  .search-bar-cmd-badge {
+    font-size: 0.62rem !important;
+    padding: 2px 6px !important;
+    right: 8px !important;
+  }
+}
+
+/* Mobile Phones (<= 767.98px): strictly hidden on mobile devices */
+@media screen and (max-width: 767.98px) {
+  .search-bar-global,
+  .hide-on-mobile {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+/* Laptops & PCs (>= 1025px): full desktop search bar */
+@media screen and (min-width: 1025px) {
+  .search-bar-global {
+    display: flex !important;
+    visibility: visible !important;
+    width: 320px !important;
+  }
+}
+
 @media screen and (max-width: 768px) {
   /* Layout adjustments */
   .app-layout {
@@ -1998,10 +2038,6 @@ h1, .page-title {
 
   /* Hide keyboard terminal shortcut on touch phones */
   .top-navbar .top-nav-right > button[onclick*="openCommandPalette"] {
-    display: none !important;
-  }
-
-  .search-bar-global {
     display: none !important;
   }
 
@@ -2270,8 +2306,10 @@ h1, .page-title {
     grid-template-columns: 1fr !important;
   }
 
-  .search-bar-global {
+  .search-bar-global,
+  .hide-on-mobile {
     display: none !important;
+    visibility: hidden !important;
   }
 
   .live-sync-pill span:last-child {
