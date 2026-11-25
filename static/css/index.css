@@ -130,6 +130,12 @@ html[data-theme="light"] body {
   color: #94a3b8 !important;
 }
 
+[data-theme="light"] .search-bar-cmd-badge {
+  background: #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+
 [data-theme="light"] .action-icon-btn,
 [data-theme="light"] .sound-toggle-btn {
   background: #f8fafc !important;
@@ -971,19 +977,23 @@ input:checked + .slider:before {
 
 .search-bar-global {
   position: relative;
+  display: flex;
+  align-items: center;
   width: 320px;
 }
 
 .search-bar-global input {
   width: 100%;
+  height: 38px;
   background-color: var(--bg-input);
   border: 1px solid var(--border-color);
-  padding: 9px 14px 9px 38px;
+  padding: 0 65px 0 38px;
   border-radius: var(--radius-sm);
   color: var(--text-main);
   font-size: 0.85rem;
   outline: none;
-  transition: border 0.2s ease;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .search-bar-global input:focus {
@@ -992,11 +1002,12 @@ input:checked + .slider:before {
 
 .search-bar-global i {
   position: absolute;
-  left: 12px;
+  left: 13px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-dim);
   font-size: 0.9rem;
+  pointer-events: none;
 }
 
 .top-nav-right {
@@ -2452,18 +2463,25 @@ h1, .page-title {
 }
 
 .search-bar-cmd-badge {
-  display: flex;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   font-size: 0.68rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 2px 7px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 3px 7px;
   border-radius: 5px;
   color: var(--text-dim);
   cursor: pointer;
-  margin-left: auto;
   font-family: var(--font-mono);
+  pointer-events: none;
+  line-height: 1;
 }
 
 /* ==========================================================================
