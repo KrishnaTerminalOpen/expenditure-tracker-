@@ -57,6 +57,13 @@ A full-stack, enterprise-grade personal expense intelligence platform and financ
 - **Interactive Avatar Gallery**: Select from curated boy & girl avatars or provide custom image links.
 - **⚠️ Danger Zone (Account Deletion)**: Secure option to permanently wipe all account records (expenses, categories, subscriptions, goals) with an intentional confirmation check (requires typing your account name).
 
+### 9. ⚡ High-Speed Cloud Architecture & Zero-Latency Optimizations
+- **Permanent Cloud Persistence (Turso LibSQL)**: Hosted distributed SQLite database on AWS ap-south-1 preventing any data loss across Vercel serverless cold-starts and redeployments.
+- **Multi-Tier In-Memory Caching**: Request-level (`flask.g`) and short-TTL memory caching for user identity, category trees, payment methods, and dashboard KPIs.
+- **Optimistic 0ms Expense Logging**: Adding expenses closes the modal immediately (0ms delay), plays celebratory Web Audio sound, renders micro-toasts, and inserts glowing rows while saving to the cloud asynchronously in the background.
+- **Top Nano-Progress Bar & Predictive Link Pre-warming**: Instant visual progress feedback on clicks with hover/touch prefetching (`<link rel="prefetch">`) for near-instant page transitions.
+- **Standalone E-Commerce ShopTrack Module**: Standalone single-file shop sales, purchase expenses, and inventory tracker with Supabase cloud backend (`ShopTrack.html`).
+
 ---
 
 ## 🛠️ Technology Stack
@@ -65,10 +72,11 @@ A full-stack, enterprise-grade personal expense intelligence platform and financ
 |---|---|
 | **Backend** | Python 3.12, Flask 3.1.x, Jinja2 Templates |
 | **Authentication** | Google Identity Services (GIS), `google-auth`, `bcrypt` |
-| **Database** | SQLite3 with WAL persistence (Serverless resilient) |
+| **Database** | Turso LibSQL Cloud (AWS ap-south-1) & SQLite3 WAL with connection pooling |
+| **Caching & Sync** | Multi-tier in-memory TTL caching, Request-scoped `flask.g` caching |
 | **PDF Generation** | ReportLab 5.x, Pillow |
 | **Frontend** | HTML5, CSS3, Modern Glassmorphic FinTech UI System, JavaScript (Vanilla ES6+) |
-| **Charts & Icons** | Chart.js, FontAwesome 6 Pro, Google Fonts (`Outfit`, `Plus Jakarta Sans`, `JetBrains Mono`) |
+| **Charts & Icons** | Chart.js, FontAwesome 6, Google Fonts (`Outfit`, `Plus Jakarta Sans`, `JetBrains Mono`) |
 | **Deployment** | Vercel Serverless Functions, Git CI/CD |
 
 ---
