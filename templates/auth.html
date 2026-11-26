@@ -315,24 +315,38 @@
 
         @media (max-width: 860px) {
             html, body {
-                overflow-y: auto; /* Fallback on small mobile screens */
+                overflow-y: auto;
                 height: auto;
                 min-height: 100%;
             }
             body {
                 height: auto;
-                padding: 12px;
+                min-height: 100vh;
+                padding: 18px 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
             .auth-container {
                 flex-direction: column;
-                max-width: 480px;
+                max-width: 440px;
+                width: 100%;
                 max-height: none;
+                border-radius: 18px;
+                margin: auto;
             }
+            /* Strictly hide the entire left preview showcase on mobile */
             .auth-left-preview {
-                padding: 24px 20px;
+                display: none !important;
             }
             .auth-right-form {
                 padding: 24px 20px;
+                width: 100%;
+                flex: none;
+                border-radius: 18px;
+            }
+            .auth-mobile-brand {
+                display: flex !important;
             }
         }
 
@@ -704,6 +718,17 @@
 
         <!-- Right Form Panel -->
         <div class="auth-right-form">
+            <!-- Mobile Brand Header (Visible only on mobile devices where left showcase is hidden) -->
+            <div class="auth-mobile-brand" style="display: none; align-items: center; justify-content: center; gap: 10px; margin-bottom: 18px;">
+                <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 9px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.05rem; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);">
+                    <i class="fa-solid fa-chart-simple"></i>
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 1.25rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; line-height: 1.1;">SpendWise</span>
+                    <span style="font-size: 0.65rem; color: var(--accent-orange); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">Intelligent Financial OS</span>
+                </div>
+            </div>
+
             <!-- Navigation Tabs -->
             <div class="auth-tabs-wrapper">
                 <button type="button" class="auth-tab-btn {{ 'active' if active_tab != 'register' else '' }}" onclick="switchTab('login')">

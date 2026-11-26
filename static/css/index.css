@@ -2444,21 +2444,27 @@ h1, .page-title {
     gap: 16px !important;
   }
 
-  /* Auth container responsive */
+  /* Auth container responsive - strictly hide left showcase on mobile */
   .auth-container {
     flex-direction: column;
-    max-width: 100%;
+    max-width: 440px !important;
+    width: 100% !important;
     border-radius: var(--radius-lg);
+    margin: auto;
   }
 
   .auth-left-preview {
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    padding: 24px 20px;
+    display: none !important;
   }
 
   .auth-right-form {
     padding: 24px 20px;
+    width: 100% !important;
+    flex: none !important;
+  }
+
+  .auth-mobile-brand {
+    display: flex !important;
   }
 
   /* Tables horizontal scrolling */
