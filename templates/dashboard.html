@@ -62,44 +62,6 @@
 
 {% if txn_count > 0 %}
 
-<!-- AI Financial Health Score & Intelligence Banner -->
-<div class="health-score-card">
-    <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-        <div class="health-score-gauge" style="--score-deg: {{ (health_score * 3.6)|round }}deg;">
-            <div class="health-score-gauge-inner">
-                <span class="health-score-value count-up" data-target="{{ health_score }}">0</span>
-                <span class="health-score-label">Rating</span>
-            </div>
-        </div>
-        <div style="max-width: 580px;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                <h3 style="font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em;">Financial Health: {{ health_status }}</h3>
-                <span class="kpi-sub {{ health_status_class }}" style="padding: 2px 10px; border-radius: 12px; font-size: 0.74rem; font-weight: 700; border: 1px solid currentColor;">
-                    {{ health_score }}/100 Score
-                </span>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.45;">
-                {{ health_tip }}
-            </p>
-        </div>
-    </div>
-    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <div class="dash-stat-capsule">
-            <div style="text-align: right;">
-                <div class="dash-stat-label">Today's Run-rate</div>
-                <div class="dash-stat-value">₹ {{ "{:,.0f}".format(todays_expenses) }}</div>
-            </div>
-            <div class="dash-stat-divider"></div>
-            <div style="text-align: right;">
-                <div class="dash-stat-label">Top Driver</div>
-                <div class="dash-stat-driver">{{ highest_category.split(' ')[0] }}</div>
-            </div>
-        </div>
-        <button class="btn-outline" style="font-size: 0.78rem; padding: 8px 12px;" onclick="openCommandPalette()" title="Command Palette">
-            <i class="fa-solid fa-terminal"></i>
-        </button>
-    </div>
-</div>
 
 <!-- 4 Key Metric Cards with Animated Number Counters -->
 <div class="kpi-grid">
