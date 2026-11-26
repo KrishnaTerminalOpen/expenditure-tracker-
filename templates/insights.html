@@ -85,8 +85,9 @@
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap;">
-                        {{ n.created_at }}
+                    <span style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" title="{{ n.created_at }}">
+                        <i class="fa-regular fa-clock" style="font-size: 0.68rem; opacity: 0.75;"></i>
+                        {{ n.created_at|notif_time }}
                     </span>
                     <div class="notif-card-actions">
                         {% if not n.is_read %}

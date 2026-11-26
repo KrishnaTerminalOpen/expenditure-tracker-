@@ -48,6 +48,49 @@ def cat_class(cat_name):
     }
     return mapping.get(cat_name, 'cat-dot-others')
 
+@app.template_filter('notif_time')
+def format_notif_time(val):
+    if not val:
+        return ""
+    val_str = str(val).strip()
+
+    dt = None
+    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M', '%Y-%m-%d'):
+        try:
+            dt = datetime.strptime(val_str, fmt)
+            break
+        except ValueError:
+            continue
+
+    if not dt:
+        return val_str
+
+    now = datetime.now()
+    diff = now - dt
+    total_seconds = diff.total_seconds()
+
+    # If within 2 minutes: "Just now"
+    if 0 <= total_seconds < 120:
+        return "Just now"
+
+    # If today
+    if dt.date() == now.date():
+        if 0 <= total_seconds < 3600:
+            minutes = max(1, int(total_seconds // 60))
+            return f"{minutes}m ago"
+        return dt.strftime("Today, %I:%M %p")
+
+    # If yesterday
+    yesterday = (now - timedelta(days=1)).date()
+    if dt.date() == yesterday:
+        return dt.strftime("Yesterday, %I:%M %p")
+
+    # If this year: e.g. "Nov 23, 11:57 PM"
+    if dt.year == now.year:
+        return dt.strftime("%b %d, %Y, %I:%M %p")
+
+    return dt.strftime("%b %d, %Y, %I:%M %p")
+
 # Ensure DB is ready
 init_db()
 
@@ -455,8 +498,8 @@ def google_auth():
             # Welcome notification
             cursor.execute("""
                 INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
-                VALUES (?, 'Welcome to SpendWise!', 'Logged in with Google. Configure your monthly budget to unlock all features.', 'success', 0, 'Just now')
-            """, (new_user_id,))
+                VALUES (?, 'Welcome to SpendWise!', 'Logged in with Google. Configure your monthly budget to unlock all features.', 'success', 0, ?)
+            """, (new_user_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             conn.commit()
 
             user = cursor.execute("SELECT * FROM users WHERE id = ?", (new_user_id,)).fetchone()
@@ -711,8 +754,8 @@ def register():
         # Welcome notification
         cursor.execute("""
             INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
-            VALUES (?, 'Welcome to SpendWise!', 'Track your expenses, set budgets, and gain smart insights effortlessly.', 'success', 0, 'Just now')
-        """, (new_user_id,))
+            VALUES (?, 'Welcome to SpendWise!', 'Track your expenses, set budgets, and gain smart insights effortlessly.', 'success', 0, ?)
+        """, (new_user_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
         conn.commit()
         conn.close()
@@ -774,8 +817,8 @@ def first_transaction():
             # Celebratory milestone notification
             cursor.execute("""
                 INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
-                VALUES (?, '🎉 First Expense Recorded!', 'Congratulations! You have officially initiated your SpendWise tracking journey.', 'success', 0, 'Just now')
-            """, (uid,))
+                VALUES (?, '🎉 First Expense Recorded!', 'Congratulations! You have officially initiated your SpendWise tracking journey.', 'success', 0, ?)
+            """, (uid, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             conn.commit()
 
         conn.close()
@@ -1140,8 +1183,8 @@ def set_initial_budget():
     # Congratulatory notification
     cursor.execute("""
         INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
-        VALUES (?, '🎯 Monthly Budget Established!', ?, 'success', 0, 'Just now')
-    """, (uid, f"Monthly spending target established at ₹{budget_val:,.0f}. All dashboard pacing gauges, runway projections, and features are now unlocked!"))
+        VALUES (?, '🎯 Monthly Budget Established!', ?, 'success', 0, ?)
+    """, (uid, f"Monthly spending target established at ₹{budget_val:,.0f}. All dashboard pacing gauges, runway projections, and features are now unlocked!", datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     conn.commit()
     conn.close()
@@ -1246,8 +1289,8 @@ def add_expense():
             if spent >= 0.8 * limit:
                 conn.execute("""
                     INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
-                    VALUES (?, ?, ?, 'warning', 0, 'Just now')
-                """, (user['id'], f"Budget Alert: {category}", f"You have reached {int((spent/limit)*100)}% of your {category} budget. Remaining: ₹{max(0, limit-spent):.0f}."))
+                    VALUES (?, ?, ?, 'warning', 0, ?)
+                """, (user['id'], f"Budget Alert: {category}", f"You have reached {int((spent/limit)*100)}% of your {category} budget. Remaining: ₹{max(0, limit-spent):.0f}.", datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
                 conn.commit()
     except Exception as e:
         print(f"Alert check note: {e}")
