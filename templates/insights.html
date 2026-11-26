@@ -4,27 +4,61 @@
 
 {% block content %}
 <!-- Module 7 Header -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
     <div>
         <h1 style="font-size: 1.5rem; font-weight: 800;">Notifications & Insights</h1>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
             Smart insights about your spending behavior and automated budget guards
         </p>
     </div>
-    <form action="{{ url_for('mark_all_notifications_read') }}" method="POST">
-        <button type="submit" class="btn-outline" style="font-size: 0.8rem; color: var(--accent-orange); border-color: rgba(249,115,22,0.3);">
+
+    <!-- Header Actions -->
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <button type="button" id="btn-mark-all-read" onclick="markAllAsRead()" class="btn-outline"
+                style="{% if unread_count == 0 %}display: none;{% else %}display: inline-flex;{% endif %} font-size: 0.82rem; color: var(--accent-orange); border-color: rgba(249,115,22,0.3); align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
             <i class="fa-solid fa-check-double"></i> Mark all as read
         </button>
-    </form>
+
+        <span id="badge-all-caught-up" class="all-caught-up-pill"
+              style="{% if unread_count == 0 and total_count > 0 %}display: inline-flex;{% else %}display: none;{% endif %}">
+            <i class="fa-solid fa-circle-check"></i> All caught up
+        </span>
+
+        {% if total_count > 0 %}
+        <button type="button" id="btn-clear-all" onclick="confirmClearAll()" class="btn-outline"
+                style="font-size: 0.82rem; color: var(--text-dim); border-color: var(--border-color); display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px; cursor: pointer;"
+                title="Clear all notifications">
+            <i class="fa-regular fa-trash-can"></i> Clear All
+        </button>
+        {% endif %}
+    </div>
 </div>
 
-<!-- List of Smart Insights matching Module 7 Screenshot Card Style -->
-<div style="display: flex; flex-direction: column; gap: 14px; max-width: 900px;">
+<!-- Tabs for Filtering: All, Unread, Read -->
+{% if total_count > 0 %}
+<div class="notif-tabs-wrapper">
+    <button type="button" class="notif-tab active" data-filter="all" onclick="filterNotifs('all')">
+        <i class="fa-solid fa-layer-group"></i> All (<span id="count-all">{{ total_count }}</span>)
+    </button>
+    <button type="button" class="notif-tab" data-filter="unread" onclick="filterNotifs('unread')">
+        <i class="fa-solid fa-envelope"></i> Unread (<span id="count-unread">{{ unread_count }}</span>)
+    </button>
+    <button type="button" class="notif-tab" data-filter="read" onclick="filterNotifs('read')">
+        <i class="fa-solid fa-envelope-open"></i> Read (<span id="count-read">{{ read_count }}</span>)
+    </button>
+</div>
+{% endif %}
+
+<!-- List of Smart Insights -->
+<div id="notifs-list-container" style="display: flex; flex-direction: column; gap: 14px; max-width: 900px;">
     {% for n in notifications %}
-    <div class="card notif-card-{{ n.type }}" style="padding: 18px 20px; display: flex; align-items: flex-start; gap: 16px;">
+    <div class="card notif-card notif-card-{{ n.type }} {% if n.is_read %}notif-card-read{% else %}notif-card-unread{% endif %}"
+         id="notif-item-{{ n.id }}"
+         data-notif-id="{{ n.id }}"
+         data-status="{% if n.is_read %}read{% else %}unread{% endif %}">
         
         <!-- Icon badge -->
-        <div class="notif-icon-{{ n.type }}" style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+        <div class="notif-icon-badge notif-icon-{{ n.type }}" style="width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">
             {% if n.type == 'alert' %}<i class="fa-solid fa-arrow-trend-up"></i>
             {% elif n.type == 'success' %}<i class="fa-solid fa-thumbs-up"></i>
             {% elif n.type == 'stat' %}<i class="fa-solid fa-chart-pie"></i>
@@ -33,25 +67,284 @@
         </div>
 
         <!-- Content -->
-        <div style="flex: 1;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
-                    {{ n.title }}
-                </h3>
-                <span style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; margin-left: 12px;">
-                    {{ n.created_at }}
-                </span>
+        <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0;">
+                        {{ n.title }}
+                    </h3>
+                    {% if n.is_read %}
+                    <span class="badge-notif-status badge-read" id="notif-badge-{{ n.id }}">
+                        <i class="fa-solid fa-check"></i> Read
+                    </span>
+                    {% else %}
+                    <span class="badge-notif-status badge-unread" id="notif-badge-{{ n.id }}">
+                        <span class="pulse-dot-orange"></span> New
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.72rem; color: var(--text-dim); white-space: nowrap;">
+                        {{ n.created_at }}
+                    </span>
+                    <div class="notif-card-actions">
+                        {% if not n.is_read %}
+                        <button type="button" class="notif-icon-action" id="btn-read-{{ n.id }}" onclick="markOneAsRead({{ n.id }})" title="Mark as read">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                        {% endif %}
+                        <button type="button" class="notif-icon-action notif-icon-delete" onclick="deleteOneNotif({{ n.id }})" title="Dismiss notification">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+            <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.45; margin: 0;">
                 {{ n.message }}
             </p>
         </div>
     </div>
-    {% else %}
-    <div class="card" style="text-align: center; padding: 40px; color: var(--text-dim);">
-        <i class="fa-regular fa-bell-slash" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
-        All caught up! No active notifications or budget alerts.
-    </div>
     {% endfor %}
 </div>
+
+<!-- Empty States -->
+<div id="empty-state-global" class="card" style="text-align: center; padding: 48px 20px; color: var(--text-dim); max-width: 900px; {% if total_count > 0 %}display: none;{% endif %}">
+    <i class="fa-regular fa-bell-slash" style="font-size: 2.2rem; margin-bottom: 12px; display: block; color: var(--text-muted); opacity: 0.6;"></i>
+    <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">All caught up!</div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">No active notifications or budget alerts.</p>
+</div>
+
+<div id="empty-state-unread" class="card" style="text-align: center; padding: 48px 20px; color: var(--text-dim); max-width: 900px; display: none;">
+    <i class="fa-solid fa-circle-check" style="font-size: 2.2rem; margin-bottom: 12px; display: block; color: var(--accent-emerald);"></i>
+    <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">Zero unread notifications</div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">You have reviewed all recent alerts and spending insights.</p>
+</div>
+
+<div id="empty-state-read" class="card" style="text-align: center; padding: 48px 20px; color: var(--text-dim); max-width: 900px; display: none;">
+    <i class="fa-regular fa-folder-open" style="font-size: 2.2rem; margin-bottom: 12px; display: block; color: var(--text-muted); opacity: 0.6;"></i>
+    <div style="font-size: 1.05rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">No read notifications</div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Notifications you have read will be archived here.</p>
+</div>
+
+<!-- Toast Alert Container -->
+<div id="notif-toast" style="position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 500; display: none; align-items: center; gap: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); z-index: 9999; transition: all 0.3s ease;">
+    <i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i>
+    <span id="notif-toast-text">All insights marked as read.</span>
+</div>
+
+<script>
+let currentFilter = 'all';
+
+function showToast(msg) {
+    const toast = document.getElementById('notif-toast');
+    const toastText = document.getElementById('notif-toast-text');
+    if (!toast || !toastText) return;
+    toastText.innerText = msg;
+    toast.style.display = 'flex';
+    toast.style.opacity = '1';
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; }, 300);
+    }, 2800);
+}
+
+function updateCountsAndBadges() {
+    const allCards = document.querySelectorAll('#notifs-list-container .notif-card:not(.removing)');
+    const unreadCards = document.querySelectorAll('#notifs-list-container .notif-card:not(.removing)[data-status="unread"]');
+    const readCards = document.querySelectorAll('#notifs-list-container .notif-card:not(.removing)[data-status="read"]');
+
+    const totalCount = allCards.length;
+    const unreadCount = unreadCards.length;
+    const readCount = readCards.length;
+
+    const countAllEl = document.getElementById('count-all');
+    const countUnreadEl = document.getElementById('count-unread');
+    const countReadEl = document.getElementById('count-read');
+
+    if (countAllEl) countAllEl.innerText = totalCount;
+    if (countUnreadEl) countUnreadEl.innerText = unreadCount;
+    if (countReadEl) countReadEl.innerText = readCount;
+
+    // Toggle Mark All As Read button vs All Caught Up pill
+    const btnMarkAll = document.getElementById('btn-mark-all-read');
+    const badgeCaughtUp = document.getElementById('badge-all-caught-up');
+    const btnClearAll = document.getElementById('btn-clear-all');
+
+    if (unreadCount === 0) {
+        if (btnMarkAll) btnMarkAll.style.display = 'none';
+        if (badgeCaughtUp && totalCount > 0) badgeCaughtUp.style.display = 'inline-flex';
+    } else {
+        if (btnMarkAll) btnMarkAll.style.display = 'inline-flex';
+        if (badgeCaughtUp) badgeCaughtUp.style.display = 'none';
+    }
+
+    if (totalCount === 0) {
+        if (btnClearAll) btnClearAll.style.display = 'none';
+        if (badgeCaughtUp) badgeCaughtUp.style.display = 'none';
+        const tabsEl = document.querySelector('.notif-tabs-wrapper');
+        if (tabsEl) tabsEl.style.display = 'none';
+    }
+
+    // Top navbar notification dot
+    const topDot = document.getElementById('top-navbar-notif-dot');
+    if (topDot) {
+        topDot.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+    }
+
+    // Re-check filter visibility
+    applyCurrentFilter();
+}
+
+function applyCurrentFilter() {
+    const allCards = document.querySelectorAll('#notifs-list-container .notif-card:not(.removing)');
+    const emptyGlobal = document.getElementById('empty-state-global');
+    const emptyUnread = document.getElementById('empty-state-unread');
+    const emptyRead = document.getElementById('empty-state-read');
+
+    if (emptyGlobal) emptyGlobal.style.display = 'none';
+    if (emptyUnread) emptyUnread.style.display = 'none';
+    if (emptyRead) emptyRead.style.display = 'none';
+
+    if (allCards.length === 0) {
+        if (emptyGlobal) emptyGlobal.style.display = 'block';
+        return;
+    }
+
+    let visibleCount = 0;
+    allCards.forEach(card => {
+        const status = card.getAttribute('data-status');
+        if (currentFilter === 'all') {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else if (currentFilter === 'unread') {
+            if (status === 'unread') {
+                card.style.display = 'flex';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        } else if (currentFilter === 'read') {
+            if (status === 'read') {
+                card.style.display = 'flex';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        }
+    });
+
+    if (visibleCount === 0) {
+        if (currentFilter === 'unread' && emptyUnread) emptyUnread.style.display = 'block';
+        else if (currentFilter === 'read' && emptyRead) emptyRead.style.display = 'block';
+        else if (emptyGlobal) emptyGlobal.style.display = 'block';
+    }
+}
+
+function filterNotifs(filterType) {
+    currentFilter = filterType;
+    document.querySelectorAll('.notif-tab').forEach(tab => {
+        if (tab.getAttribute('data-filter') === filterType) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    applyCurrentFilter();
+}
+
+function markAllAsRead() {
+    const unreadCards = document.querySelectorAll('#notifs-list-container .notif-card[data-status="unread"]');
+    if (unreadCards.length === 0) return;
+
+    // Optimistic UI updates
+    unreadCards.forEach(card => {
+        card.setAttribute('data-status', 'read');
+        card.classList.remove('notif-card-unread');
+        card.classList.add('notif-card-read');
+
+        const notifId = card.getAttribute('data-notif-id');
+        const badge = document.getElementById('notif-badge-' + notifId);
+        if (badge) {
+            badge.className = 'badge-notif-status badge-read';
+            badge.innerHTML = '<i class="fa-solid fa-check"></i> Read';
+        }
+
+        const readBtn = document.getElementById('btn-read-' + notifId);
+        if (readBtn) readBtn.remove();
+    });
+
+    updateCountsAndBadges();
+    showToast('All insights marked as read.');
+
+    // Async server sync
+    fetch('{{ url_for("mark_all_notifications_read") }}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+    }).catch(err => console.error('Failed to sync mark all read:', err));
+}
+
+function markOneAsRead(notifId) {
+    const card = document.getElementById('notif-item-' + notifId);
+    if (!card) return;
+
+    card.setAttribute('data-status', 'read');
+    card.classList.remove('notif-card-unread');
+    card.classList.add('notif-card-read');
+
+    const badge = document.getElementById('notif-badge-' + notifId);
+    if (badge) {
+        badge.className = 'badge-notif-status badge-read';
+        badge.innerHTML = '<i class="fa-solid fa-check"></i> Read';
+    }
+
+    const readBtn = document.getElementById('btn-read-' + notifId);
+    if (readBtn) readBtn.remove();
+
+    updateCountsAndBadges();
+    showToast('Insight marked as read.');
+
+    fetch('/notifications/' + notifId + '/read', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+    }).catch(err => console.error('Failed to mark read:', err));
+}
+
+function deleteOneNotif(notifId) {
+    const card = document.getElementById('notif-item-' + notifId);
+    if (!card) return;
+
+    card.classList.add('removing');
+    setTimeout(() => {
+        card.remove();
+        updateCountsAndBadges();
+        showToast('Notification dismissed.');
+    }, 320);
+
+    fetch('/notifications/' + notifId + '/delete', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+    }).catch(err => console.error('Failed to delete notification:', err));
+}
+
+function confirmClearAll() {
+    if (!confirm('Are you sure you want to clear all notifications and insights?')) return;
+
+    const cards = document.querySelectorAll('#notifs-list-container .notif-card');
+    cards.forEach(c => c.remove());
+
+    updateCountsAndBadges();
+    showToast('All notifications cleared.');
+
+    fetch('/notifications/clear-all', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+    }).catch(err => console.error('Failed to clear notifications:', err));
+}
+
+// Initial count check on load
+document.addEventListener('DOMContentLoaded', () => {
+    updateCountsAndBadges();
+});
+</script>
 {% endblock %}

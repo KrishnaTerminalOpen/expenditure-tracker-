@@ -157,7 +157,11 @@
                     <!-- Notification & Insights (positioned at right-hand side of krishna sahu) -->
                     <a href="{{ url_for('insights') }}" class="icon-btn-badge" title="Notifications & Insights" id="btn-top-notifs">
                         <i class="fa-regular fa-bell"></i>
-                        <span class="badge-dot"></span>
+                        {% if unread_notifs_count and unread_notifs_count > 0 %}
+                        <span class="badge-dot" id="top-navbar-notif-dot"></span>
+                        {% else %}
+                        <span class="badge-dot" id="top-navbar-notif-dot" style="display: none;"></span>
+                        {% endif %}
                     </a>
 
                     <!-- Sign Out Button -->

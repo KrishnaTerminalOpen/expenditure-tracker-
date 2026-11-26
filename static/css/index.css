@@ -1548,11 +1548,191 @@ input:checked + .slider:before {
 .cat-dot-others { background-color: #64748b; box-shadow: 0 0 8px rgba(100, 116, 139, 0.6); }
 
 /* Notification card & badge utilities */
+.notif-card {
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  overflow: hidden;
+}
+
 .notif-card-alert { border-left: 4px solid #ef4444 !important; background: rgba(239, 68, 68, 0.05) !important; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1) !important; }
 .notif-card-success { border-left: 4px solid #10b981 !important; background: rgba(16, 185, 129, 0.05) !important; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1) !important; }
 .notif-card-stat { border-left: 4px solid #3b82f6 !important; background: rgba(59, 130, 246, 0.05) !important; box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1) !important; }
 .notif-card-warning { border-left: 4px solid #f59e0b !important; background: rgba(245, 158, 11, 0.05) !important; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.1) !important; }
 .notif-card-tip { border-left: 4px solid #8b5cf6 !important; background: rgba(139, 92, 246, 0.05) !important; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.1) !important; }
+
+/* Read State: clearly distinguished with muted border, calm opacity, and no bright glow */
+.notif-card.notif-card-read {
+  opacity: 0.65 !important;
+  background: var(--bg-card) !important;
+  border-left: 3px solid var(--border-color) !important;
+  box-shadow: none !important;
+  filter: grayscale(18%);
+}
+
+.notif-card.notif-card-read:hover {
+  opacity: 0.95 !important;
+  filter: grayscale(0%);
+}
+
+.notif-card.notif-card-read .notif-icon-badge {
+  opacity: 0.65;
+  box-shadow: none !important;
+}
+
+.notif-card.notif-card-read h3 {
+  font-weight: 600 !important;
+  color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .notif-card.notif-card-read {
+  background: #f8fafc !important;
+  border-left-color: #cbd5e1 !important;
+}
+
+.notif-card.removing {
+  opacity: 0 !important;
+  transform: translateX(30px) scale(0.95);
+  max-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  border: none !important;
+  pointer-events: none;
+  transition: all 0.35s ease;
+}
+
+/* Notification Tabs */
+.notif-tabs-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.notif-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notif-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notif-tab.active {
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--accent-orange);
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+[data-theme="light"] .notif-tab:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .notif-tab.active {
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--accent-orange);
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+/* Status Badges */
+.badge-notif-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  line-height: 1.2;
+}
+
+.badge-notif-status.badge-unread {
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--accent-orange);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.badge-notif-status.badge-read {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-dim);
+  border: 1px solid var(--border-color);
+}
+
+.pulse-dot-orange {
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent-orange);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-orange);
+  animation: pulseBeacon 2s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* Actions in Card */
+.notif-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notif-icon-action {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notif-icon-action:hover {
+  color: var(--accent-emerald);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.notif-icon-action.notif-icon-delete:hover {
+  color: var(--accent-red);
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.all-caught-up-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 6px 14px;
+  border-radius: 8px;
+}
 
 .notif-icon-alert { background: rgba(239, 68, 68, 0.2); color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
 .notif-icon-success { background: rgba(16, 185, 129, 0.2); color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }

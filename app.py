@@ -264,10 +264,24 @@ def get_current_user():
 def inject_user_context():
     user = get_current_user()
     budget_set = True if user else False
+    unread_count = 0
+    if user:
+        if 'unread_notifs_count' in session:
+            unread_count = session['unread_notifs_count']
+        else:
+            try:
+                conn = get_db()
+                row = conn.execute("SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0", (user['id'],)).fetchone()
+                unread_count = row['c'] if row else 0
+                session['unread_notifs_count'] = unread_count
+                conn.close()
+            except Exception:
+                unread_count = 0
     return {
         'current_user': user,
         'budget_is_set': budget_set,
-        'google_client_id': GOOGLE_CLIENT_ID
+        'google_client_id': GOOGLE_CLIENT_ID,
+        'unread_notifs_count': unread_count
     }
 
 @app.before_request
@@ -1643,13 +1657,21 @@ def insights():
         ORDER BY is_read ASC, id DESC
     """, (uid,)).fetchall()
 
+    unread_count = sum(1 for n in notifs if not n['is_read'])
+    read_count = sum(1 for n in notifs if n['is_read'])
+    total_count = len(notifs)
+    session['unread_notifs_count'] = unread_count
+
     conn.close()
 
     return render_template(
         'insights.html',
         user=user,
         current_page='insights',
-        notifications=notifs
+        notifications=notifs,
+        unread_count=unread_count,
+        read_count=read_count,
+        total_count=total_count
     )
 
 @app.route('/notifications/mark-all-read', methods=['GET', 'POST'])
@@ -1660,12 +1682,91 @@ def mark_all_notifications_read():
     try:
         conn.execute("UPDATE notifications SET is_read = 1 WHERE user_id = ?", (user['id'],))
         conn.commit()
+        session['unread_notifs_count'] = 0
         flash("All insights marked as read.", "success")
     except Exception as e:
         conn.rollback()
         flash(f"Error updating insights: {str(e)}", "danger")
     finally:
         conn.close()
+
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+              'application/json' in request.headers.get('Accept', '') or \
+              request.is_json
+    if is_ajax:
+        return jsonify({"success": True, "message": "All insights marked as read.", "unread_count": 0})
+
+    return redirect(url_for('insights'))
+
+@app.route('/notifications/<int:notif_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notif_id):
+    user = get_current_user()
+    conn = get_db()
+    unread_count = 0
+    try:
+        conn.execute("UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?", (notif_id, user['id']))
+        conn.commit()
+        row = conn.execute("SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0", (user['id'],)).fetchone()
+        unread_count = row['c'] if row else 0
+        session['unread_notifs_count'] = unread_count
+    except Exception as e:
+        conn.rollback()
+    finally:
+        conn.close()
+
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+              'application/json' in request.headers.get('Accept', '') or \
+              request.is_json
+    if is_ajax:
+        return jsonify({"success": True, "unread_count": unread_count})
+    return redirect(url_for('insights'))
+
+@app.route('/notifications/<int:notif_id>/delete', methods=['POST'])
+@login_required
+def delete_notification(notif_id):
+    user = get_current_user()
+    conn = get_db()
+    unread_count = 0
+    try:
+        conn.execute("DELETE FROM notifications WHERE id = ? AND user_id = ?", (notif_id, user['id']))
+        conn.commit()
+        row = conn.execute("SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0", (user['id'],)).fetchone()
+        unread_count = row['c'] if row else 0
+        session['unread_notifs_count'] = unread_count
+    except Exception as e:
+        conn.rollback()
+    finally:
+        conn.close()
+
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+              'application/json' in request.headers.get('Accept', '') or \
+              request.is_json
+    if is_ajax:
+        return jsonify({"success": True, "unread_count": unread_count})
+    return redirect(url_for('insights'))
+
+@app.route('/notifications/clear-all', methods=['POST'])
+@login_required
+def clear_all_notifications():
+    user = get_current_user()
+    conn = get_db()
+    try:
+        conn.execute("DELETE FROM notifications WHERE user_id = ?", (user['id'],))
+        conn.commit()
+        session['unread_notifs_count'] = 0
+        flash("All notifications and insights cleared.", "info")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Error clearing notifications: {str(e)}", "danger")
+    finally:
+        conn.close()
+
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+              'application/json' in request.headers.get('Accept', '') or \
+              request.is_json
+    if is_ajax:
+        return jsonify({"success": True, "unread_count": 0})
     return redirect(url_for('insights'))
 
 # ==========================================
