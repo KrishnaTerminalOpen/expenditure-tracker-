@@ -279,12 +279,12 @@
         </div>
     </div>
 
-    <!-- Modal: Global Smart CSV Bank Statement Import -->
+    <!-- Modal: Global Multi-Format Bank Statement Import (PDF, CSV, Excel) -->
     <div class="modal-overlay" id="importCsvModal">
-        <div class="modal-content" style="max-width: 520px;">
+        <div class="modal-content" style="max-width: 540px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-file-import" style="color: #38bdf8;"></i> Import Bank Statement CSV
+                    <i class="fa-solid fa-file-import" style="color: #38bdf8;"></i> Import Statement (PDF, CSV, Excel)
                 </h3>
                 <button onclick="closeModal('importCsvModal')" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
                     <i class="fa-solid fa-xmark"></i>
@@ -293,21 +293,29 @@
             
             <div style="padding: 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; margin-bottom: 20px;">
                 <div style="font-size: 0.82rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Intelligent Categorization Active
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Multi-Format Parser & Date Sync
                 </div>
                 <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px; line-height: 1.45;">
-                    Our parser automatically detects Dates, Merchants, and Amounts, and uses keyword intelligence to classify entries into Food, Shopping, Utilities, and Transport.
+                    Upload any bank statement file (<strong>PDF, Excel .xlsx, or CSV</strong>). The system automatically fetches transactions, analyzes merchants & amounts, and saves each record with the <strong>exact date given in the statement</strong>.
                 </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+                    <span style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);"><i class="fa-solid fa-file-pdf"></i> PDF e-Statements</span>
+                    <span style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-file-excel"></i> Excel (.xlsx)</span>
+                    <span style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);"><i class="fa-solid fa-file-csv"></i> CSV / TSV</span>
+                </div>
             </div>
 
-            <form action="{{ url_for('import_csv') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ url_for('import_statement') }}" method="POST" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label>Choose CSV Statement File</label>
-                    <input type="file" name="statement_file" accept=".csv" required class="form-input" style="padding: 10px;">
+                    <label>Choose Statement File (PDF, CSV, or XLSX)</label>
+                    <input type="file" name="statement_file" accept=".pdf,.csv,.xlsx,.xls,.tsv,.txt" required class="form-input" style="padding: 10px;">
                 </div>
 
-                <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 14px; font-size: 0.78rem;">
-                    <span style="color: var(--text-dim);">UTF-8 Encoded</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 0.78rem;">
+                    <span style="color: var(--text-dim);"><i class="fa-solid fa-shield-halved" style="color: var(--accent-emerald);"></i> Bank-grade private parsing</span>
+                    <a href="{{ url_for('import_template') }}" style="color: #38bdf8; text-decoration: none; font-weight: 600;">
+                        <i class="fa-solid fa-download"></i> Sample CSV Template
+                    </a>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">

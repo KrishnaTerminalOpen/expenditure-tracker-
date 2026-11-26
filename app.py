@@ -12,6 +12,7 @@ Full Python Flask Backend powering the 8 modules shown in the design:
 """
 import os
 import io
+import re
 import csv
 import time
 from datetime import datetime, date, timedelta
@@ -2442,109 +2443,333 @@ def auto_detect_category(text: str) -> tuple[str, str]:
 
     return cat, pm
 
-@app.route('/import/csv', methods=['POST'])
-@login_required
-def import_csv():
-    user = get_current_user()
-    file = request.files.get('statement_file') or request.files.get('file') or request.files.get('csv_file')
-    if not file or file.filename == '':
-        flash("No CSV file selected for statement import.", "danger")
-        return redirect(url_for('expenses'))
+DATE_PATTERNS = [
+    (r'\b(\d{4}[-/]\d{1,2}[-/]\d{1,2})\b', ['%Y-%m-%d', '%Y/%m/%d']),
+    (r'\b(\d{1,2}[-/]\d{1,2}[-/]\d{4})\b', ['%d/%m/%Y', '%d-%m-%Y', '%m/%d/%Y', '%m-%d-%Y']),
+    (r'\b(\d{1,2}[-/]\d{1,2}[-/]\d{2})\b', ['%d/%m/%y', '%d-%m-%y', '%m/%d/%y']),
+    (r'\b(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b', ['%d %b %Y', '%d %b %y', '%d %B %Y', '%d %B %y']),
+    (r'\b(\d{1,2}-(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*-\d{2,4})\b', ['%d-%b-%Y', '%d-%b-%y', '%d-%B-%Y', '%d-%B-%y']),
+    (r'\b((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{2,4})\b', ['%b %d, %Y', '%b %d %Y', '%B %d, %Y', '%B %d %Y'])
+]
 
-    try:
-        content = file.stream.read().decode('utf-8-sig', errors='replace')
-        stream = io.StringIO(content)
-        reader = csv.reader(stream)
-        rows = list(reader)
+def parse_flexible_date(raw_val) -> str:
+    if not raw_val:
+        return datetime.now().strftime('%Y-%m-%d 12:00:00')
+    if isinstance(raw_val, datetime):
+        return raw_val.strftime('%Y-%m-%d %H:%M:%S' if raw_val.hour or raw_val.minute else '%Y-%m-%d 12:00:00')
+    if isinstance(raw_val, date):
+        return raw_val.strftime('%Y-%m-%d 12:00:00')
 
-        if not rows:
-            flash("The uploaded CSV statement file is empty.", "danger")
-            return redirect(url_for('expenses'))
+    val_str = str(raw_val).strip()
+    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%m/%d/%Y', '%d/%m/%y', '%d-%m-%y', '%d %b %Y', '%d-%b-%Y', '%b %d, %Y', '%d %B %Y', '%d-%B-%Y'):
+        try:
+            d = datetime.strptime(val_str, fmt)
+            return d.strftime('%Y-%m-%d 12:00:00')
+        except ValueError:
+            pass
 
-        header = [col.strip().lower() for col in rows[0]]
-        
-        date_idx = -1
-        desc_idx = -1
-        amount_idx = -1
-        cat_idx = -1
-        pm_idx = -1
-
-        for idx, col in enumerate(header):
-            if any(k in col for k in ['date', 'txn date', 'transaction date', 'value date']):
-                if date_idx == -1: date_idx = idx
-            elif any(k in col for k in ['desc', 'narration', 'particulars', 'title', 'merchant', 'payee']):
-                if desc_idx == -1: desc_idx = idx
-            elif any(k in col for k in ['amount', 'debit', 'spent', 'withdrawal', 'cost']):
-                if amount_idx == -1: amount_idx = idx
-            elif 'category' in col:
-                cat_idx = idx
-            elif any(k in col for k in ['payment', 'method', 'mode', 'channel']):
-                pm_idx = idx
-
-        if date_idx == -1: date_idx = 0
-        if desc_idx == -1: desc_idx = 1 if len(header) > 1 else 0
-        if amount_idx == -1: amount_idx = 2 if len(header) > 2 else -1
-
-        if amount_idx == -1:
-            flash("Could not detect Amount column in your CSV statement.", "danger")
-            return redirect(url_for('expenses'))
-
-        conn = get_db()
-        imported_count = 0
-        auto_cat_count = 0
-
-        for r in rows[1:]:
-            if len(r) <= max(date_idx, desc_idx, amount_idx):
-                continue
-            
-            raw_title = r[desc_idx].strip() if desc_idx < len(r) else 'Imported Expense'
-            raw_amt_str = r[amount_idx].replace('₹', '').replace('$', '').replace(',', '').strip()
-            if not raw_title or not raw_amt_str:
-                continue
-
-            try:
-                amt = abs(float(raw_amt_str))
-                if amt <= 0:
-                    continue
-            except ValueError:
-                continue
-
-            raw_date = r[date_idx].strip()
-            formatted_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y', '%d/%m/%y'):
+    for pattern, fmts in DATE_PATTERNS:
+        m = re.search(pattern, val_str, re.IGNORECASE)
+        if m:
+            s = m.group(1)
+            for fmt in fmts:
                 try:
-                    d_parsed = datetime.strptime(raw_date, fmt)
-                    formatted_date = d_parsed.strftime('%Y-%m-%d 12:00:00')
-                    break
+                    d = datetime.strptime(s, fmt)
+                    return d.strftime('%Y-%m-%d 12:00:00')
                 except ValueError:
                     pass
 
-            auto_cat, auto_pm = auto_detect_category(raw_title)
+    return datetime.now().strftime('%Y-%m-%d 12:00:00')
 
-            cat = r[cat_idx].strip() if (cat_idx != -1 and cat_idx < len(r) and r[cat_idx].strip()) else auto_cat
-            pm = r[pm_idx].strip() if (pm_idx != -1 and pm_idx < len(r) and r[pm_idx].strip()) else auto_pm
-            if cat == auto_cat:
-                auto_cat_count += 1
+def parse_pdf_statement(file_stream) -> list[dict]:
+    import pypdf
+    reader = pypdf.PdfReader(file_stream)
+    transactions = []
 
+    for page in reader.pages:
+        text = page.extract_text() or ""
+        lines = text.split("\n")
+
+        for line in lines:
+            line = line.strip()
+            if not line or len(line) < 8:
+                continue
+
+            if any(h in line.lower() for h in ['statement period', 'account number', 'opening balance', 'closing balance', 'page ', 'date description', 'transaction details']):
+                continue
+
+            found_date_str = None
+            date_span = None
+            for pattern, fmts in DATE_PATTERNS:
+                m = re.search(pattern, line, re.IGNORECASE)
+                if m:
+                    s = m.group(1)
+                    for fmt in fmts:
+                        try:
+                            d = datetime.strptime(s, fmt)
+                            found_date_str = d.strftime('%Y-%m-%d 12:00:00')
+                            date_span = m.span(1)
+                            break
+                        except ValueError:
+                            pass
+                    if found_date_str:
+                        break
+
+            if not found_date_str or not date_span:
+                continue
+
+            remaining = line[:date_span[0]] + ' ' + line[date_span[1]:]
+
+            is_credit_only = bool(re.search(r'\b(salary|deposit|interest credited|refund credited)\b', line, re.IGNORECASE) and not re.search(r'\b(debit|dr|withdrawal|pos|upi)\b', line, re.IGNORECASE))
+            if is_credit_only and "salary" in line.lower():
+                continue
+
+            amt_matches = list(re.finditer(r'(?<![A-Za-z0-9/])(?:₹|\$|Rs\.?\s*)?([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})|[0-9]+(?:\.[0-9]{1,2}))(?:\s*(Dr|Debit|Cr|Credit))?', remaining, re.IGNORECASE))
+            if not amt_matches:
+                amt_matches = list(re.finditer(r'(?<![A-Za-z0-9/])(?:₹|\$|Rs\.?\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{2,6})(?:\s*(Dr|Debit|Cr|Credit))?', remaining, re.IGNORECASE))
+
+            if not amt_matches:
+                continue
+
+            chosen_amt = None
+            for m in amt_matches:
+                val_str = m.group(1).replace(',', '')
+                try:
+                    v = float(val_str)
+                    if v > 0:
+                        chosen_amt = v
+                        remaining = remaining[:m.start()] + ' ' + remaining[m.end():]
+                        break
+                except ValueError:
+                    continue
+
+            if not chosen_amt:
+                continue
+
+            remaining = re.sub(r'\s+[0-9,]+(?:\.[0-9]{1,2})?\s*$', '', remaining)
+            desc = re.sub(r'\b(DR|CR|Debit|Credit)\b', '', remaining, flags=re.IGNORECASE)
+            desc = re.sub(r'[\t\r\n]+', ' ', desc)
+            desc = re.sub(r'\s{2,}', ' ', desc).strip()
+            desc = re.sub(r'^[^a-zA-Z0-9]+', '', desc)
+            desc = re.sub(r'[^a-zA-Z0-9]+$', '', desc)
+
+            if not desc or len(desc) < 2:
+                desc = "Bank Transaction"
+
+            cat, pm = auto_detect_category(desc)
+
+            transactions.append({
+                "title": desc[:100],
+                "amount": round(abs(chosen_amt), 2),
+                "category": cat,
+                "payment_method": pm,
+                "expense_date": found_date_str,
+                "notes": "Imported via PDF Bank Statement"
+            })
+
+    return transactions
+
+def parse_excel_statement(file_stream) -> list[dict]:
+    import openpyxl
+    wb = openpyxl.load_workbook(file_stream, data_only=True)
+    sheet = wb.active
+    rows = list(sheet.iter_rows(values_only=True))
+    if not rows:
+        return []
+
+    header_idx = -1
+    date_idx, desc_idx, amount_idx, cat_idx, pm_idx = -1, -1, -1, -1, -1
+
+    for r_idx, r in enumerate(rows[:10]):
+        row_str = [str(c or '').strip().lower() for c in r]
+        for c_idx, col in enumerate(row_str):
+            if any(k in col for k in ['date', 'txn date', 'transaction date', 'value date']):
+                if date_idx == -1: date_idx = c_idx
+            elif any(k in col for k in ['desc', 'narration', 'particulars', 'title', 'merchant', 'payee', 'details']):
+                if desc_idx == -1: desc_idx = c_idx
+            elif any(k in col for k in ['amount', 'debit', 'spent', 'withdrawal', 'cost']):
+                if amount_idx == -1: amount_idx = c_idx
+            elif 'category' in col:
+                cat_idx = c_idx
+            elif any(k in col for k in ['payment', 'method', 'mode']):
+                pm_idx = c_idx
+        if date_idx != -1 and (desc_idx != -1 or amount_idx != -1):
+            header_idx = r_idx
+            break
+
+    if header_idx == -1:
+        header_idx = 0
+        date_idx = 0
+        desc_idx = 1 if len(rows[0]) > 1 else 0
+        amount_idx = 2 if len(rows[0]) > 2 else -1
+
+    if amount_idx == -1:
+        return []
+
+    transactions = []
+    for r in rows[header_idx + 1:]:
+        if len(r) <= max(date_idx, desc_idx, amount_idx):
+            continue
+
+        raw_desc = str(r[desc_idx] or '').strip()
+        raw_amt = r[amount_idx]
+        if not raw_desc or raw_amt is None:
+            continue
+
+        try:
+            if isinstance(raw_amt, (int, float)):
+                amt = abs(float(raw_amt))
+            else:
+                amt_str = str(raw_amt).replace('₹', '').replace('$', '').replace(',', '').strip()
+                amt = abs(float(amt_str))
+            if amt <= 0:
+                continue
+        except (ValueError, TypeError):
+            continue
+
+        raw_date = r[date_idx]
+        parsed_date = parse_flexible_date(raw_date)
+
+        auto_cat, auto_pm = auto_detect_category(raw_desc)
+        cat = str(r[cat_idx]).strip() if (cat_idx != -1 and cat_idx < len(r) and r[cat_idx]) else auto_cat
+        pm = str(r[pm_idx]).strip() if (pm_idx != -1 and pm_idx < len(r) and r[pm_idx]) else auto_pm
+
+        transactions.append({
+            "title": raw_desc[:100],
+            "amount": round(amt, 2),
+            "category": cat or auto_cat,
+            "payment_method": pm or auto_pm,
+            "expense_date": parsed_date,
+            "notes": "Imported via Excel Bank Statement"
+        })
+
+    return transactions
+
+def parse_csv_statement(file_stream) -> list[dict]:
+    content_bytes = file_stream.read()
+    try:
+        content = content_bytes.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        content = content_bytes.decode('latin-1', errors='replace')
+
+    first_line = content.split('\n')[0] if content else ''
+    delimiter = ';' if ';' in first_line and first_line.count(';') > first_line.count(',') else (
+        '\t' if '\t' in first_line and first_line.count('\t') > first_line.count(',') else ','
+    )
+
+    stream = io.StringIO(content)
+    reader = csv.reader(stream, delimiter=delimiter)
+    rows = list(reader)
+    if not rows:
+        return []
+
+    header = [col.strip().lower() for col in rows[0]]
+    date_idx, desc_idx, amount_idx, cat_idx, pm_idx = -1, -1, -1, -1, -1
+
+    for idx, col in enumerate(header):
+        if any(k in col for k in ['date', 'txn date', 'transaction date', 'value date']):
+            if date_idx == -1: date_idx = idx
+        elif any(k in col for k in ['desc', 'narration', 'particulars', 'title', 'merchant', 'payee', 'details']):
+            if desc_idx == -1: desc_idx = idx
+        elif any(k in col for k in ['amount', 'debit', 'spent', 'withdrawal', 'cost']):
+            if amount_idx == -1: amount_idx = idx
+        elif 'category' in col:
+            cat_idx = idx
+        elif any(k in col for k in ['payment', 'method', 'mode', 'channel']):
+            pm_idx = idx
+
+    if date_idx == -1: date_idx = 0
+    if desc_idx == -1: desc_idx = 1 if len(header) > 1 else 0
+    if amount_idx == -1: amount_idx = 2 if len(header) > 2 else -1
+
+    if amount_idx == -1:
+        return []
+
+    transactions = []
+    for r in rows[1:]:
+        if len(r) <= max(date_idx, desc_idx, amount_idx):
+            continue
+
+        raw_title = r[desc_idx].strip() if desc_idx < len(r) else 'Imported Expense'
+        raw_amt_str = r[amount_idx].replace('₹', '').replace('$', '').replace(',', '').strip()
+        if not raw_title or not raw_amt_str:
+            continue
+
+        try:
+            amt = abs(float(raw_amt_str))
+            if amt <= 0:
+                continue
+        except ValueError:
+            continue
+
+        raw_date = r[date_idx].strip()
+        formatted_date = parse_flexible_date(raw_date)
+
+        auto_cat, auto_pm = auto_detect_category(raw_title)
+        cat = r[cat_idx].strip() if (cat_idx != -1 and cat_idx < len(r) and r[cat_idx].strip()) else auto_cat
+        pm = r[pm_idx].strip() if (pm_idx != -1 and pm_idx < len(r) and r[pm_idx].strip()) else auto_pm
+
+        transactions.append({
+            "title": raw_title[:100],
+            "amount": round(amt, 2),
+            "category": cat or auto_cat,
+            "payment_method": pm or auto_pm,
+            "expense_date": formatted_date,
+            "notes": "Imported via CSV Bank Statement"
+        })
+
+    return transactions
+
+@app.route('/import/statement', methods=['POST'])
+@app.route('/import/csv', methods=['POST'])
+@login_required
+def import_statement():
+    user = get_current_user()
+    file = request.files.get('statement_file') or request.files.get('file') or request.files.get('csv_file')
+    if not file or file.filename == '':
+        flash("No statement file selected for import.", "danger")
+        return redirect(url_for('expenses'))
+
+    fname = file.filename.lower()
+    transactions = []
+
+    try:
+        if fname.endswith('.pdf'):
+            transactions = parse_pdf_statement(file.stream)
+        elif fname.endswith(('.xlsx', '.xls')):
+            transactions = parse_excel_statement(file.stream)
+        else:
+            transactions = parse_csv_statement(file.stream)
+
+        if not transactions:
+            flash(f"Could not extract any valid expense transactions from '{file.filename}'. Please verify the statement format.", "warning")
+            return redirect(url_for('expenses'))
+
+        conn = get_db()
+        for t in transactions:
             conn.execute("""
                 INSERT INTO expenses (user_id, title, amount, category, payment_method, expense_date, notes)
-                VALUES (?, ?, ?, ?, ?, ?, 'Imported via Bank Statement CSV Parser')
-            """, (user['id'], raw_title, amt, cat, pm, formatted_date))
-            imported_count += 1
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (user['id'], t['title'], t['amount'], t['category'], t['payment_method'], t['expense_date'], t.get('notes', 'Imported Statement')))
 
         conn.commit()
         conn.close()
         invalidate_dashboard_cache(user['id'])
 
-        if imported_count > 0:
-            flash(f"⚡ Successfully imported {imported_count} transactions! Auto-categorized {auto_cat_count} entries using intelligent heuristics.", "success")
-        else:
-            flash("No valid expense rows could be parsed from the CSV statement.", "warning")
+        dates = [t['expense_date'][:10] for t in transactions]
+        min_date = min(dates)
+        max_date = max(dates)
+        date_range_str = f" (dates: {min_date} to {max_date})" if min_date != max_date else f" (date: {min_date})"
+
+        flash(f"⚡ Successfully imported {len(transactions)} transactions{date_range_str} from '{file.filename}'! All records saved with their exact dates.", "success")
 
     except Exception as e:
-        flash(f"Error processing CSV statement: {str(e)}", "danger")
+        flash(f"Error parsing '{file.filename}': {str(e)}", "danger")
 
-    return redirect(request.referrer or url_for('dashboard'))
+    return redirect(url_for('expenses'))
+
+def import_csv():
+    return import_statement()
 
 @app.route('/import/template')
 @login_required
