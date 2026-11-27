@@ -14,10 +14,11 @@
     <script src="https://accounts.google.com/gsi/client" async defer onload="renderGoogleButtons()"></script>
     <style>
         :root {
-            --auth-bg-gradient: radial-gradient(circle at 15% 15%, rgba(249, 115, 22, 0.15) 0%, transparent 45%),
-                                radial-gradient(circle at 85% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
-                                radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 60%),
-                                #090d16;
+            --auth-bg-gradient: radial-gradient(circle at 50% 20%, rgba(249, 115, 22, 0.15) 0%, transparent 55%),
+                                radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+                                linear-gradient(180deg, #070a13 0%, #0c101d 100%);
+            --accent-orange: #f97316;
+            --accent-orange-hover: #ea580c;
         }
 
         html, body {
@@ -28,8 +29,11 @@
         }
 
         body {
-            background-color: #090d16;
-            background-image: var(--auth-bg-gradient);
+            background-color: #070a13;
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                var(--auth-bg-gradient);
+            background-size: 24px 24px, 100% 100%;
             background-attachment: fixed;
             display: flex;
             align-items: center;
@@ -42,7 +46,7 @@
             position: relative;
         }
 
-        /* Ambient floating ambient glows */
+        /* Ambient floating glowing orbs */
         .ambient-orb {
             position: absolute;
             border-radius: 50%;
@@ -55,16 +59,16 @@
         .orb-1 {
             width: 320px;
             height: 320px;
-            background: rgba(249, 115, 22, 0.16);
+            background: rgba(249, 115, 22, 0.18);
             top: 5%;
-            left: 10%;
+            left: 15%;
         }
         .orb-2 {
-            width: 360px;
-            height: 360px;
-            background: rgba(59, 130, 246, 0.12);
+            width: 340px;
+            height: 340px;
+            background: rgba(59, 130, 246, 0.13);
             bottom: 5%;
-            right: 8%;
+            right: 15%;
             animation-duration: 18s;
         }
 
@@ -73,124 +77,89 @@
             100% { transform: translate(25px, 30px) scale(1.05); }
         }
 
+        /* Centered Modern Floating Card */
         .auth-container {
             display: flex;
+            flex-direction: column;
             width: 100%;
-            max-width: 980px;
-            max-height: min(620px, calc(100vh - 32px));
-            background: rgba(18, 24, 38, 0.82);
+            max-width: 420px;
+            background: rgba(14, 20, 34, 0.85);
             backdrop-filter: blur(28px) saturate(190%);
             -webkit-backdrop-filter: blur(28px) saturate(190%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-top: 1px solid rgba(255, 255, 255, 0.22);
-            border-radius: 20px;
-            overflow: hidden;
+            border-radius: 22px;
+            padding: 26px 26px 18px 26px;
             box-shadow: 
-                0 4px 20px rgba(0, 0, 0, 0.4),
-                0 25px 60px -15px rgba(0, 0, 0, 0.8),
-                0 0 50px -10px rgba(249, 115, 22, 0.15);
+                0 0 0 1px rgba(0, 0, 0, 0.5),
+                0 25px 60px -15px rgba(0, 0, 0, 0.85),
+                0 0 50px -12px rgba(249, 115, 22, 0.15);
             position: relative;
             z-index: 10;
-        }
-
-        /* Left Showcase Panel */
-        .auth-left-preview {
-            flex: 1.1;
-            background: linear-gradient(145deg, rgba(22, 30, 48, 0.85) 0%, rgba(13, 17, 26, 0.95) 100%);
-            padding: 28px 32px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            position: relative;
-            overflow: hidden;
             box-sizing: border-box;
+            margin: auto;
         }
 
-        .auth-left-preview::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #f97316 0%, #3b82f6 50%, #10b981 100%);
+        /* Brand Header */
+        .auth-header {
+            text-align: center;
+            margin-bottom: 14px;
         }
 
-        .auth-badge-pill {
+        .auth-brand-logo {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border-radius: 11px;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 3px 10px;
-            background: rgba(249, 115, 22, 0.12);
-            border: 1px solid rgba(249, 115, 22, 0.3);
-            border-radius: 20px;
-            font-size: 0.68rem;
-            font-weight: 700;
-            color: #fb923c;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .auth-hero-title {
-            font-size: 1.55rem;
-            font-weight: 800;
-            line-height: 1.24;
-            letter-spacing: -0.025em;
-            margin-bottom: 6px;
-            color: #ffffff;
-        }
-
-        .auth-hero-title span {
-            background: linear-gradient(135deg, #f97316 0%, #fb923c 60%, #fdba74 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .auth-hero-desc {
-            color: var(--text-muted);
-            font-size: 0.82rem;
-            line-height: 1.45;
-            margin-bottom: 16px;
-        }
-
-
-
-
-
-        /* Right Form Panel */
-        .auth-right-form {
-            flex: 1.1;
-            padding: 28px 36px;
-            display: flex;
-            flex-direction: column;
             justify-content: center;
-            background: rgba(19, 25, 40, 0.95);
-            box-sizing: border-box;
-            overflow-y: auto;
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35);
+            margin-bottom: 8px;
         }
 
+        .auth-brand-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.025em;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .auth-brand-subtitle {
+            font-size: 0.72rem;
+            color: #fb923c;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 3px 0 0 0;
+        }
+
+        /* Navigation Tabs */
         .auth-tabs-wrapper {
-            background: rgba(14, 19, 31, 0.85);
-            padding: 4px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
             border-radius: 12px;
+            padding: 3px;
             display: flex;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            margin-bottom: 18px;
+            gap: 3px;
+            margin-bottom: 14px;
         }
 
         .auth-tab-btn {
             flex: 1;
             padding: 8px 12px;
             background: transparent;
-            border: none;
+            border: 1px solid transparent;
             color: var(--text-muted);
             font-size: 0.82rem;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 9px;
             cursor: pointer;
-            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -198,105 +167,11 @@
         }
 
         .auth-tab-btn.active {
-            background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(249, 115, 22, 0.08) 100%);
+            background: rgba(255, 255, 255, 0.09);
             color: #ffffff;
-            border: 1px solid rgba(249, 115, 22, 0.35);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             font-weight: 700;
-        }
-
-        .form-input-container {
-            position: relative;
-            margin-bottom: 13px;
-        }
-
-        .form-input-container label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 750;
-            color: #ffffff;
-            letter-spacing: 0.015em;
-            margin-bottom: 6px;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-        }
-
-        .input-icon-box {
-            position: relative;
-        }
-
-        .input-icon-box i.prefix-icon {
-            position: absolute;
-            left: 13px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-dim);
-            font-size: 0.82rem;
-            transition: color 0.2s;
-        }
-
-        .input-icon-box input {
-            width: 100%;
-            background: rgba(14, 19, 30, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.09);
-            padding: 10px 14px 10px 38px;
-            border-radius: 10px;
-            color: #ffffff;
-            font-size: 0.86rem;
-            font-family: var(--font-main);
-            outline: none;
-            transition: all 0.2s ease;
-            box-sizing: border-box;
-        }
-
-        .input-icon-box input:focus {
-            border-color: var(--accent-orange);
-            background: rgba(18, 24, 38, 0.95);
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
-        }
-
-        .password-toggle-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--text-dim);
-            cursor: pointer;
-            padding: 3px;
-            font-size: 0.85rem;
-        }
-
-        .password-toggle-btn:hover {
-            color: var(--text-main);
-        }
-
-        .btn-submit-auth {
-            width: 100%;
-            padding: 11px;
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            color: #ffffff;
-            border: none;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            margin-top: 6px;
-        }
-
-        .btn-submit-auth:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5);
-        }
-
-        .btn-submit-auth:active {
-            transform: translateY(0);
         }
 
         .panel-hidden {
@@ -313,204 +188,111 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        @media (max-width: 860px) {
-            html, body {
-                overflow: hidden !important;
-                height: 100% !important;
-                height: 100dvh !important;
-                max-height: 100dvh !important;
-                position: fixed !important;
-                width: 100% !important;
-                left: 0 !important;
-                top: 0 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                touch-action: pan-y;
-            }
-            body {
-                height: 100% !important;
-                height: 100dvh !important;
-                max-height: 100dvh !important;
-                padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                box-sizing: border-box !important;
-                overflow: hidden !important;
-            }
-            .auth-container {
-                flex-direction: column !important;
-                max-width: 400px !important;
-                width: 100% !important;
-                max-height: calc(100dvh - 16px) !important;
-                border-radius: 16px !important;
-                margin: auto !important;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
-                overflow: hidden !important;
-            }
-            /* Strictly hide the entire left preview showcase on mobile */
-            .auth-left-preview {
-                display: none !important;
-            }
-            .auth-right-form {
-                padding: 14px 16px !important;
-                width: 100% !important;
-                flex: 1 1 auto !important;
-                border-radius: 16px !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: center !important;
-                overflow-y: auto !important;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none !important;
-                box-sizing: border-box !important;
-            }
-            .auth-right-form::-webkit-scrollbar {
-                display: none !important;
-            }
-            .auth-mobile-brand {
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                gap: 8px !important;
-                margin-bottom: 8px !important;
-            }
-            .auth-mobile-brand > div:first-child {
-                width: 28px !important;
-                height: 28px !important;
-                border-radius: 7px !important;
-                font-size: 0.88rem !important;
-            }
-            .auth-mobile-brand span:first-child {
-                font-size: 1.1rem !important;
-            }
-            .auth-mobile-brand span:last-child {
-                font-size: 0.58rem !important;
-            }
-            .auth-tabs-wrapper {
-                padding: 3px !important;
-                margin-bottom: 8px !important;
-                border-radius: 9px !important;
-            }
-            .auth-tab-btn {
-                padding: 6px 10px !important;
-                font-size: 0.78rem !important;
-                border-radius: 7px !important;
-            }
-            #login-panel > div:first-child,
-            #register-panel > div:first-child {
-                margin-bottom: 8px !important;
-            }
-            #login-panel h2,
-            #register-panel h2 {
-                font-size: 1.15rem !important;
-                margin-bottom: 2px !important;
-            }
-            #login-panel p,
-            #register-panel p {
-                font-size: 0.74rem !important;
-                line-height: 1.25 !important;
-            }
-            .form-input-container {
-                margin-bottom: 7px !important;
-            }
-            .form-input-container label {
-                font-size: 0.75rem !important;
-                margin-bottom: 2px !important;
-            }
-            .input-icon-box input {
-                padding: 7px 12px 7px 32px !important;
-                font-size: 0.82rem !important;
-                border-radius: 8px !important;
-                height: 36px !important;
-            }
-            .input-icon-box i.prefix-icon {
-                left: 10px !important;
-                font-size: 0.74rem !important;
-            }
-            .password-toggle-btn {
-                right: 9px !important;
-                font-size: 0.76rem !important;
-            }
-            .auth-remember-row,
-            .auth-terms-row {
-                margin-bottom: 7px !important;
-            }
-            .btn-submit-auth {
-                padding: 8px 12px !important;
-                font-size: 0.84rem !important;
-                margin-top: 3px !important;
-                border-radius: 8px !important;
-                height: 38px !important;
-            }
-            .auth-divider {
-                margin: 7px 0 !important;
-                font-size: 0.65rem !important;
-            }
-            .google-auth-wrapper {
-                margin-top: 1px !important;
-                margin-bottom: 3px !important;
-            }
-            .fancy-google-box {
-                max-width: 100% !important;
-                border-radius: 9999px !important;
-            }
-            #googleSignInBtnLogin,
-            #googleSignInBtnRegister {
-                min-height: 36px !important;
-            }
-            .fancy-google-fallback-btn {
-                padding: 6px 12px 6px 10px !important;
-                font-size: 0.78rem !important;
-                height: 36px !important;
-            }
-            .google-btn-label {
-                font-size: 0.78rem !important;
-            }
-            .google-pill-badge {
-                font-size: 0.62rem !important;
-                padding: 2px 6px !important;
-            }
-            .auth-bottom-switch {
-                margin-top: 7px !important;
-                font-size: 0.74rem !important;
-            }
+        /* Inputs */
+        .form-input-container {
+            position: relative;
+            margin-bottom: 10px;
         }
 
-        @media (max-height: 680px) and (max-width: 860px) {
-            .auth-mobile-brand {
-                margin-bottom: 5px !important;
-            }
-            .auth-tabs-wrapper {
-                margin-bottom: 5px !important;
-            }
-            #login-panel > div:first-child,
-            #register-panel > div:first-child {
-                margin-bottom: 4px !important;
-            }
-            .form-input-container {
-                margin-bottom: 5px !important;
-            }
-            .btn-submit-auth {
-                height: 34px !important;
-                padding: 6px 10px !important;
-            }
-            .auth-divider {
-                margin: 5px 0 !important;
-            }
-            .auth-bottom-switch {
-                margin-top: 5px !important;
-            }
+        .form-input-container label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #cbd5e1;
+            letter-spacing: 0.015em;
+            margin-bottom: 4px;
         }
 
-        /* Google Identity Services & Divider */
+        .input-icon-box {
+            position: relative;
+        }
+
+        .input-icon-box i.prefix-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            transition: color 0.2s;
+            pointer-events: none;
+        }
+
+        .input-icon-box input {
+            width: 100%;
+            background: rgba(8, 12, 22, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            padding: 9px 12px 9px 36px;
+            border-radius: 9px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-family: var(--font-main);
+            outline: none;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            height: 38px;
+        }
+
+        .input-icon-box input:focus {
+            border-color: var(--accent-orange);
+            background: rgba(14, 20, 32, 0.95);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 0.82rem;
+            transition: color 0.2s;
+        }
+
+        .password-toggle-btn:hover {
+            color: #ffffff;
+        }
+
+        .btn-submit-auth {
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 18px rgba(249, 115, 22, 0.35);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 4px;
+        }
+
+        .btn-submit-auth:hover {
+            transform: translateY(-1px);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 22px rgba(249, 115, 22, 0.5);
+        }
+
+        .btn-submit-auth:active {
+            transform: translateY(0);
+        }
+
+        /* Divider */
         .auth-divider {
             display: flex;
             align-items: center;
             text-align: center;
-            margin: 14px 0 16px 0;
+            margin: 11px 0 13px 0;
             color: var(--text-dim);
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             font-weight: 600;
@@ -520,55 +302,20 @@
         .auth-divider::after {
             content: '';
             flex: 1;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .auth-divider span {
             padding: 0 10px;
         }
 
-        @keyframes googleGradientFlow {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-
-        @keyframes googleAuraPulse {
-            0%, 100% {
-                opacity: 0.65;
-                transform: scale(0.99);
-                filter: blur(12px);
-            }
-            50% {
-                opacity: 0.95;
-                transform: scale(1.02);
-                filter: blur(18px);
-            }
-        }
-
-        @keyframes googleShimmerSweep {
-            0% {
-                transform: translateX(-160%) skewX(-20deg);
-            }
-            30%, 100% {
-                transform: translateX(260%) skewX(-20deg);
-            }
-        }
-
+        /* Google 1-Click Clean Button */
         .google-auth-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 100%;
-            margin-top: 4px;
-            margin-bottom: 8px;
             position: relative;
         }
 
@@ -577,119 +324,43 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2px;
-            border-radius: 9999px;
-            background: linear-gradient(
-                90deg,
-                #4285F4 0%,
-                #EA4335 25%,
-                #FBBC05 50%,
-                #34A853 75%,
-                #4285F4 100%
-            );
-            background-size: 300% 300%;
-            animation: googleGradientFlow 5s ease infinite;
-            box-shadow: 0 4px 20px -2px rgba(66, 133, 244, 0.4), 0 2px 10px rgba(0, 0, 0, 0.45);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            max-width: 400px;
             width: 100%;
             box-sizing: border-box;
             cursor: pointer;
             user-select: none;
         }
 
-        .fancy-google-box:hover {
-            transform: translateY(-2px) scale(1.015);
-            box-shadow: 0 10px 30px -2px rgba(66, 133, 244, 0.65), 
-                        0 0 25px rgba(52, 168, 83, 0.45),
-                        0 0 16px rgba(234, 67, 53, 0.35);
-            animation-duration: 2.5s;
-        }
-
-        .fancy-google-box:active {
-            transform: translateY(0.5px) scale(0.99);
-        }
-
-        .fancy-google-aura {
-            position: absolute;
-            inset: -2px;
-            border-radius: 9999px;
-            background: linear-gradient(
-                90deg,
-                rgba(66, 133, 244, 0.5) 0%,
-                rgba(234, 67, 53, 0.45) 25%,
-                rgba(251, 188, 5, 0.45) 50%,
-                rgba(52, 168, 83, 0.5) 75%,
-                rgba(66, 133, 244, 0.5) 100%
-            );
-            background-size: 300% 300%;
-            animation: googleGradientFlow 5s ease infinite, googleAuraPulse 3.5s ease-in-out infinite;
-            filter: blur(10px);
-            opacity: 0.55;
-            z-index: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease, filter 0.3s ease;
-        }
-
-        .fancy-google-box:hover .fancy-google-aura {
-            opacity: 0.85;
-            filter: blur(14px);
-        }
-
         .google-btn-container {
-            position: relative;
-            z-index: 2;
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 9999px;
-            overflow: visible;
-            background: #0d1322;
             box-sizing: border-box;
         }
 
         .fancy-google-fallback-btn {
-            position: relative;
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            background: linear-gradient(180deg, #172033 0%, #0d1322 100%);
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.04);
             color: #ffffff;
-            border: none;
-            border-radius: 9999px;
-            padding: 9px 16px 9px 12px;
-            font-size: 0.86rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), inset 0 -1px 2px rgba(0, 0, 0, 0.6);
-            transition: all 0.25s ease;
-            overflow: hidden;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease;
         }
 
         .fancy-google-fallback-btn:hover {
-            background: linear-gradient(180deg, #1d2840 0%, #101729 100%);
-        }
-
-        /* Diagonal dynamic shimmer sweep across button */
-        .fancy-google-fallback-btn::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(
-                60deg,
-                transparent 40%,
-                rgba(255, 255, 255, 0.14) 50%,
-                transparent 60%
-            );
-            transform: translateX(-160%) skewX(-20deg);
-            animation: googleShimmerSweep 4.5s ease-in-out infinite;
-            pointer-events: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(249, 115, 22, 0.35);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
         }
 
         .google-icon-wrapper {
@@ -697,16 +368,11 @@
             align-items: center;
             justify-content: center;
             background: #ffffff;
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
             border-radius: 50%;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.25);
-            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .fancy-google-box:hover .google-icon-wrapper {
-            transform: scale(1.1) rotate(6deg);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
 
         .google-btn-text-group {
@@ -718,48 +384,40 @@
         }
 
         .google-btn-label {
-            font-size: 0.86rem;
+            font-size: 0.84rem;
             font-weight: 650;
             color: #ffffff;
             letter-spacing: 0.01em;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
 
         .google-pill-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            border-radius: 9999px;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             font-weight: 700;
-            letter-spacing: 0.02em;
+            padding: 2px 7px;
+            border-radius: 20px;
+            background: rgba(249, 115, 22, 0.15);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            color: #fb923c;
             text-transform: uppercase;
-            background: rgba(66, 133, 244, 0.2);
-            border: 1px solid rgba(66, 133, 244, 0.4);
-            color: #93c5fd;
-            margin-left: auto;
-            white-space: nowrap;
+            letter-spacing: 0.04em;
+            display: flex;
+            align-items: center;
+            gap: 3px;
         }
 
-        .google-pill-badge.google-pill-badge-green {
-            background: rgba(16, 185, 129, 0.2);
-            border: 1px solid rgba(16, 185, 129, 0.4);
-            color: #6ee7b7;
-        }
-
-        .google-btn-container iframe {
-            max-width: 100% !important;
-            cursor: pointer !important;
+        .google-pill-badge-green {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
         }
 
         .google-auth-feedback {
             width: 100%;
             box-sizing: border-box;
-            margin-top: 8px;
-            padding: 8px 12px;
+            margin-top: 6px;
+            padding: 7px 10px;
             border-radius: 8px;
-            font-size: 0.76rem;
+            font-size: 0.74rem;
             display: none;
             align-items: center;
             gap: 8px;
@@ -786,6 +444,266 @@
             border: 1px solid rgba(16, 185, 129, 0.35);
             color: #34d399;
         }
+
+        /* Auxiliary Rows */
+        .auth-remember-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.74rem;
+        }
+
+        .auth-remember-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #cbd5e1;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .auth-remember-label input {
+            accent-color: var(--accent-orange);
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .auth-secure-badge {
+            color: #10b981;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+        }
+
+        .auth-forgot-link {
+            font-size: 0.74rem;
+            color: #fb923c;
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .auth-forgot-link:hover {
+            color: #fdba74;
+            text-decoration: underline;
+        }
+
+        .auth-bottom-switch {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.76rem;
+            color: var(--text-dim);
+        }
+
+        .auth-bottom-switch a {
+            color: #fb923c;
+            font-weight: 700;
+            margin-left: 3px;
+            text-decoration: none;
+        }
+
+        .auth-bottom-switch a:hover {
+            color: #fdba74;
+            text-decoration: underline;
+        }
+
+        .auth-trust-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 14px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 12px;
+        }
+
+        .auth-trust-footer i {
+            color: #10b981;
+            font-size: 0.72rem;
+        }
+
+        .form-grid-two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .auth-terms-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+            font-size: 0.74rem;
+            color: var(--text-muted);
+        }
+
+        .auth-terms-row input {
+            accent-color: var(--accent-orange);
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .auth-terms-row a {
+            color: #fb923c;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-error-banner {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .auth-error-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #f87171;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .auth-error-sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .btn-reset-pw-quick {
+            padding: 5px 10px;
+            font-size: 0.74rem;
+            background: #ef4444;
+            border: 1px solid #dc2626;
+            color: white;
+            border-radius: 7px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Mobile View: Fixed, zero scrolling */
+        @media (max-width: 860px) {
+            html, body {
+                overflow: hidden !important;
+                height: 100% !important;
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+                position: fixed !important;
+                width: 100% !important;
+                left: 0 !important;
+                top: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                touch-action: pan-y;
+            }
+            body {
+                height: 100% !important;
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+                padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+            .auth-container {
+                max-width: 385px !important;
+                padding: 14px 16px 10px 16px !important;
+                border-radius: 18px !important;
+                max-height: calc(100dvh - 12px) !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none !important;
+            }
+            .auth-container::-webkit-scrollbar {
+                display: none !important;
+            }
+            .auth-brand-logo {
+                width: 32px !important;
+                height: 32px !important;
+                border-radius: 8px !important;
+                font-size: 0.95rem !important;
+                margin-bottom: 5px !important;
+            }
+            .auth-brand-title {
+                font-size: 1.15rem !important;
+            }
+            .auth-brand-subtitle {
+                font-size: 0.62rem !important;
+                margin-bottom: 10px !important;
+            }
+            .auth-tabs-wrapper {
+                margin-bottom: 10px !important;
+                padding: 2px !important;
+            }
+            .auth-tab-btn {
+                padding: 6px 10px !important;
+                font-size: 0.78rem !important;
+            }
+            .fancy-google-fallback-btn {
+                padding: 6px 12px !important;
+                font-size: 0.8rem !important;
+                height: 36px !important;
+            }
+            .auth-divider {
+                margin: 8px 0 !important;
+                font-size: 0.64rem !important;
+            }
+            .form-input-container {
+                margin-bottom: 7px !important;
+            }
+            .form-input-container label {
+                font-size: 0.74rem !important;
+                margin-bottom: 2px !important;
+            }
+            .input-icon-box input {
+                height: 35px !important;
+                padding: 6px 10px 6px 32px !important;
+                font-size: 0.82rem !important;
+            }
+            .input-icon-box i.prefix-icon {
+                left: 10px !important;
+                font-size: 0.74rem !important;
+            }
+            .auth-remember-row, .auth-terms-row {
+                margin-bottom: 6px !important;
+                font-size: 0.72rem !important;
+            }
+            .btn-submit-auth {
+                height: 36px !important;
+                font-size: 0.84rem !important;
+                margin-top: 2px !important;
+            }
+            .auth-bottom-switch {
+                margin-top: 6px !important;
+                font-size: 0.72rem !important;
+            }
+            .auth-trust-footer {
+                margin-top: 10px !important;
+                padding-top: 8px !important;
+                font-size: 0.64rem !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -794,299 +712,209 @@
     <div class="ambient-orb orb-2"></div>
 
     <div class="auth-container">
-        <!-- Visual & Feature Showcase Panel -->
-        <div class="auth-left-preview">
-            <div>
-                <!-- Brand Identity -->
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
-                    <div style="width: 38px; height: 38px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);">
-                        <i class="fa-solid fa-chart-simple"></i>
-                    </div>
-                    <div>
-                        <div style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; color: #ffffff; line-height: 1.1;">SpendWise</div>
-                        <span style="font-size: 0.68rem; color: var(--accent-orange); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;">Intelligent Financial OS</span>
-                    </div>
-                </div>
-
-                <div class="auth-badge-pill">
-                    <i class="fa-solid fa-sparkles"></i> 2026 Enterprise Edition
-                </div>
-
-                <h1 class="auth-hero-title">
-                    Master your capital with <span>real-time intelligence</span>.
-                </h1>
-                <p class="auth-hero-desc">
-                    Personal expense tracking, automated category pacing, subscriptions hub, and instant PDF audits.
-                </p>
-
-                <!-- Feature Highlights -->
-                <div style="display: flex; flex-direction: column; gap: 9px; margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 9px 12px;">
-                        <div style="width: 28px; height: 28px; border-radius: 7px; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.35); display: flex; align-items: center; justify-content: center; color: #fb923c; font-size: 0.8rem; flex-shrink: 0;">
-                            <i class="fa-solid fa-file-csv"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.76rem; font-weight: 700; color: #ffffff;">Bank Statement & CSV Import</div>
-                            <div style="font-size: 0.67rem; color: var(--text-muted);">Auto-parse transactions with zero manual entry</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 9px 12px;">
-                        <div style="width: 28px; height: 28px; border-radius: 7px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); display: flex; align-items: center; justify-content: center; color: #60a5fa; font-size: 0.8rem; flex-shrink: 0;">
-                            <i class="fa-solid fa-chart-line"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.76rem; font-weight: 700; color: #ffffff;">Intelligent Spending Analytics</div>
-                            <div style="font-size: 0.67rem; color: var(--text-muted);">Real-time burn rate, category pacing & health scores</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 9px 12px;">
-                        <div style="width: 28px; height: 28px; border-radius: 7px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; color: #34d399; font-size: 0.8rem; flex-shrink: 0;">
-                            <i class="fa-solid fa-file-pdf"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.76rem; font-weight: 700; color: #ffffff;">Executive Financial PDF Audits</div>
-                            <div style="font-size: 0.67rem; color: var(--text-muted);">One-click report generation with full itemization</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Enterprise Grade Security Callout -->
-                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.08) 100%); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 36px; height: 36px; border-radius: 9px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1rem; flex-shrink: 0;">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.76rem; font-weight: 700; color: #ffffff;">Bank-Grade Data Privacy</div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px;">100% private user data isolation & encrypted authentication</div>
-                    </div>
-                </div>
+        <!-- Brand Header -->
+        <div class="auth-header">
+            <div class="auth-brand-logo">
+                <i class="fa-solid fa-chart-simple"></i>
             </div>
-
-            <!-- Footer Security Guarantee -->
-            <div style="font-size: 0.72rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px; margin-top: 14px;">
-                <i class="fa-solid fa-lock" style="color: #10b981; font-size: 0.72rem;"></i>
-                <span>Bank-grade bcrypt hashing • SQLite WAL persistence</span>
-            </div>
+            <h1 class="auth-brand-title">SpendWise</h1>
+            <p class="auth-brand-subtitle">Intelligent Financial OS</p>
         </div>
 
-        <!-- Right Form Panel -->
-        <div class="auth-right-form">
-            <!-- Mobile Brand Header (Visible only on mobile devices where left showcase is hidden) -->
-            <div class="auth-mobile-brand" style="display: none; align-items: center; justify-content: center; gap: 10px; margin-bottom: 18px;">
-                <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 9px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.05rem; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);">
-                    <i class="fa-solid fa-chart-simple"></i>
-                </div>
-                <div style="display: flex; flex-direction: column;">
-                    <span style="font-size: 1.25rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; line-height: 1.1;">SpendWise</span>
-                    <span style="font-size: 0.65rem; color: var(--accent-orange); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;">Intelligent Financial OS</span>
-                </div>
-            </div>
+        <!-- Navigation Tabs -->
+        <div class="auth-tabs-wrapper">
+            <button type="button" class="auth-tab-btn {{ 'active' if active_tab != 'register' else '' }}" onclick="switchTab('login')">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+            </button>
+            <button type="button" class="auth-tab-btn {{ 'active' if active_tab == 'register' else '' }}" onclick="switchTab('register')">
+                <i class="fa-solid fa-user-plus"></i> Create Account
+            </button>
+        </div>
 
-            <!-- Navigation Tabs -->
-            <div class="auth-tabs-wrapper">
-                <button type="button" class="auth-tab-btn {{ 'active' if active_tab != 'register' else '' }}" onclick="switchTab('login')">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
-                </button>
-                <button type="button" class="auth-tab-btn {{ 'active' if active_tab == 'register' else '' }}" onclick="switchTab('register')">
-                    <i class="fa-solid fa-user-plus"></i> Create Account
-                </button>
-            </div>
-
-            <!-- Flash Alerts -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div style="margin-bottom: 12px;">
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }}" style="padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-circle-exclamation"></i>
-                                <span>{{ message }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-
-            <!-- LOGIN PANEL -->
-            <div id="login-panel" class="{{ 'panel-active' if active_tab != 'register' else 'panel-hidden' }}">
-                <div style="margin-bottom: 14px;">
-                    <h2 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 3px;">Welcome Back 👋</h2>
-                    <p style="font-size: 0.8rem; color: var(--text-muted);">Enter your credentials to access your financial OS.</p>
-                </div>
-
-                <form id="loginForm" action="{{ url_for('login') }}" method="POST">
-                    <input type="hidden" name="client_budget" id="loginClientBudget">
-                    <input type="hidden" name="client_budget_set" id="loginClientBudgetSet">
-                    <div class="form-input-container">
-                        <label for="login-email">Email Address</label>
-                        <div class="input-icon-box">
-                            <input type="email" id="login-email" name="email" value="{{ email or '' }}" placeholder="name@company.com" required>
-                            <i class="fa-regular fa-envelope prefix-icon"></i>
+        <!-- Flash Alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div style="margin-bottom: 10px;">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" style="padding: 7px 10px; border-radius: 8px; font-size: 0.76rem; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>{{ message }}</span>
                         </div>
-                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
-                    <div class="form-input-container">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <label for="login-password" style="margin: 0;">Password</label>
-                            <a href="{{ url_for('reset_password') }}" onclick="goToResetPassword(); return false;" style="font-size: 0.76rem; color: #fb923c; font-weight: 700;">Forgot?</a>
-                        </div>
-                        <div class="input-icon-box">
-                            <input type="password" id="login-password" name="password" value="" placeholder="••••••••" required>
-                            <i class="fa-solid fa-lock prefix-icon"></i>
-                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Show/Hide password">
-                                <i class="fa-regular fa-eye"></i>
+        <!-- LOGIN PANEL -->
+        <div id="login-panel" class="{{ 'panel-active' if active_tab != 'register' else 'panel-hidden' }}">
+            <!-- Fast Google 1-Click Button -->
+            <div class="google-auth-wrapper">
+                <div class="fancy-google-box" title="Sign in with your Google account">
+                    <div class="google-btn-container">
+                        <div id="googleSignInBtnLogin" style="width: 100%; display: flex; justify-content: center; align-items: center; min-height: 40px;">
+                            <button type="button" class="fancy-google-fallback-btn" onclick="handleCustomGoogleClick('login')">
+                                <div class="google-btn-text-group">
+                                    <div class="google-icon-wrapper">
+                                        <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                    </div>
+                                    <span class="google-btn-label">Continue with Google</span>
+                                </div>
+                                <span class="google-pill-badge"><i class="fa-solid fa-bolt"></i> Fast</span>
                             </button>
                         </div>
                     </div>
-
-                    {% if incorrect_pw %}
-                    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 10px; padding: 11px 13px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                        <div>
-                            <div style="font-size: 0.78rem; font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Incorrect Password
-                            </div>
-                            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
-                                Would you like to reset your password?
-                            </div>
-                        </div>
-                        <a href="{{ url_for('reset_password') }}?email={{ email|urlencode }}" class="btn-outline" style="padding: 6px 14px; font-size: 0.75rem; background: #ef4444; border: 1px solid #dc2626; color: white; border-radius: 8px; font-weight: 700; text-decoration: none; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(239, 68, 68, 0.4);">
-                            <i class="fa-solid fa-key"></i> Reset Password
-                        </a>
-                    </div>
-                    {% endif %}
-
-                    <div class="auth-remember-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-                        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #cbd5e1; font-weight: 600; cursor: pointer;">
-                            <input type="checkbox" id="remember-me" checked style="accent-color: var(--accent-orange); width: 14px; height: 14px; border-radius: 3px;">
-                            Remember device
-                        </label>
-                        <span style="font-size: 0.72rem; color: #10b981; display: flex; align-items: center; gap: 4px;">
-                            <i class="fa-solid fa-circle-check"></i> SSL Secure
-                        </span>
-                    </div>
-
-                    <button type="submit" class="btn-submit-auth" id="loginSubmitBtn">
-                        <span>Sign In to SpendWise</span>
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </form>
-
-                <div class="auth-divider">
-                    <span>or continue with</span>
                 </div>
-
-                <!-- Google Sign-In Button at Bottom -->
-                <div class="google-auth-wrapper">
-                    <div class="fancy-google-box" title="Sign in with your Google account">
-                        <div class="fancy-google-aura"></div>
-                        <div class="google-btn-container">
-                            <div id="googleSignInBtnLogin" style="width: 100%; display: flex; justify-content: center; align-items: center; min-height: 44px;">
-                                <button type="button" class="fancy-google-fallback-btn" onclick="handleCustomGoogleClick('login')">
-                                    <div class="google-btn-text-group">
-                                        <div class="google-icon-wrapper">
-                                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                                        </div>
-                                        <span class="google-btn-label">Continue with Google</span>
-                                    </div>
-                                    <span class="google-pill-badge"><i class="fa-solid fa-bolt"></i> Fast</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="google-auth-feedback" id="googleFeedbackLogin"></div>
-                </div>
-
-                <div class="auth-bottom-switch" style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
-                    Don't have an account yet? 
-                    <a href="javascript:void(0)" onclick="switchTab('register')" style="color: var(--accent-orange); font-weight: 700; margin-left: 3px;">Create account</a>
-                </div>
+                <div class="google-auth-feedback" id="googleFeedbackLogin"></div>
             </div>
 
-            <!-- REGISTER PANEL -->
-            <div id="register-panel" class="{{ 'panel-active' if active_tab == 'register' else 'panel-hidden' }}">
-                <div style="margin-bottom: 12px;">
-                    <h2 style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 2px;">Create Account 🚀</h2>
-                    <p style="font-size: 0.78rem; color: var(--text-muted);">Start tracking and optimizing your net capital today.</p>
-                </div>
-
-                <form id="registerForm" action="{{ url_for('register') }}" method="POST">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div class="form-input-container">
-                            <label for="reg-name">Full Name</label>
-                            <div class="input-icon-box">
-                                <input type="text" id="reg-name" name="name" value="{{ name or '' }}" placeholder="Your Full Name" required>
-                                <i class="fa-regular fa-user prefix-icon"></i>
-                            </div>
-                        </div>
-
-                        <div class="form-input-container">
-                            <label for="reg-email">Email Address</label>
-                            <div class="input-icon-box">
-                                <input type="email" id="reg-email" name="email" value="{{ email or '' }}" placeholder="name@company.com" required>
-                                <i class="fa-regular fa-envelope prefix-icon"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div class="form-input-container">
-                            <label for="reg-password">Password</label>
-                            <div class="input-icon-box">
-                                <input type="password" id="reg-password" name="password" placeholder="••••••••" required>
-                                <i class="fa-solid fa-lock prefix-icon"></i>
-                            </div>
-                        </div>
-                        <div class="form-input-container">
-                            <label for="reg-confirm">Confirm</label>
-                            <div class="input-icon-box">
-                                <input type="password" id="reg-confirm" name="confirm_password" placeholder="••••••••" required>
-                                <i class="fa-solid fa-shield-halved prefix-icon"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="auth-terms-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-                        <input type="checkbox" id="terms-agree" required checked style="accent-color: var(--accent-orange); width: 14px; height: 14px;">
-                        <label for="terms-agree" style="font-size: 0.76rem; color: var(--text-muted); cursor: pointer;">
-                            I accept the <a href="javascript:void(0)" style="color: var(--accent-orange);">Terms</a> & <a href="javascript:void(0)" style="color: var(--accent-orange);">Privacy Policy</a>
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn-submit-auth">
-                        <span>Create SpendWise Account</span>
-                        <i class="fa-solid fa-user-check"></i>
-                    </button>
-                </form>
-
-                <div class="auth-divider">
-                    <span>or sign up with</span>
-                </div>
-
-                <!-- Google Sign-Up Button at Bottom -->
-                <div class="google-auth-wrapper">
-                    <div class="fancy-google-box" title="Sign up with your Google account">
-                        <div class="fancy-google-aura"></div>
-                        <div class="google-btn-container">
-                            <div id="googleSignInBtnRegister" style="width: 100%; display: flex; justify-content: center; align-items: center; min-height: 44px;">
-                                <button type="button" class="fancy-google-fallback-btn" onclick="handleCustomGoogleClick('register')">
-                                    <div class="google-btn-text-group">
-                                        <div class="google-icon-wrapper">
-                                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                                        </div>
-                                        <span class="google-btn-label">Sign up with Google</span>
-                                    </div>
-                                    <span class="google-pill-badge google-pill-badge-green"><i class="fa-solid fa-shield-halved"></i> 1-Click</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="google-auth-feedback" id="googleFeedbackRegister"></div>
-                </div>
-
-                <div class="auth-bottom-switch" style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
-                    Already have an account? 
-                    <a href="javascript:void(0)" onclick="switchTab('login')" style="color: var(--accent-orange); font-weight: 700; margin-left: 3px;">Sign In</a>
-                </div>
+            <div class="auth-divider">
+                <span>or continue with email</span>
             </div>
+
+            <form id="loginForm" action="{{ url_for('login') }}" method="POST">
+                <input type="hidden" name="client_budget" id="loginClientBudget">
+                <input type="hidden" name="client_budget_set" id="loginClientBudgetSet">
+                
+                <div class="form-input-container">
+                    <label for="login-email">Email Address</label>
+                    <div class="input-icon-box">
+                        <input type="email" id="login-email" name="email" value="{{ email or '' }}" placeholder="name@company.com" required autocomplete="email">
+                        <i class="fa-regular fa-envelope prefix-icon"></i>
+                    </div>
+                </div>
+
+                <div class="form-input-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <label for="login-password" style="margin: 0;">Password</label>
+                        <a href="{{ url_for('reset_password') }}" onclick="goToResetPassword(); return false;" class="auth-forgot-link">Forgot?</a>
+                    </div>
+                    <div class="input-icon-box">
+                        <input type="password" id="login-password" name="password" value="" placeholder="••••••••" required autocomplete="current-password">
+                        <i class="fa-solid fa-lock prefix-icon"></i>
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Show/Hide password">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                {% if incorrect_pw %}
+                <div class="auth-error-banner">
+                    <div>
+                        <div class="auth-error-title"><i class="fa-solid fa-triangle-exclamation"></i> Incorrect Password</div>
+                        <div class="auth-error-sub">Need to reset your password?</div>
+                    </div>
+                    <a href="{{ url_for('reset_password') }}?email={{ email|urlencode }}" class="btn-reset-pw-quick">
+                        <i class="fa-solid fa-key"></i> Reset
+                    </a>
+                </div>
+                {% endif %}
+
+                <div class="auth-remember-row">
+                    <label class="auth-remember-label">
+                        <input type="checkbox" id="remember-me" checked>
+                        <span>Remember device</span>
+                    </label>
+                    <span class="auth-secure-badge">
+                        <i class="fa-solid fa-circle-check"></i> SSL Secure
+                    </span>
+                </div>
+
+                <button type="submit" class="btn-submit-auth" id="loginSubmitBtn">
+                    <span>Sign In to SpendWise</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="auth-bottom-switch">
+                Don't have an account yet? 
+                <a href="javascript:void(0)" onclick="switchTab('register')">Create account</a>
+            </div>
+        </div>
+
+        <!-- REGISTER PANEL -->
+        <div id="register-panel" class="{{ 'panel-active' if active_tab == 'register' else 'panel-hidden' }}">
+            <!-- Fast Google 1-Click Button -->
+            <div class="google-auth-wrapper">
+                <div class="fancy-google-box" title="Sign up with your Google account">
+                    <div class="google-btn-container">
+                        <div id="googleSignInBtnRegister" style="width: 100%; display: flex; justify-content: center; align-items: center; min-height: 40px;">
+                            <button type="button" class="fancy-google-fallback-btn" onclick="handleCustomGoogleClick('register')">
+                                <div class="google-btn-text-group">
+                                    <div class="google-icon-wrapper">
+                                        <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                    </div>
+                                    <span class="google-btn-label">Sign up with Google</span>
+                                </div>
+                                <span class="google-pill-badge google-pill-badge-green"><i class="fa-solid fa-shield-halved"></i> 1-Click</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="google-auth-feedback" id="googleFeedbackRegister"></div>
+            </div>
+
+            <div class="auth-divider">
+                <span>or continue with email</span>
+            </div>
+
+            <form id="registerForm" action="{{ url_for('register') }}" method="POST">
+                <div class="form-grid-two">
+                    <div class="form-input-container">
+                        <label for="reg-name">Full Name</label>
+                        <div class="input-icon-box">
+                            <input type="text" id="reg-name" name="name" value="{{ name or '' }}" placeholder="Your Name" required autocomplete="name">
+                            <i class="fa-regular fa-user prefix-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-input-container">
+                        <label for="reg-email">Email Address</label>
+                        <div class="input-icon-box">
+                            <input type="email" id="reg-email" name="email" value="{{ email or '' }}" placeholder="name@company.com" required autocomplete="email">
+                            <i class="fa-regular fa-envelope prefix-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid-two">
+                    <div class="form-input-container">
+                        <label for="reg-password">Password</label>
+                        <div class="input-icon-box">
+                            <input type="password" id="reg-password" name="password" placeholder="••••••••" required autocomplete="new-password">
+                            <i class="fa-solid fa-lock prefix-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-input-container">
+                        <label for="reg-confirm">Confirm</label>
+                        <div class="input-icon-box">
+                            <input type="password" id="reg-confirm" name="confirm_password" placeholder="••••••••" required autocomplete="new-password">
+                            <i class="fa-solid fa-shield-halved prefix-icon"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-terms-row">
+                    <input type="checkbox" id="terms-agree" required checked>
+                    <label for="terms-agree">
+                        I accept the <a href="javascript:void(0)">Terms</a> & <a href="javascript:void(0)">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-submit-auth">
+                    <span>Create SpendWise Account</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="auth-bottom-switch">
+                Already have an account? 
+                <a href="javascript:void(0)" onclick="switchTab('login')">Sign In</a>
+            </div>
+        </div>
+
+        <!-- Trust Footer -->
+        <div class="auth-trust-footer">
+            <i class="fa-solid fa-lock"></i>
+            <span>Bank-grade 256-bit encryption • SQLite WAL persistence</span>
         </div>
     </div>
 
@@ -1122,16 +950,18 @@
             const icon = btn.querySelector('i');
             if (input.type === 'password') {
                 input.type = 'text';
-                icon.className = 'fa-regular fa-eye-slash';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
             } else {
                 input.type = 'password';
-                icon.className = 'fa-regular fa-eye';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
         }
 
-        /* ========================================================
-           GOOGLE IDENTITY SERVICES CLIENT INTEGRATION
-           ======================================================== */
+        // ==========================================
+        // GOOGLE IDENTITY SERVICES (ONE-TAP & BUTTON)
+        // ==========================================
         const GOOGLE_CLIENT_ID = "{{ google_client_id or '' }}";
 
         function handleGoogleCredentialResponse(response) {
@@ -1158,38 +988,40 @@
             })
             .then(async (res) => {
                 const data = await res.json();
-                if (!res.ok || !data.success) {
-                    throw new Error(data.message || 'Google authentication failed.');
+                if (res.ok && data.success) {
+                    showGoogleFeedback('Welcome, ' + (data.user ? data.user.name : '') + '! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect || "{{ url_for('dashboard') }}";
+                    }, 400);
+                } else {
+                    showGoogleFeedback(data.message || 'Google authentication failed.', 'error');
                 }
-                showGoogleFeedback('Login successful! Redirecting to SpendWise...', 'success');
-                const targetUrl = data.redirect_url || "{{ url_for('dashboard') }}";
-                window.location.replace(targetUrl);
             })
-            .catch((err) => {
-                console.error('Google Auth Error:', err);
-                showGoogleFeedback(err.message || 'Unable to authenticate with Google. Please try again.', 'error');
+            .catch(err => {
+                console.error("Google Auth Network Error:", err);
+                showGoogleFeedback('Network connection error during Google sign-in.', 'error');
             });
         }
 
         function showGoogleFeedback(msg, type) {
-            const feedbackEls = document.querySelectorAll('.google-auth-feedback');
-            feedbackEls.forEach(el => {
-                el.className = 'google-auth-feedback ' + type;
-                let icon = '<i class="fa-solid fa-circle-exclamation"></i>';
-                if (type === 'loading') icon = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
-                if (type === 'success') icon = '<i class="fa-solid fa-circle-check"></i>';
-                el.innerHTML = icon + ' <span>' + msg + '</span>';
-                el.style.display = 'flex';
+            const feedbackLogin = document.getElementById('googleFeedbackLogin');
+            const feedbackRegister = document.getElementById('googleFeedbackRegister');
+            [feedbackLogin, feedbackRegister].forEach(el => {
+                if (el) {
+                    el.className = 'google-auth-feedback ' + type;
+                    el.innerHTML = (type === 'loading' ? '<i class="fa-solid fa-spinner fa-spin"></i>' : 
+                                   type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : 
+                                   '<i class="fa-solid fa-circle-exclamation"></i>') + ' <span>' + msg + '</span>';
+                }
             });
         }
 
         function handleGoogleTokenResponse(tokenResponse) {
             if (!tokenResponse || !tokenResponse.access_token) {
-                showGoogleFeedback('Google sign-in was cancelled or encountered an error.', 'error');
+                showGoogleFeedback('Google authentication was cancelled.', 'error');
                 return;
             }
-
-            showGoogleFeedback('Verifying Google credentials...', 'loading');
+            showGoogleFeedback('Verifying Google profile...', 'loading');
 
             const savedBudget = localStorage.getItem('spendwise_budget') || '';
             const isBudgetSet = localStorage.getItem('spendwise_budget_set') || '';
@@ -1207,77 +1039,66 @@
             })
             .then(async (res) => {
                 const data = await res.json();
-                if (!res.ok || !data.success) {
-                    throw new Error(data.message || 'Google authentication failed.');
+                if (res.ok && data.success) {
+                    showGoogleFeedback('Welcome back! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect || "{{ url_for('dashboard') }}";
+                    }, 400);
+                } else {
+                    showGoogleFeedback(data.message || 'Google authentication failed.', 'error');
                 }
-                showGoogleFeedback('Login successful! Redirecting to SpendWise...', 'success');
-                const targetUrl = data.redirect_url || "{{ url_for('dashboard') }}";
-                window.location.replace(targetUrl);
             })
-            .catch((err) => {
-                console.error('Google Auth Error:', err);
-                showGoogleFeedback(err.message || 'Unable to authenticate with Google. Please try again.', 'error');
+            .catch(err => {
+                console.error("Google OAuth token error:", err);
+                showGoogleFeedback('Network error verifying Google account.', 'error');
             });
         }
 
+        let tokenClient = null;
+
         function handleCustomGoogleClick(type) {
-            showGoogleFeedback('Connecting to Google...', 'loading');
+            if (!GOOGLE_CLIENT_ID) {
+                handleGoogleNotConfigured();
+                return;
+            }
 
-            // 1. Try Google OAuth2 Token Client popup (instant account chooser window)
-            if (window.google && window.google.accounts && window.google.accounts.oauth2 && GOOGLE_CLIENT_ID) {
+            if (window.google && window.google.accounts && window.google.accounts.oauth2) {
                 try {
-                    const tokenClient = google.accounts.oauth2.initTokenClient({
-                        client_id: GOOGLE_CLIENT_ID,
-                        scope: 'email profile openid',
-                        callback: handleGoogleTokenResponse
-                    });
-                    tokenClient.requestAccessToken();
+                    if (!tokenClient) {
+                        tokenClient = google.accounts.oauth2.initTokenClient({
+                            client_id: GOOGLE_CLIENT_ID,
+                            scope: 'openid email profile',
+                            callback: handleGoogleTokenResponse
+                        });
+                    }
+                    tokenClient.requestAccessToken({ prompt: 'select_account' });
                     return;
-                } catch (e) {
-                    console.warn('Google OAuth2 popup token error:', e);
+                } catch (err) {
+                    console.warn("OAuth2 tokenClient error, trying standard prompt:", err);
                 }
             }
 
-            // 2. Try Google One Tap prompt
-            if (window.google && window.google.accounts && window.google.accounts.id && GOOGLE_CLIENT_ID) {
-                try {
-                    google.accounts.id.prompt((notification) => {
-                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                            renderGoogleButtons();
-                            showGoogleFeedback('Please click the Google button directly to sign in.', 'error');
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        const btnContainer = type === 'register' ? 
+                            document.getElementById('googleSignInBtnRegister') : 
+                            document.getElementById('googleSignInBtnLogin');
+                        const iframeBtn = btnContainer ? btnContainer.querySelector('div[role="button"], iframe') : null;
+                        if (iframeBtn) {
+                            iframeBtn.click();
+                        } else {
+                            showGoogleFeedback('Please allow popups or select your Google account.', 'loading');
                         }
-                    });
-                    return;
-                } catch (e) {
-                    console.warn('Google prompt exception:', e);
-                }
+                    }
+                });
+            } else {
+                showGoogleFeedback('Google Services library is loading. Please try again in a moment.', 'loading');
             }
-
-            // 3. Fallback: Re-render official button and notify user
-            renderGoogleButtons();
-            showGoogleFeedback('Loading Google Sign-In, please try again in a moment...', 'loading');
         }
 
         function handleGoogleNotConfigured() {
-            // Disabled: Never show developer setup modals in production
-            console.info('Google Sign-In active.');
-        }
-
-        function closeGoogleModal() {
-            const modal = document.getElementById('googleSetupModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function copyOrigin(text, btn) {
-            navigator.clipboard.writeText(text).then(() => {
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-                btn.style.color = '#10b981';
-                setTimeout(() => {
-                    btn.innerHTML = orig;
-                    btn.style.color = '';
-                }, 1800);
-            });
+            showGoogleFeedback('Google Client ID is not configured on this server.', 'error');
         }
 
         function getOptimalGoogleWidth() {
@@ -1285,17 +1106,16 @@
                 const activeBox = document.querySelector('.panel-active .fancy-google-box') || 
                                   document.querySelector('.fancy-google-box');
                 if (activeBox && activeBox.clientWidth > 0) {
-                    return Math.min(390, Math.max(280, Math.floor(activeBox.clientWidth) - 8));
+                    return Math.min(390, Math.max(260, Math.floor(activeBox.clientWidth) - 4));
                 }
-                const formPanel = document.querySelector('.auth-right-form');
-                if (formPanel && formPanel.clientWidth > 0) {
-                    return Math.min(390, Math.max(280, Math.floor(formPanel.clientWidth) - 76));
+                const container = document.querySelector('.auth-container');
+                if (container && container.clientWidth > 0) {
+                    return Math.min(390, Math.max(260, Math.floor(container.clientWidth) - 52));
                 }
             } catch (e) {}
-            return 385;
+            return 360;
         }
 
-        // Initialize Google Identity Services buttons on page load with deferred retries
         function renderGoogleButtons() {
             if (GOOGLE_CLIENT_ID && window.google && window.google.accounts && window.google.accounts.id) {
                 try {
