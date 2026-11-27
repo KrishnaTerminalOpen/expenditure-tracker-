@@ -760,10 +760,188 @@
             // 4. Reset form fields for next entry
             form.reset();
 
-            // 5. Temporary ID for optimistic row insertion
+            // 5. Temporary ID for optimistic insertions
             const tempId = 'temp_' + Date.now();
 
-            // 6. If on Expenses table, optimistically inject the row instantly
+            // Category dots mapping
+            const catClasses = {
+                'Food & Dining': 'cat-dot-food',
+                'Shopping': 'cat-dot-shopping',
+                'Transport': 'cat-dot-transport',
+                'Bills & Utilities': 'cat-dot-bills',
+                'Entertainment': 'cat-dot-entertainment',
+                'Education': 'cat-dot-education',
+                'Health': 'cat-dot-health'
+            };
+            const dotClass = catClasses[category] || 'cat-dot-others';
+
+            // Helper to smoothly animate number counters
+            function bumpCounter(element, increment) {
+                if (!element) return;
+                const current = parseFloat(element.getAttribute('data-target') || element.textContent.replace(/[^0-9.-]+/g, "") || '0');
+                const next = Math.max(0, current + increment);
+                element.setAttribute('data-target', next);
+
+                const duration = 500;
+                const startTime = performance.now();
+                function tick(now) {
+                    const progress = Math.min((now - startTime) / duration, 1);
+                    const ease = 1 - Math.pow(1 - progress, 3);
+                    const val = Math.round(current + (next - current) * ease);
+                    element.textContent = val.toLocaleString('en-IN');
+                    if (progress < 1) {
+                        requestAnimationFrame(tick);
+                    } else {
+                        element.textContent = Math.round(next).toLocaleString('en-IN');
+                    }
+                }
+                requestAnimationFrame(tick);
+            }
+
+            // 6. OPTIMISTIC UPDATE FOR DASHBOARD (0ms Instant Live Reaction!)
+            const dashTotal = document.getElementById('dashTotalExpenses');
+            if (dashTotal) {
+                // Instantly bump Total Expenses
+                bumpCounter(dashTotal, amountVal);
+
+                // Instantly bump Today's Expenses if date is today (or default)
+                const dashToday = document.getElementById('dashTodaysExpenses');
+                const todayStr = new Date().toISOString().slice(0, 10);
+                if (dashToday && (!rawDate || rawDate.startsWith(todayStr))) {
+                    bumpCounter(dashToday, amountVal);
+                }
+
+                // Instantly decrement Remaining Budget
+                const dashBudget = document.getElementById('dashRemainingBudget');
+                if (dashBudget) {
+                    bumpCounter(dashBudget, -amountVal);
+                }
+
+                // Update Remaining Budget subtext & percentage
+                const dashBudgetSub = document.getElementById('dashBudgetUsedSub');
+                if (dashBudgetSub) {
+                    const monthlyBudget = parseFloat(dashBudgetSub.getAttribute('data-monthly-budget') || '0');
+                    if (monthlyBudget > 0) {
+                        const currentTotal = parseFloat(dashTotal.getAttribute('data-target') || '0') + amountVal;
+                        const pct = Math.round((currentTotal / monthlyBudget) * 100);
+                        const subSpan = dashBudgetSub.querySelector('span');
+                        if (subSpan) {
+                            subSpan.textContent = `${pct}% of ₹${Math.round(monthlyBudget).toLocaleString('en-IN')} used`;
+                        }
+                    }
+                }
+
+                // Increment Recorded Entries count
+                const dashTxn = document.getElementById('dashTxnCount');
+                if (dashTxn) {
+                    const currentCount = parseInt(dashTxn.getAttribute('data-count') || '0') + 1;
+                    dashTxn.setAttribute('data-count', currentCount);
+                    dashTxn.textContent = `${currentCount} recorded entries`;
+                }
+
+                // Optimistically prepend to Recent Transactions list
+                const recentList = document.getElementById('dashRecentTxnsList');
+                if (recentList) {
+                    const emptyNotice = recentList.querySelector('.fa-receipt');
+                    if (emptyNotice) {
+                        const emptyCard = emptyNotice.closest('div[style*="text-align: center"]');
+                        if (emptyCard) emptyCard.remove();
+                    }
+
+                    const itemDiv = document.createElement('div');
+                    itemDiv.id = `dash-txn-${tempId}`;
+                    itemDiv.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border-color); background: rgba(249, 115, 22, 0.18); border-radius: 8px; transition: background 1.6s ease;';
+
+                    itemDiv.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: var(--accent-orange);">
+                                <i class="fa-solid fa-receipt"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.82rem; font-weight: 600;">${escapeHtml(title)}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-dim);">
+                                    <span class="badge-dot-cat ${dotClass}" style="width: 6px; height: 6px;"></span> ${escapeHtml(category)} • ${escapeHtml(paymentMethod)}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.85rem; font-weight: 700; color: #ef4444;">-₹${Math.round(amountVal).toLocaleString('en-IN')}</div>
+                            <div style="font-size: 0.65rem; color: var(--text-dim);">Just now</div>
+                        </div>
+                    `;
+
+                    recentList.insertBefore(itemDiv, recentList.firstChild);
+
+                    // Keep max 5 items in recent list
+                    const items = recentList.querySelectorAll(':scope > div');
+                    if (items.length > 5) {
+                        items[items.length - 1].remove();
+                    }
+
+                    setTimeout(() => {
+                        itemDiv.style.background = '';
+                    }, 1600);
+                }
+
+                // Optimistically update Category Budget progress bar if exists
+                const catBudgetItem = document.querySelector(`.dash-budget-cat-item[data-cat-name="${category}"]`);
+                if (catBudgetItem) {
+                    const currentSpent = parseFloat(catBudgetItem.getAttribute('data-spent') || '0');
+                    const limitVal = parseFloat(catBudgetItem.getAttribute('data-limit') || '1');
+                    const newSpent = currentSpent + amountVal;
+                    catBudgetItem.setAttribute('data-spent', newSpent);
+                    const newPct = Math.min(100, Math.round((newSpent / (limitVal > 0 ? limitVal : 1)) * 100));
+                    const textSpan = catBudgetItem.querySelector('.dash-budget-cat-text');
+                    if (textSpan) {
+                        textSpan.textContent = `₹${Math.round(newSpent).toLocaleString('en-IN')} / ₹${Math.round(limitVal).toLocaleString('en-IN')}`;
+                    }
+                    const barDiv = catBudgetItem.querySelector('.dash-budget-cat-bar');
+                    if (barDiv) {
+                        barDiv.style.width = `${newPct}%`;
+                    }
+                }
+
+                // Optimistically update Category Donut Chart if present
+                if (window.categoryDonutChartInstance) {
+                    try {
+                        const chart = window.categoryDonutChartInstance;
+                        let catIdx = chart.data.labels.indexOf(category);
+                        if (catIdx !== -1) {
+                            chart.data.datasets[0].data[catIdx] += amountVal;
+                        } else {
+                            if (chart.data.labels.length === 1 && chart.data.labels[0] === 'No data') {
+                                chart.data.labels = [category];
+                                chart.data.datasets[0].data = [amountVal];
+                                chart.data.datasets[0].backgroundColor = ['#f97316'];
+                            } else {
+                                chart.data.labels.push(category);
+                                chart.data.datasets[0].data.push(amountVal);
+                                const pal = ['#f97316', '#ec4899', '#3b82f6', '#10b981', '#8b5cf6', '#64748b', '#6366f1', '#ef4444'];
+                                chart.data.datasets[0].backgroundColor.push(pal[chart.data.labels.length % pal.length]);
+                            }
+                        }
+                        chart.update('none');
+                    } catch (chartErr) {
+                        console.log("Chart donut note:", chartErr);
+                    }
+                }
+
+                // Optimistically update Monthly Trend Chart if present
+                if (window.monthlyTrendChartInstance) {
+                    try {
+                        const chart = window.monthlyTrendChartInstance;
+                        const dLen = chart.data.datasets[0].data.length;
+                        if (dLen > 0) {
+                            chart.data.datasets[0].data[dLen - 1] += amountVal;
+                            chart.update('none');
+                        }
+                    } catch (chartErr) {
+                        console.log("Chart trend note:", chartErr);
+                    }
+                }
+            }
+
+            // 7. If on Expenses table, optimistically inject the row instantly
             const tableBody = document.querySelector('.data-table tbody');
             let optimisticTr = null;
             if (tableBody) {
@@ -772,17 +950,6 @@
                     const parentRow = emptyCell.closest('tr');
                     if (parentRow) parentRow.remove();
                 }
-
-                const catClasses = {
-                    'Food & Dining': 'cat-dot-food',
-                    'Shopping': 'cat-dot-shopping',
-                    'Transport': 'cat-dot-transport',
-                    'Bills & Utilities': 'cat-dot-bills',
-                    'Entertainment': 'cat-dot-entertainment',
-                    'Education': 'cat-dot-education',
-                    'Health': 'cat-dot-health'
-                };
-                const dotClass = catClasses[category] || 'cat-dot-others';
 
                 optimisticTr = document.createElement('tr');
                 optimisticTr.id = `row-exp-${tempId}`;
@@ -830,7 +997,7 @@
                 }, 1600);
             }
 
-            // 7. Background asynchronous submission to Turso DB
+            // 8. Background asynchronous submission to Turso DB
             fetch('{{ url_for("add_expense") }}', {
                 method: 'POST',
                 body: formData,
@@ -858,8 +1025,9 @@
                         }
                     }
                 }
-                if (window.location.pathname.includes('/dashboard')) {
-                    setTimeout(() => window.location.reload(), 600);
+                // Only if the dashboard was in zero-data onboarding state, reload so the full metric cards grid renders
+                if (window.location.pathname.includes('/dashboard') && !document.getElementById('dashTotalExpenses')) {
+                    window.location.reload();
                 }
             })
             .catch(err => {

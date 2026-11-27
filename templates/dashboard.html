@@ -74,11 +74,11 @@
             </div>
         </div>
         <div class="kpi-value">
-            ₹ <span class="count-up" data-target="{{ total_expenses }}">0</span>
+            ₹ <span id="dashTotalExpenses" class="count-up" data-target="{{ total_expenses }}">0</span>
         </div>
         <div class="kpi-sub negative">
             <i class="fa-solid fa-arrow-trend-up"></i>
-            <span>{{ txn_count }} recorded entries</span>
+            <span id="dashTxnCount" data-count="{{ txn_count }}">{{ txn_count }} recorded entries</span>
         </div>
     </div>
 
@@ -91,7 +91,7 @@
             </div>
         </div>
         <div class="kpi-value">
-            ₹ <span class="count-up" data-target="{{ todays_expenses }}">0</span>
+            ₹ <span id="dashTodaysExpenses" class="count-up" data-target="{{ todays_expenses }}">0</span>
         </div>
         <div class="kpi-sub positive">
             <i class="fa-solid fa-clock"></i>
@@ -109,9 +109,9 @@
         </div>
         {% if monthly_budget > 0 %}
         <div class="kpi-value">
-            ₹ <span class="count-up" data-target="{{ remaining_budget }}">0</span>
+            ₹ <span id="dashRemainingBudget" class="count-up" data-target="{{ remaining_budget }}">0</span>
         </div>
-        <div class="kpi-sub" style="color: #6ee7b7;">
+        <div id="dashBudgetUsedSub" class="kpi-sub" style="color: #6ee7b7;" data-monthly-budget="{{ monthly_budget }}">
             <span>{{ ((total_expenses / monthly_budget) * 100)|round|int }}% of ₹{{ "{:,.0f}".format(monthly_budget) }} used</span>
         </div>
         {% else %}
@@ -134,9 +134,9 @@
                 <i class="fa-solid fa-utensils"></i>
             </div>
         </div>
-        <div class="kpi-value" style="font-size: 1.35rem;">{{ highest_category }}</div>
+        <div id="dashHighestCategory" class="kpi-value" style="font-size: 1.35rem;">{{ highest_category }}</div>
         <div class="kpi-sub" style="color: #fdba74;">
-            <span>₹ <span class="count-up" data-target="{{ highest_category_amount }}">0</span> ({{ ((highest_category_amount / (total_expenses if total_expenses > 0 else 1)) * 100)|round|int }}%)</span>
+            <span>₹ <span id="dashHighestCategoryAmt" class="count-up" data-target="{{ highest_category_amount }}">0</span> ({{ ((highest_category_amount / (total_expenses if total_expenses > 0 else 1)) * 100)|round|int }}%)</span>
         </div>
     </div>
 </div>
@@ -284,7 +284,7 @@
             <h3 style="font-size: 0.95rem; font-weight: 700;">Recent Transactions</h3>
             <a href="{{ url_for('expenses') }}" style="font-size: 0.75rem; color: var(--accent-orange);">View All</a>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div id="dashRecentTxnsList" style="display: flex; flex-direction: column; gap: 12px;">
             {% for t in recent_txns[:5] %}
             <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -323,21 +323,21 @@
             <h3 style="font-size: 0.95rem; font-weight: 700;">Budget Progress</h3>
             <a href="{{ url_for('budget') }}" style="font-size: 0.75rem; color: var(--accent-orange);">View All</a>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div id="dashBudgetProgressList" style="display: flex; flex-direction: column; gap: 14px;">
             {% if cat_budgets %}
                 {% for b in cat_budgets %}
                 {% set limit_val = b.budget_limit if b.budget_limit and b.budget_limit > 0 else 1 %}
                 {% set pct = [100, (((b.spent or 0) / limit_val) * 100)|round|int]|min %}
-                <div>
+                <div class="dash-budget-cat-item" data-cat-name="{{ b.name }}" data-limit="{{ b.budget_limit or 0 }}" data-spent="{{ b.spent or 0 }}">
                     <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px;">
                         <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
                             <span class="badge-dot-cat {{ b.name|cat_class }}"></span>
                             {{ b.name }}
                         </span>
-                        <span style="color: var(--text-dim);">₹{{ "{:,.0f}".format(b.spent or 0) }} / ₹{{ "{:,.0f}".format(b.budget_limit or 0) }}</span>
+                        <span class="dash-budget-cat-text" style="color: var(--text-dim);">₹{{ "{:,.0f}".format(b.spent or 0) }} / ₹{{ "{:,.0f}".format(b.budget_limit or 0) }}</span>
                     </div>
                     <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden;">
-                        <div style="height: 100%; width: {{ pct }}%; background: {{ b.color }}; border-radius: 10px;"></div>
+                        <div class="dash-budget-cat-bar" style="height: 100%; width: {{ pct }}%; background: {{ b.color }}; border-radius: 10px; transition: width 0.5s ease;"></div>
                     </div>
                 </div>
                 {% endfor %}
@@ -478,7 +478,7 @@
         orangeGradient.addColorStop(0, 'rgba(249, 115, 22, 0.35)');
         orangeGradient.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
 
-        new Chart(trendCtx, {
+        window.monthlyTrendChartInstance = new Chart(trendCtx, {
             type: 'line',
             data: {
                 labels: {{ trend_labels|tojson }},
@@ -541,7 +541,7 @@
             ? defaultColors.slice(0, {{ cat_labels|length }}) 
             : ['rgba(255,255,255,0.08)'];
 
-        new Chart(donutCtx, {
+        window.categoryDonutChartInstance = new Chart(donutCtx, {
             type: 'doughnut',
             data: {
                 labels: labels,

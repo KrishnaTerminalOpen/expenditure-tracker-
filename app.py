@@ -1281,12 +1281,16 @@ def add_expense():
     conn.commit()
     new_id = getattr(cur, 'lastrowid', None)
 
-    # Check category budget alert
+    # Check category budget alert (optimized single query)
     try:
-        cat = conn.execute("SELECT budget_limit FROM categories WHERE user_id = ? AND name = ?", (user['id'], category)).fetchone()
-        if cat and cat['budget_limit'] and float(cat['budget_limit']) > 0:
-            limit = float(cat['budget_limit'])
-            spent = conn.execute("SELECT SUM(amount) FROM expenses WHERE user_id = ? AND category = ?", (user['id'], category)).fetchone()[0] or 0.0
+        row = conn.execute("""
+            SELECT c.budget_limit, (SELECT COALESCE(SUM(amount), 0.0) FROM expenses WHERE user_id = ? AND category = ?) as spent
+            FROM categories c
+            WHERE c.user_id = ? AND c.name = ?
+        """, (user['id'], category, user['id'], category)).fetchone()
+        if row and row['budget_limit'] and float(row['budget_limit']) > 0:
+            limit = float(row['budget_limit'])
+            spent = float(row['spent'] or 0.0)
             if spent >= 0.8 * limit:
                 conn.execute("""
                     INSERT INTO notifications (user_id, title, message, type, is_read, created_at)
