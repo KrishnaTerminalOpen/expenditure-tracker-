@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SpendWise - Sign In & Registration</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23f97316'/><path d='M30 68V48M50 68V32M70 68V42' stroke='white' stroke-width='9' stroke-linecap='round'/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -315,38 +315,191 @@
 
         @media (max-width: 860px) {
             html, body {
-                overflow-y: auto;
-                height: auto;
-                min-height: 100%;
+                overflow: hidden !important;
+                height: 100% !important;
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+                position: fixed !important;
+                width: 100% !important;
+                left: 0 !important;
+                top: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                touch-action: pan-y;
             }
             body {
-                height: auto;
-                min-height: 100vh;
-                padding: 18px 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                height: 100% !important;
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+                padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
             }
             .auth-container {
-                flex-direction: column;
-                max-width: 440px;
-                width: 100%;
-                max-height: none;
-                border-radius: 18px;
-                margin: auto;
+                flex-direction: column !important;
+                max-width: 400px !important;
+                width: 100% !important;
+                max-height: calc(100dvh - 16px) !important;
+                border-radius: 16px !important;
+                margin: auto !important;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+                overflow: hidden !important;
             }
             /* Strictly hide the entire left preview showcase on mobile */
             .auth-left-preview {
                 display: none !important;
             }
             .auth-right-form {
-                padding: 24px 20px;
-                width: 100%;
-                flex: none;
-                border-radius: 18px;
+                padding: 14px 16px !important;
+                width: 100% !important;
+                flex: 1 1 auto !important;
+                border-radius: 16px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none !important;
+                box-sizing: border-box !important;
+            }
+            .auth-right-form::-webkit-scrollbar {
+                display: none !important;
             }
             .auth-mobile-brand {
                 display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 8px !important;
+                margin-bottom: 8px !important;
+            }
+            .auth-mobile-brand > div:first-child {
+                width: 28px !important;
+                height: 28px !important;
+                border-radius: 7px !important;
+                font-size: 0.88rem !important;
+            }
+            .auth-mobile-brand span:first-child {
+                font-size: 1.1rem !important;
+            }
+            .auth-mobile-brand span:last-child {
+                font-size: 0.58rem !important;
+            }
+            .auth-tabs-wrapper {
+                padding: 3px !important;
+                margin-bottom: 8px !important;
+                border-radius: 9px !important;
+            }
+            .auth-tab-btn {
+                padding: 6px 10px !important;
+                font-size: 0.78rem !important;
+                border-radius: 7px !important;
+            }
+            #login-panel > div:first-child,
+            #register-panel > div:first-child {
+                margin-bottom: 8px !important;
+            }
+            #login-panel h2,
+            #register-panel h2 {
+                font-size: 1.15rem !important;
+                margin-bottom: 2px !important;
+            }
+            #login-panel p,
+            #register-panel p {
+                font-size: 0.74rem !important;
+                line-height: 1.25 !important;
+            }
+            .form-input-container {
+                margin-bottom: 7px !important;
+            }
+            .form-input-container label {
+                font-size: 0.75rem !important;
+                margin-bottom: 2px !important;
+            }
+            .input-icon-box input {
+                padding: 7px 12px 7px 32px !important;
+                font-size: 0.82rem !important;
+                border-radius: 8px !important;
+                height: 36px !important;
+            }
+            .input-icon-box i.prefix-icon {
+                left: 10px !important;
+                font-size: 0.74rem !important;
+            }
+            .password-toggle-btn {
+                right: 9px !important;
+                font-size: 0.76rem !important;
+            }
+            .auth-remember-row,
+            .auth-terms-row {
+                margin-bottom: 7px !important;
+            }
+            .btn-submit-auth {
+                padding: 8px 12px !important;
+                font-size: 0.84rem !important;
+                margin-top: 3px !important;
+                border-radius: 8px !important;
+                height: 38px !important;
+            }
+            .auth-divider {
+                margin: 7px 0 !important;
+                font-size: 0.65rem !important;
+            }
+            .google-auth-wrapper {
+                margin-top: 1px !important;
+                margin-bottom: 3px !important;
+            }
+            .fancy-google-box {
+                max-width: 100% !important;
+                border-radius: 9999px !important;
+            }
+            #googleSignInBtnLogin,
+            #googleSignInBtnRegister {
+                min-height: 36px !important;
+            }
+            .fancy-google-fallback-btn {
+                padding: 6px 12px 6px 10px !important;
+                font-size: 0.78rem !important;
+                height: 36px !important;
+            }
+            .google-btn-label {
+                font-size: 0.78rem !important;
+            }
+            .google-pill-badge {
+                font-size: 0.62rem !important;
+                padding: 2px 6px !important;
+            }
+            .auth-bottom-switch {
+                margin-top: 7px !important;
+                font-size: 0.74rem !important;
+            }
+        }
+
+        @media (max-height: 680px) and (max-width: 860px) {
+            .auth-mobile-brand {
+                margin-bottom: 5px !important;
+            }
+            .auth-tabs-wrapper {
+                margin-bottom: 5px !important;
+            }
+            #login-panel > div:first-child,
+            #register-panel > div:first-child {
+                margin-bottom: 4px !important;
+            }
+            .form-input-container {
+                margin-bottom: 5px !important;
+            }
+            .btn-submit-auth {
+                height: 34px !important;
+                padding: 6px 10px !important;
+            }
+            .auth-divider {
+                margin: 5px 0 !important;
+            }
+            .auth-bottom-switch {
+                margin-top: 5px !important;
             }
         }
 
@@ -801,7 +954,7 @@
                     </div>
                     {% endif %}
 
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                    <div class="auth-remember-row" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
                         <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #cbd5e1; font-weight: 600; cursor: pointer;">
                             <input type="checkbox" id="remember-me" checked style="accent-color: var(--accent-orange); width: 14px; height: 14px; border-radius: 3px;">
                             Remember device
@@ -842,7 +995,7 @@
                     <div class="google-auth-feedback" id="googleFeedbackLogin"></div>
                 </div>
 
-                <div style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
+                <div class="auth-bottom-switch" style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
                     Don't have an account yet? 
                     <a href="javascript:void(0)" onclick="switchTab('register')" style="color: var(--accent-orange); font-weight: 700; margin-left: 3px;">Create account</a>
                 </div>
@@ -891,7 +1044,7 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+                    <div class="auth-terms-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
                         <input type="checkbox" id="terms-agree" required checked style="accent-color: var(--accent-orange); width: 14px; height: 14px;">
                         <label for="terms-agree" style="font-size: 0.76rem; color: var(--text-muted); cursor: pointer;">
                             I accept the <a href="javascript:void(0)" style="color: var(--accent-orange);">Terms</a> & <a href="javascript:void(0)" style="color: var(--accent-orange);">Privacy Policy</a>
@@ -929,7 +1082,7 @@
                     <div class="google-auth-feedback" id="googleFeedbackRegister"></div>
                 </div>
 
-                <div style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
+                <div class="auth-bottom-switch" style="text-align: center; margin-top: 12px; font-size: 0.78rem; color: var(--text-dim);">
                     Already have an account? 
                     <a href="javascript:void(0)" onclick="switchTab('login')" style="color: var(--accent-orange); font-weight: 700; margin-left: 3px;">Sign In</a>
                 </div>
